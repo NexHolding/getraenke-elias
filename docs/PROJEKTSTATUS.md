@@ -1,6 +1,6 @@
 # Projektstatus und Übergabe
 
-> Dieser Bericht dokumentiert den bereits veröffentlichten Ausgangsstand. Der neu vorbereitete Ausbau (149 SKUs, Kundenportal, Mitarbeiterrechte und Auslieferung) ist separat unter [Erweiterung vom 17.09.2026](ERWEITERUNG-2026-09-17.md) beschrieben und noch nicht veröffentlicht.
+> Dieser Bericht dokumentiert den bereits veröffentlichten Ausgangsstand. Der neu vorbereitete Ausbau (149 SKUs, Kundenportal, Mitarbeiterrechte und Auslieferung) ist separat unter [Erweiterung vom 17.09.2026](ERWEITERUNG-2026-09-17.md) beschrieben und inzwischen veröffentlicht. Aktuelle Live-Prüfung: [Veröffentlichungsprotokoll](VEROEFFENTLICHUNG-2026-09-17.md).
 
 ## Implementiert und geprüft
 - Eigenständige moderne Website im Original-Elias-Farbsystem, lokal gespeichertes Logo und illustrative Getränkefotografie.

@@ -1,5 +1,7 @@
 # Ausbauplan vom 17.09.2026
 
+**Veröffentlicht nach ausdrücklicher Freigabe.** Aktueller Stand: [Veröffentlichungsprotokoll](VEROEFFENTLICHUNG-2026-09-17.md).
+
 Verbindliche Arbeitsliste aus der Kundenrückmeldung. Browser und API müssen dieselben Berechtigungen und Berechnungen verwenden.
 
 1. Sortiment: Sorten als eigene SKU, gruppierte Auswahl; Produktfotos mit Herkunft; Bild-Upload; Gebinde- und Pfandprofile; Kategorien im Lager und in der Kasse.
@@ -21,7 +23,7 @@ Der Flyer benennt teilweise keine Verpackungsart oder konkreten Sorten. Diese F�
 - Echte Next.js-Routen gegen isoliertes SQL-Backend mit simulierten Supabase-Auth-Antworten: Sortenwahl, Pfand, Kundenauftrag, Teil-/Restlieferung, PDF, Modulrechte, Rabattrecht und PIN-Gerät erfolgreich geprüft. Keine Aussage über eine bereits erfolgte Produktionsmigration.
 - Produktionsbuild erfolgreich; zusätzliche Unit-Tests für Monatsenden, Zeitfenster, Pfandprofile und Rechte.
 - Produktionsdaten vor Migration lesend geprüft und privat gesichert: 108 Produkte, 1 Lieferant, 2 Mitarbeiterkonten, keine Bestellungen/Verkäufe/Einkäufe/Abschlüsse/Lagerbewegungen.
-- Automatische Freigabeprüfung hat die Produktionsmigration zweimal abgewiesen. Keine neue Migration wurde auf Produktion ausgeführt. Explizite Freigabe der konkreten Migration ist der verbleibende Veröffentlichungsschritt.
+- Nach ausdrücklicher Freigabe wurden Migrationen 005–011 erfolgreich auf Produktion angewendet. Der fehlende Historienstand von 001–004 wurde vorher anhand aller zwölf Funktions-Prüfsummen und vorhandener Spalten geprüft und registriert. Anwendung auf Vercel veröffentlicht und live geprüft.
 
 ## Noch erforderliche Betriebsdaten
 - SMTP-Zugang fehlt: Belege werden im Ausgang vorbereitet; tatsächlicher E-Mail-Versand und Registrierungsmails müssen mit dem gewählten SMTP-/Auth-Anbieter abschließend geprüft werden.
@@ -37,8 +39,8 @@ Alle folgenden Ansichten und Belege enthalten ausschließlich erfundene Daten au
 - [Musterrechnung](preview/rechnung.pdf), [unterschriebener Lieferschein](preview/lieferschein.pdf)
 - [80-mm-Bon](preview/bon.pdf), [Tagesbericht mit Bar/Karte](preview/tagesbericht.pdf)
 
-## Konkret vorbereitete Produktionsänderung
-Freizugebendes Ziel: vorhandenes Supabase-Projekt `sfggvhjtsiitqnocridz` und anschließend die dazugehörige Vercel-Anwendung.
+## Ausgeführte Produktionsänderung
+Veröffentlichungsziel: vorhandenes Supabase-Projekt `sfggvhjtsiitqnocridz` und anschließend die dazugehörige Vercel-Anwendung.
 
 | Migration | Wirkung |
 | --- | --- |
@@ -50,6 +52,6 @@ Freizugebendes Ziel: vorhandenes Supabase-Projekt `sfggvhjtsiitqnocridz` und ans
 | 010 | Historische Bestell-/Firmendaten auf Belegen sichern; unterschriebene Inhalte sperren |
 | 011 | Abweichende Longneck-Pfandprofile für Fritz/Paulaner Spezi korrigieren |
 
-Die Umstellung ändert Berechtigungen und zentrale Buchungsfunktionen. Deshalb müssen Datenbank und Anwendung in dieser Reihenfolge gemeinsam veröffentlicht werden. Eine vorherige Datensicherung liegt außerhalb des Repositorys geschützt vor. Die Automatik bleibt bis zur Konfiguration deaktiviert. Kein E-Mail-Versand wurde bei diesen Prüfungen ausgelöst.
+Die Umstellung hat Berechtigungen und zentrale Buchungsfunktionen erweitert. Zuerst wurde die Datenbank migriert und geprüft, danach die passende Anwendung veröffentlicht. Eine vorherige Datensicherung liegt außerhalb des Repositorys geschützt vor. Die Automatik bleibt bis zur Konfiguration deaktiviert. Kein E-Mail-Versand wurde bei diesen Prüfungen ausgelöst.
 
 Abschlussprüfung: 11 Unit-Tests, sämtliche 11 Migrationen in isoliertem SQL, Browserablauf mit API-/SQL-Verknüpfung, mobile handschriftliche Signatur, unveränderte historische Teilmengen, Mitarbeiter-E-Mail-Wechsel, PIN-Rechte, Lint/TypeScript/Produktionsbuild erfolgreich. PDF-Seiten wurden gerendert und visuell geprüft. Auth im Browser-Test ist simuliert; SMTP und reale Bestätigungsmails sind damit nicht abgenommen.

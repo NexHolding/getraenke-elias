@@ -3,7 +3,7 @@
 Next.js 16 / React 19 / TypeScript, Supabase Postgres/Auth und Vercel. Website mit 149 aktiven Artikel-SKUs, Lieferbestellung und Kundenportal, CRM, Browserkasse im Einrichtungsmodus und mobile Auslieferung.
 
 ## Stand und Veröffentlichung
-Die Erweiterung ist lokal implementiert und isoliert geprüft. **Migrationen 005–011 sind noch nicht auf Produktion angewendet.** Der Prüfzweig `codex/operations-expansion` löst bewusst keine Vercel-Veröffentlichung aus. Erst die Datenbank umstellen und prüfen, danach die passende Anwendung veröffentlichen. Freigabestand und Grenzen: [Erweiterung](docs/ERWEITERUNG-2026-09-17.md).
+Die Erweiterung ist nach ausdrücklicher Freigabe am 17.09.2026 veröffentlicht. **Migrationen 005–011 sind auf Produktion angewendet.** PR #1 ist nach `main` übernommen; die neue Anwendung läuft unter https://getraenke-elias.vercel.app. Live-Prüfung und noch offene Anschlüsse: [Veröffentlichungsprotokoll](docs/VEROEFFENTLICHUNG-2026-09-17.md).
 
 ## Entwicklung
 1. `npm ci`
@@ -12,7 +12,7 @@ Die Erweiterung ist lokal implementiert und isoliert geprüft. **Migrationen 005
 4. `npm test`, `npm run test:db`, `npm run lint`, `npm run build`
 
 ## Daten und Zugriffe
-- Migrationen in `supabase/migrations/` in Dateinamensreihenfolge. Die sieben neuen Migrationen erweitern Tabellen, Funktionen und Zugriffsregeln; keine dieser Änderungen ist bereits live.
+- Migrationen in `supabase/migrations/` in Dateinamensreihenfolge. Die sieben Erweiterungsmigrationen für Tabellen, Funktionen und Zugriffsregeln sind live.
 - `data/catalog-original.json`: 108 Original-Flyerpositionen. `data/catalog.json`: 149 aktive SKUs nach Sortentrennung. Archivierte Sammelpositionen bleiben für historische Referenzen erhalten.
 - Pfandprofile berechnen Flaschen- und Kastenpfand serverseitig. Unklare Verpackungen und nicht spezifizierte Sorten stehen in den Artikelnotizen. Keine erfundenen Lagerbestände oder EANs. [Quellen](docs/PFAND-UND-BILDQUELLEN.md).
 - RLS auf allen Geschäftstabellen, serverseitige Autorisierung pro Modul. Inhaberstatus wird ausschließlich in `staff` vergeben, niemals aus vom Benutzer änderbaren Auth-Metadaten.
