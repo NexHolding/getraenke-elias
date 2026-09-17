@@ -88,21 +88,27 @@ export async function catalogPdf(products: Product[]) {
   });
   await finish(doc, "Elias-Artikelliste.pdf");
 }
-export async function financePdf(sales: Sale[], period: string) {
+export async function financePdf(
+  sales: Sale[],
+  period: string,
+  closing?: { opening?: number; counted?: number; difference?: number },
+) {
   const doc = await documentBase(
-    "Finanzübersicht · TESTDATEN",
-    `${period} · Keine steuerliche Abrechnung / kein DSFinV-K-Export`,
+    period.length === 10 ? "Tagesbericht" : "Monatsbericht",
+    `${period} · Einrichtungsmodus · Netto / Umsatzsteuer / Brutto`,
   );
   const { default: autoTable } = await import("jspdf-autotable");
   autoTable(doc, {
     startY: 50,
     margin: { left: 16, right: 16, bottom: 25 },
-    head: [["Testbon", "Datum", "Netto", "USt.", "Brutto", "davon Pfand"]],
+    head: [
+      ["Bon", "Datum / Zahlart", "Netto", "USt.", "Brutto", "davon Pfand"],
+    ],
     body: sales.map((s) => [
-      `T-${s.number}`,
+      `E-${s.number}`,
       new Date(s.created_at).toLocaleDateString("de-DE", {
         timeZone: "Europe/Berlin",
-      }),
+      }) + ` / ${s.payment === "cash" ? "Bar" : "Karte"}`,
       euro(s.net_cents),
       euro(s.tax_cents),
       euro(s.total_cents),
@@ -122,11 +128,52 @@ export async function financePdf(sales: Sale[], period: string) {
     headStyles: { fillColor: [45, 63, 38] },
     footStyles: { fillColor: [153, 183, 43], textColor: [30, 40, 25] },
   });
-  await finish(doc, `Elias-Finanzen-TEST-${period}.pdf`);
+  let y =
+    (doc as typeof doc & { lastAutoTable: { finalY: number } }).lastAutoTable
+      .finalY + 12;
+  if (y > 245) {
+    doc.addPage();
+    y = 25;
+  }
+  doc.setFontSize(11);
+  doc.text(
+    `Bar: ${euro(sales.filter((s) => s.payment === "cash").reduce((a, s) => a + s.total_cents, 0))}    Karte: ${euro(sales.filter((s) => s.payment === "card").reduce((a, s) => a + s.total_cents, 0))}`,
+    16,
+    y,
+  );
+  const all = totals(sales.flatMap((s) => s.items));
+  for (const [rate, v] of Object.entries(all.taxes)) {
+    y += 7;
+    doc.text(
+      `${rate}% USt. · Netto ${euro(v.net)} · Steuer ${euro(v.tax)} · Brutto ${euro(v.gross)}`,
+      16,
+      y,
+    );
+  }
+  if (closing) {
+    y += 10;
+    if (y > 260) {
+      doc.addPage();
+      y = 25;
+    }
+    doc.text(
+      `Anfangsbestand ${euro(closing.opening || 0)} · Gezählt ${euro(closing.counted || 0)} · Differenz ${euro(closing.difference || 0)}`,
+      16,
+      y,
+    );
+  }
+  await finish(doc, `Elias-Finanzen-${period}.pdf`);
 }
 export async function receiptPdf(sale: Sale) {
   const { jsPDF } = await import("jspdf");
-  const height = Math.max(170, 120 + sale.items.length * 17);
+  const height = Math.max(
+    180,
+    150 +
+      sale.items.reduce(
+        (n, l) => n + Math.ceil(l.name.length / 35) * 5 + 14,
+        0,
+      ),
+  );
   const doc = new jsPDF({ unit: "mm", format: [80, height] });
   doc.setFontSize(17);
   doc.text("ELIAS", 40, 12, { align: "center" });
@@ -135,8 +182,10 @@ export async function receiptPdf(sale: Sale) {
     [
       "Getränkeshop · Frank Elias",
       "Wartbergstraße 3 · 74076 Heilbronn",
-      "TESTBELEG – KEIN FISKALBELEG",
-      `T-${sale.number} · ${new Date(sale.created_at).toLocaleString("de-DE", { timeZone: "Europe/Berlin" })}`,
+      sale.test_mode
+        ? "Einrichtungsbeleg · ohne Fiskalisierung"
+        : "Kassenbeleg",
+      `E-${sale.number} · ${new Date(sale.created_at).toLocaleString("de-DE", { timeZone: "Europe/Berlin" })}`,
     ],
     40,
     18,
@@ -144,8 +193,9 @@ export async function receiptPdf(sale: Sale) {
   );
   let y = 38;
   for (const l of sale.items) {
-    doc.text(doc.splitTextToSize(`${l.quantity} × ${l.name}`, 68), 6, y);
-    y += 10;
+    const wrapped = doc.splitTextToSize(`${l.quantity} × ${l.name}`, 68);
+    doc.text(wrapped, 6, y);
+    y += wrapped.length * 4 + 4;
     doc.text(
       `${euro(l.quantity * l.price_cents)} + Pfand ${euro(l.quantity * l.deposit_cents)}`,
       6,
@@ -166,13 +216,13 @@ export async function receiptPdf(sale: Sale) {
   }
   doc.text(
     [
-      `Zahlart: ${sale.payment === "cash" ? "Bar" : "Karte (Simulation)"}`,
+      `Zahlart: ${sale.payment === "cash" ? "Bar" : "Karte"}`,
       `Pfand enthalten: ${euro(t.deposit)}`,
-      "Ohne TSE-Signatur. Keine reale Zahlung.",
+      sale.test_mode ? "Einrichtungsmodus · keine TSE-Signatur" : "",
       "Vielen Dank für deinen Besuch!",
     ],
     6,
     y + 5,
   );
-  doc.save(`Elias-Testbon-${sale.number}.pdf`);
+  doc.save(`Elias-Bon-${sale.number}.pdf`);
 }

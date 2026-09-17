@@ -74,6 +74,9 @@ export default function Password() {
               {message}
             </p>
           )}
+          <Link className="text-link" href="/konto">
+            Zum Kundenkonto
+          </Link>
           <Link className="text-link" href="/crm">
             Zur Verwaltung
           </Link>

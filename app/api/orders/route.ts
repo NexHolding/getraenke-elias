@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { serviceDb, sameOrigin } from "@/lib/server";
+import { serviceDb, sameOrigin, userDb } from "@/lib/server";
 import { orderSchema } from "@/lib/validation";
 export async function POST(req: Request) {
   try {
@@ -17,6 +17,29 @@ export async function POST(req: Request) {
       );
     const v = parsed.data;
     const db = serviceDb();
+    const auth = await userDb();
+    const {
+      data: { user },
+    } = await auth.auth.getUser();
+    const { data: cfg } = await db
+      .from("settings")
+      .select("value")
+      .eq("id", 1)
+      .single();
+    if (!user && cfg?.value?.guest_orders === false)
+      return Response.json(
+        {
+          error:
+            "Bitte im Kundenkonto anmelden. Gastbestellungen sind deaktiviert.",
+        },
+        { status: 401 },
+      );
+    let customer = null;
+    if (user) {
+      const { signedCustomer } = await import("@/lib/customer-server");
+      customer = await signedCustomer();
+      v.email = customer.email;
+    }
     const existing = await db
       .from("orders")
       .select("number")
@@ -71,6 +94,8 @@ export async function POST(req: Request) {
         deposit_cents: p.deposit_cents,
         pack_count: p.pack_count,
         kind: p.kind,
+        tax_rate: p.tax_rate,
+        deposit_tax_rate: p.deposit_tax_rate,
       };
     });
     if (
@@ -84,10 +109,51 @@ export async function POST(req: Request) {
         { error: "Die Mindestabnahmemenge beträgt vier Kisten." },
         { status: 400 },
       );
+    if (!customer) {
+      const { data: found } = await db
+        .from("customers")
+        .select("*")
+        .eq("email", v.email.toLowerCase())
+        .maybeSingle();
+      customer = found;
+      if (!customer) {
+        const { data: created, error } = await db
+          .from("customers")
+          .insert({
+            name: v.customer_name,
+            email: v.email.toLowerCase(),
+            phone: v.phone,
+            address: v.address,
+          })
+          .select("*")
+          .single();
+        if (error?.code === "23505") {
+          const { data: repeat } = await db
+            .from("customers")
+            .select("*")
+            .eq("email", v.email.toLowerCase())
+            .single();
+          customer = repeat;
+        } else if (error) throw error;
+        else customer = created;
+      }
+    }
     const { data: order, error: insertError } = await db
       .from("orders")
       .insert({
         request_id: v.request_id,
+        customer_id: customer?.id,
+        preference_snapshot: user
+          ? {
+              windows: customer?.windows,
+              dropoff_allowed: customer?.dropoff_allowed,
+              dropoff_note: customer?.dropoff_note,
+              latitude:
+                customer?.address === v.address ? customer?.latitude : null,
+              longitude:
+                customer?.address === v.address ? customer?.longitude : null,
+            }
+          : {},
         customer_name: v.customer_name,
         email: v.email,
         phone: v.phone,

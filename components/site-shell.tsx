@@ -57,6 +57,13 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
     [message, setMessage] = useState(""),
     [busy, setBusy] = useState(false),
     [social, setSocial] = useState(""),
+    [guestAllowed, setGuestAllowed] = useState(true),
+    [customer, setCustomer] = useState<{
+      name: string;
+      email: string;
+      phone: string;
+      address: string;
+    } | null>(null),
     [requestId, setRequestId] = useState(() => crypto.randomUUID());
   useDialog(open, () => setOpen(false));
   const cartJson = useSyncExternalStore(
@@ -80,7 +87,18 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     fetch("/api/catalog")
       .then((r) => r.json())
-      .then((d) => setSocial(d.instagram || ""))
+      .then((d) => {
+        setSocial(d.instagram || "");
+        setGuestAllowed(d.guest_orders !== false);
+      })
+      .catch(() => {});
+  }, []);
+  useEffect(() => {
+    fetch("/api/customer")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.customer) setCustomer(d.customer);
+      })
       .catch(() => {});
   }, []);
   const update = (lines: CartLine[]) => {
@@ -107,7 +125,7 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
       (s, l) => s + l.quantity * (l.product.deposit_cents ?? 0),
       0,
     ),
-    unknown = cart.some((l) => l.product.deposit_cents === null),
+    unknown = false,
     crates = cart.reduce(
       (s, l) =>
         s +
@@ -136,7 +154,7 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
       update([]);
       setRequestId(crypto.randomUUID());
       setMessage(
-        `Danke! Deine Anfrage ${d.number} ist eingegangen. Elias bestätigt Preis, Pfand und Liefertermin persönlich.`,
+        `Danke! Deine Anfrage ${d.number} ist eingegangen. Deine gewählten Sorten und der Pfandbetrag wurden übernommen. Elias bestätigt den Liefertermin.`,
       );
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "Bitte versuche es erneut.");
@@ -185,6 +203,9 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
             ))}
           </nav>
           <div className="nav-actions">
+            <Link href="/konto" className="text-link">
+              Mein Konto
+            </Link>
             <button
               className="bag-button"
               onClick={() => setOpen(true)}
@@ -376,7 +397,7 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
                   </div>
                   <div>
                     <span>Pfand</span>
-                    <span>{unknown ? "wird bestätigt" : euro(deposit)}</span>
+                    <span>{euro(deposit)}</span>
                   </div>
                   <div>
                     <span>Lieferung</span>
@@ -391,10 +412,19 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
                   </div>
                 </div>
                 <form onSubmit={submit} className="form-grid">
+                  <p className="notice">
+                    {customer
+                      ? `Bestellung als ${customer.name}`
+                      : guestAllowed
+                        ? "Du bestellst als Gast. Mit einem Kundenkonto werden deine Daten gespeichert."
+                        : "Bitte melde dich für eine Bestellung an."}{" "}
+                    <Link href="/konto">Zum Kundenkonto</Link>
+                  </p>
                   <label>
                     Name
                     <input
                       name="customer_name"
+                      defaultValue={customer?.name || ""}
                       required
                       maxLength={120}
                       autoComplete="name"
@@ -405,6 +435,7 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
                     <input
                       type="email"
                       name="email"
+                      defaultValue={customer?.email || ""}
                       required
                       autoComplete="email"
                     />
@@ -413,6 +444,7 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
                     Telefon
                     <input
                       name="phone"
+                      defaultValue={customer?.phone || ""}
                       type="tel"
                       required
                       autoComplete="tel"
@@ -422,6 +454,7 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
                     Lieferadresse
                     <input
                       name="address"
+                      defaultValue={customer?.address || ""}
                       required
                       minLength={8}
                       maxLength={300}
@@ -460,7 +493,12 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
                       zur Mindestabnahmemenge.
                     </p>
                   )}
-                  <button disabled={busy || crates < 4} className="button">
+                  <button
+                    disabled={
+                      busy || crates < 4 || (!guestAllowed && !customer)
+                    }
+                    className="button"
+                  >
                     {busy ? "Wird übermittelt …" : "Lieferanfrage senden"}{" "}
                     <ArrowRight size={18} />
                   </button>

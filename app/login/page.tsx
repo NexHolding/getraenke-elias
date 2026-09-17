@@ -28,7 +28,9 @@ export default function Login() {
       router.push("/crm");
       router.refresh();
     } catch {
-      setError("Anmeldung fehlgeschlagen. Bitte Benutzername oder E-Mail und Passwort prüfen.");
+      setError(
+        "Anmeldung fehlgeschlagen. Bitte Benutzername oder E-Mail und Passwort prüfen.",
+      );
     } finally {
       setBusy(false);
     }

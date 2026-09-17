@@ -1,3 +1,4 @@
+import { can } from "./permissions";
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
@@ -26,19 +27,38 @@ export async function userDb() {
     },
   );
 }
-export async function requireStaff() {
+export async function requireStaff(module?: string) {
   const db = await userDb();
-  const {
-    data: { user },
-  } = await db.auth.getUser();
-  if (!user) throw new Error("UNAUTHORIZED");
-  const { data } = await db
+  const jar = await cookies();
+  let id: string | undefined;
+  if (jar.get("elias-device")) {
+    const { terminalDevice, tokenHash } = await import("./terminal");
+    const device = await terminalDevice();
+    const token = jar.get("elias-operator")?.value;
+    if (!device || !token) throw new Error("UNAUTHORIZED");
+    const { data } = await serviceDb()
+      .from("terminal_sessions")
+      .select("user_id")
+      .eq("token_hash", tokenHash(token))
+      .eq("device_id", device.id)
+      .gt("expires_at", new Date().toISOString())
+      .maybeSingle();
+    id = data?.user_id;
+  } else {
+    const {
+      data: { user },
+    } = await db.auth.getUser();
+    id = user?.id;
+  }
+  if (!id) throw new Error("UNAUTHORIZED");
+  const { data } = await serviceDb()
     .from("staff")
-    .select("role")
-    .eq("user_id", user.id)
-    .single();
-  if (!data) throw new Error("FORBIDDEN");
-  return { db, user, role: data.role };
+    .select("user_id,role,name,permissions,active,number")
+    .eq("user_id", id)
+    .maybeSingle();
+  if (!data || !data.active) throw new Error("FORBIDDEN");
+  if (module && !can(data, module)) throw new Error("FORBIDDEN");
+  return { db, user: { id }, ...data };
 }
 export function safeError(e: unknown) {
   const m = e instanceof Error ? e.message : "Fehler";
@@ -49,7 +69,9 @@ export function safeError(e: unknown) {
           ? "Bitte anmelden."
           : m === "FORBIDDEN"
             ? "Keine Berechtigung."
-            : "Die Aktion konnte nicht gespeichert werden. Bitte Eingaben prüfen und erneut versuchen.",
+            : m.startsWith("HINWEIS:")
+              ? m.slice(8)
+              : "Die Aktion konnte nicht gespeichert werden. Bitte Eingaben prüfen und erneut versuchen.",
     },
     { status: m === "UNAUTHORIZED" ? 401 : m === "FORBIDDEN" ? 403 : 400 },
   );

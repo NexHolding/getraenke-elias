@@ -1,3 +1,4 @@
+import { dailyAutomation } from "@/lib/automation";
 import { timingSafeEqual } from "node:crypto";
 import { serviceDb } from "@/lib/server";
 export async function GET(req: Request) {
@@ -15,5 +16,6 @@ export async function GET(req: Request) {
       { error: "Nachbestellungen konnten nicht erzeugt werden." },
       { status: 500 },
     );
+  await dailyAutomation();
   return Response.json({ drafts_created: data });
 }

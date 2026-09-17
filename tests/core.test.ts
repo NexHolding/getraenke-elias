@@ -3,9 +3,9 @@ import assert from "node:assert/strict";
 import { totals, reorderQuantity } from "../lib/money";
 import { productSchema, orderSchema } from "../lib/validation";
 import raw from "../data/catalog.json";
-test("108 source positions imported with exact representative prices and pack sizes", () => {
-  assert.equal(raw.length, 108);
-  assert.equal(new Set(raw.map((p) => p.id)).size, 108);
+test("149 separate SKUs retain source prices and pack sizes", () => {
+  assert.equal(raw.length, 149);
+  assert.equal(new Set(raw.map((p) => p.id)).size, 149);
   assert.deepEqual(
     raw
       .filter((p) => p.name === "Paulaner Spezi")
@@ -15,7 +15,8 @@ test("108 source positions imported with exact representative prices and pack si
   assert.equal(raw.find((p) => p.name === "Kühlwagen")?.price_cents, 19500);
   assert.ok(
     raw.every(
-      (p) => p.deposit_cents === null && p.stock === null && !p.verified,
+      (p) =>
+        Number.isInteger(p.deposit_cents) && p.stock === null && !p.verified,
     ),
   );
 });
@@ -109,7 +110,8 @@ test("reorder honours threshold and open purchases", () => {
 });
 test("cannot verify product with unknown deposit or inverted target", () => {
   assert.equal(
-    productSchema.safeParse({ ...raw[0], verified: true }).success,
+    productSchema.safeParse({ ...raw[0], verified: true, deposit_cents: null })
+      .success,
     false,
   );
   assert.equal(

@@ -1,6 +1,34 @@
 import { z } from "zod";
 export const productSchema = z
   .object({
+    group_name: z.string().max(200).default(""),
+    variant: z.string().max(100).default(""),
+    image_url: z
+      .string()
+      .max(2000)
+      .refine(
+        (v) =>
+          !v ||
+          v.startsWith("/products/") ||
+          v.startsWith(
+            process.env.NEXT_PUBLIC_SUPABASE_URL +
+              "/storage/v1/object/public/product-images/",
+          ),
+      )
+      .default(""),
+    image_source: z.string().max(2000).default(""),
+    deposit_profile: z
+      .enum([
+        "none",
+        "beer",
+        "swing",
+        "reusable",
+        "single",
+        "sixpack",
+        "custom",
+      ])
+      .default("custom"),
+    data_note: z.string().max(1000).default(""),
     revision: z.number().int().min(0).optional(),
     id: z.string().min(1).max(80),
     sku: z.string().min(1).max(80),
@@ -46,12 +74,16 @@ export const supplierSchema = z
     name: z.string().min(1).max(150),
     email: z.union([z.email(), z.literal("")]),
     phone: z.string().max(80),
-    is_demo: z.boolean(),
+    is_demo: z.boolean().default(false),
+    company: z.string().max(200).default(""),
+    address: z.string().max(500).default(""),
+    contact: z.string().max(200).default(""),
+    notes: z.string().max(1000).default(""),
     auto_send: z.boolean(),
   })
   .refine(
-    (s) => !s.auto_send || (!s.is_demo && s.email !== ""),
-    "Automatik benötigt einen echten Lieferanten und eine Bestelladresse.",
+    (s) => !s.auto_send || s.email !== "",
+    "Automatik benötigt eine Bestell-E-Mail-Adresse.",
   );
 export const orderSchema = z.object({
   request_id: z.uuid(),
@@ -70,9 +102,49 @@ export const orderSchema = z.object({
       }),
     )
     .min(1)
-    .max(108),
+    .max(200),
 });
 export const settingsSchema = z.object({
+  live_mode: z.boolean().default(false),
+  guest_orders: z.boolean().default(true),
+  reorder_days: z
+    .array(z.number().int().min(1).max(7))
+    .min(1)
+    .max(7)
+    .default([1]),
+  reorder_time: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
+    .default("10:00"),
+  reorder_weeks: z.number().int().min(1).max(12).default(1),
+  reorder_anchor: z.iso.date().default("2026-09-14"),
+  delivery_days: z
+    .array(z.number().int().min(1).max(7))
+    .min(1)
+    .max(7)
+    .default([1, 2, 3, 4, 5]),
+  delivery_from: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
+    .default("10:00"),
+  delivery_to: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
+    .default("18:00"),
+  delivery_stop_minutes: z.number().int().min(1).max(120).default(10),
+  discount_percent: z.number().int().min(0).max(100).default(10),
+  tax_number: z.string().max(80).default(""),
+  business_name: z
+    .string()
+    .min(1)
+    .max(200)
+    .default("Getränkeshop Elias · Frank Elias"),
+  business_address: z
+    .string()
+    .min(1)
+    .max(300)
+    .default("Wartbergstraße 3 · 74076 Heilbronn"),
+  route_geocoding: z.boolean().default(false),
   auto_reorder: z.boolean(),
   instagram: z
     .string()
