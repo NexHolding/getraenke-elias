@@ -3656,3 +3656,138 @@ textarea {
 .receipt-choices, .receipt-links { display: flex; flex-wrap: wrap; gap: 12px; margin: 18px 0; align-items: center; }
 .digital-receipt { padding: 18px; border: 1px solid #d9dfd4; border-radius: 12px; margin-top: 16px; }
 .digital-receipt img { display: block; max-width: 100%; height: auto; margin: 12px auto; }
+
+/* Customer correspondence */
+.auth-help {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 24px;
+  align-items: flex-start;
+}
+.communication-history {
+  min-width: 0;
+}
+.communication-card {
+  margin: 14px 0;
+  border: 1px solid var(--line, #e0e6d9);
+  border-radius: 14px;
+  background: #fff;
+  overflow: hidden;
+}
+.communication-card summary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px;
+  cursor: pointer;
+  list-style: none;
+}
+.communication-card summary > span:first-of-type {
+  flex: 1;
+  min-width: 0;
+}
+.communication-card summary strong,
+.communication-card summary small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.communication-card summary small {
+  color: #687262;
+  font-size: 12px;
+  margin-top: 5px;
+}
+.communication-card summary:focus-visible {
+  outline: 3px solid #859e42;
+  outline-offset: -3px;
+}
+.communication-card[open] summary {
+  background: #f4f7ee;
+  border-bottom: 1px solid #e0e6d9;
+}
+.mail-status {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 9px;
+  border-radius: 20px;
+  background: #f0f2ec;
+  color: #536142;
+  white-space: nowrap;
+}
+.mail-status-failed,
+.mail-status-uncertain {
+  background: #fff2e5;
+  color: #8b4a16;
+}
+.mail-status-sent {
+  background: #eef5db;
+  color: #536c22;
+}
+.communication-content {
+  padding: 24px;
+}
+.communication-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 0 0 24px;
+}
+.communication-meta dt {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #78806f;
+  letter-spacing: 0.04em;
+}
+.communication-meta dd {
+  font-size: 13px;
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+.communication-body {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.7;
+  font-size: 14px;
+  padding: 22px;
+  background: #fafbf8;
+  border-radius: 10px;
+}
+.communication-attachments {
+  margin-top: 22px;
+}
+.communication-attachments a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  color: #526c26;
+}
+.communication-attachments small {
+  display: block;
+  color: #727968;
+  font-size: 11px;
+  margin-top: 4px;
+}
+@media (max-width: 600px) {
+  .communication-card summary {
+    flex-wrap: wrap;
+    padding: 16px;
+  }
+  .mail-status {
+    margin-left: 34px;
+  }
+  .communication-meta {
+    grid-template-columns: 1fr;
+  }
+  .communication-content {
+    padding: 16px;
+  }
+  .communication-body {
+    padding: 16px;
+  }
+}
+@media (max-width:600px) {
+  .communication-card summary { display:grid;grid-template-columns:20px minmax(0,1fr);align-items:start; }
+  .communication-card summary > svg { margin-top:3px; }
+  .communication-card summary .mail-status { grid-column:2;margin-left:0;justify-self:start; }
+}

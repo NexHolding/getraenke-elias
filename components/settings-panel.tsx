@@ -313,6 +313,13 @@ export default function SettingsPanel({
                     Gespeicherte SMTP-Verbindung prüfen
                   </button>
                   <p className="fineprint span-two">
+                    Dieser SMTP-Zugang versendet auch Bestätigungen, Einladungen
+                    und Passwort-Rücksetzlinks. Ohne aktivierten Versand können
+                    Kunden ihre Registrierung nicht bestätigen. Kunden-E-Mails
+                    und Anhänge sind in der Kundenakte unter Kommunikation
+                    dokumentiert.
+                  </p>
+                  <p className="fineprint span-two">
                     Die Domain muss zusätzlich im Hosting und per DNS verbunden
                     werden. E-Mail-Zugangsdaten werden verschlüsselt
                     gespeichert.

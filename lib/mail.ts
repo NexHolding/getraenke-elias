@@ -3,6 +3,7 @@ import nodemailer from "nodemailer";
 import { lookup } from "node:dns/promises";
 import { serviceDb } from "./server";
 import { decrypt } from "./secrets";
+import { archiveAttachment } from "./communications";
 export async function smtpTransport() {
   const { data, error } = await serviceDb()
     .from("settings")
@@ -80,6 +81,19 @@ export async function dispatchMail() {
           continue;
         }
       }
+      const { data: communication, error: archiveError } = await db
+        .from("customer_communications")
+        .select("id")
+        .eq("source_key", `outbox:${m.id}`)
+        .maybeSingle();
+      if (archiveError) throw archiveError;
+      if (communication) {
+        const { error } = await db
+          .from("customer_communications")
+          .update({ sender: from, legacy: false })
+          .eq("id", communication.id);
+        if (error) throw error;
+      }
       const attachments = [];
       if (m.kind === "delivery_document" || m.kind === "invoice_document") {
         const kind = m.kind === "invoice_document" ? "invoice" : "delivery";
@@ -101,13 +115,12 @@ export async function dispatchMail() {
           .single();
         const { businessDocument } = await import("./documents");
         const pdf = businessDocument(kind, record, order, cfg?.value || {});
-        attachments.push({
-          filename: pdf.filename,
-          content: pdf.bytes,
-          contentType: "application/pdf",
-        });
+        if (!communication) throw new Error("Customer archive unavailable");
+        attachments.push(
+          await archiveAttachment(communication.id, pdf.filename, pdf.bytes),
+        );
       }
-      await transport.sendMail({
+      const result = await transport.sendMail({
         attachments,
         from,
         to: m.recipient,
@@ -115,10 +128,24 @@ export async function dispatchMail() {
         text: m.body,
         messageId: `<${m.id}@getraenke-elias.de>`,
       });
-      await db
+      if (!result.accepted?.length || result.rejected?.length)
+        throw new Error("SMTP did not accept recipient");
+      if (communication) {
+        const { error } = await db
+          .from("customer_communications")
+          .update({ provider_message_id: result.messageId })
+          .eq("id", communication.id);
+        if (error) throw error;
+      }
+      const { error: updateError } = await db
         .from("mail_outbox")
-        .update({ status: "sent", sent_at: new Date().toISOString() })
+        .update({
+          status: "sent",
+          error: null,
+          sent_at: new Date().toISOString(),
+        })
         .eq("id", m.id);
+      if (updateError) throw updateError;
       if (m.kind === "purchase")
         await db
           .from("purchases")

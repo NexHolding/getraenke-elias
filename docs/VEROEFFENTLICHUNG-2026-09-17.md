@@ -59,3 +59,12 @@ Migration `202609170018_finance_reader.sql` ergänzt einen optionalen reinen Fin
 Tages-/Monats-PDFs wurden in A4-Querformat mit Logo, heller Gestaltung, kleinerer Schrift, Steuerübersicht, Tagesverlauf, Belegjournal und Kassenabschlussabgleich neu aufgebaut. CSV und PDF nutzen dieselbe serverseitige Berechnungsgrundlage; Kassenbons und Lieferrechnungen werden getrennt ausgewiesen. Berliner Zeitraumgrenzen, negative Pfandrücknahmen und getrennte Steuersätze sind geprüft.
 
 31 Fachtests, vier Datenbank-Prüfskripte, TypeScript, ESLint und Produktionsbuild bestanden. Alle Seiten der Layoutmuster mit Poppler gerendert und durchgesehen. Anmeldung mit `steuerberater`, ausschließlich Finanznavigation, erlaubte PDF-/CSV-Downloads, gesperrte Schreibaktionen/andere Bereiche und anonyme Zugriffe im Browser geprüft. Keine neuen Verkäufe, Rechnungen oder Lagerbewegungen durch die Abnahme erzeugt. [Bedienung und Datenumfang](FINANZBERICHTE.md).
+
+
+## Kundenkommunikation
+
+Migration `202609170019_customer_communications.sql` ergänzt ausschließlich Kommunikationsarchiv, Originalanhänge und geschützte Auth-Versandaufgaben. Prüfsummen für Artikel, Verkäufe, Mitarbeiter, Einstellungen, Lagerbewegungen, Bestellungen und Einkauf vor/nach Migration identisch. Echte neue Kundenkonten werden erst nach bestätigter E-Mail angebunden; parallele Erstaufrufe sind abgefangen.
+
+Neuer Vercel-Serverwert: `AUTH_EMAIL_HOOK_SECRET`. Supabase-Ziel: `/api/hooks/auth-email` auf der bestehenden Produktionsdomain, E-Mail-Bestätigung bleibt eingeschaltet. Signaturwerte sind nicht im Repository enthalten.
+
+Abnahme: 34 Fachtests, vollständige bisherige Datenbankprüfungen, neue Archiv-/Warteschlangenprüfungen, isolierte Versandarbeiterprüfung, ESLint/TypeScript/Build und Browserablauf mit temporären Supabase-Konten. Es wurden keine externen E-Mails und keine Geschäftsbuchungen erzeugt. SMTP-Verbindung ist noch durch den Inhaber zu hinterlegen.

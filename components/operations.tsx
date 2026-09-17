@@ -1,4 +1,5 @@
 "use client";
+import { CommunicationHistory } from "./communication-history";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Plus, Users, Truck, FileText, Check, ArrowRight } from "lucide-react";
 import type {
@@ -305,6 +306,7 @@ export function CustomerManager({ orders }: { orders: Order[] }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [edit, setEdit] = useState<Partial<Customer> | null>(null);
   const [query, setQuery] = useState("");
+  const [customerTab, setCustomerTab] = useState("profile");
   const c = op.data.customers.find((c) => c.id === selected);
   const own = orders.filter((o) => o.customer_id === selected);
   return (
@@ -341,7 +343,10 @@ export function CustomerManager({ orders }: { orders: Order[] }) {
               <button
                 key={c.id}
                 className={selected === c.id ? "selected" : ""}
-                onClick={() => setSelected(c.id)}
+                onClick={() => {
+                  setSelected(c.id);
+                  setCustomerTab("profile");
+                }}
               >
                 <span className="avatar">
                   <Users size={20} />
@@ -371,86 +376,109 @@ export function CustomerManager({ orders }: { orders: Order[] }) {
                   Bearbeiten
                 </button>
               </div>
-              <p>
-                {c.address}
-                <br />
-                {c.phone} · {c.email}
-              </p>
-              <p>
-                {c.user_id ? "Kundenkonto verknüpft" : "Ohne Kundenlogin"} ·{" "}
-                {c.invoice_email
-                  ? "Rechnungsversand per E-Mail"
-                  : "Rechnungsversand deaktiviert"}
-              </p>
-              <div className="stats-grid">
-                <div className="stat">
-                  <small>Bestellungen</small>
-                  <strong>{own.length}</strong>
-                </div>
-                <div className="stat">
-                  <small>Offen</small>
-                  <strong>
-                    {
-                      own.filter(
-                        (o) => !["completed", "cancelled"].includes(o.status),
-                      ).length
-                    }
-                  </strong>
-                </div>
-                <div className="stat">
-                  <small>Teillieferungen</small>
-                  <strong>
-                    {own.filter((o) => o.status === "partial").length}
-                  </strong>
-                </div>
+              <div className="category-tabs" aria-label="Kundenprofil">
+                <button
+                  className={customerTab === "profile" ? "selected" : ""}
+                  onClick={() => setCustomerTab("profile")}
+                >
+                  Profil & Belege
+                </button>
+                <button
+                  className={customerTab === "communication" ? "selected" : ""}
+                  onClick={() => setCustomerTab("communication")}
+                >
+                  Kommunikation
+                </button>
               </div>
-              <h3>Bestellverlauf</h3>
-              {own.map((o) => (
-                <div className="ledger-row" key={o.id}>
-                  <strong>EL-{o.number}</strong>
-                  <span>
-                    {o.status === "partial"
-                      ? "Restlieferung offen"
-                      : o.status === "completed"
-                        ? "Abgeschlossen"
-                        : o.status === "cancelled"
-                          ? "Storniert"
-                          : "Offen"}
-                  </span>
-                  <small>
-                    {o.items.map((i) => `${i.quantity} × ${i.name}`).join(", ")}
-                  </small>
-                </div>
-              ))}
-              <h3>Dokumente</h3>
-              <DocumentsList
-                deliveries={op.data.deliveries.filter(
-                  (d) => d.customer_id === c.id,
-                )}
-                invoices={op.data.invoices.filter(
-                  (i) => i.customer_id === c.id,
-                )}
-              />
-              <h3>Lieferabos</h3>
-              {op.data.subscriptions
-                .filter((s) => s.customer_id === c.id)
-                .map((s) => (
-                  <p key={s.id}>
-                    {s.active ? "Aktiv" : "Pausiert"} · nächster Auftrag{" "}
-                    {s.next_date} · {s.interval}
+              {customerTab === "communication" ? (
+                <CommunicationHistory key={c.id} customerId={c.id} />
+              ) : (
+                <>
+                  <p>
+                    {c.address}
+                    <br />
+                    {c.phone} · {c.email}
                   </p>
-                ))}
-              <button
-                className="button secondary"
-                disabled={op.busy || !!c.user_id}
-                onClick={() => op.act("customer-invite", { id: c.id })}
-              >
-                Kundenkonto per E-Mail einladen
-              </button>
-              <p className="fineprint">
-                Eine Einladung wird über den eingerichteten Auth-E-Mail-Dienst
-                versendet.
-              </p>
+                  <p>
+                    {c.user_id ? "Kundenkonto verknüpft" : "Ohne Kundenlogin"} ·{" "}
+                    {c.invoice_email
+                      ? "Rechnungsversand per E-Mail"
+                      : "Rechnungsversand deaktiviert"}
+                  </p>
+                  <div className="stats-grid">
+                    <div className="stat">
+                      <small>Bestellungen</small>
+                      <strong>{own.length}</strong>
+                    </div>
+                    <div className="stat">
+                      <small>Offen</small>
+                      <strong>
+                        {
+                          own.filter(
+                            (o) =>
+                              !["completed", "cancelled"].includes(o.status),
+                          ).length
+                        }
+                      </strong>
+                    </div>
+                    <div className="stat">
+                      <small>Teillieferungen</small>
+                      <strong>
+                        {own.filter((o) => o.status === "partial").length}
+                      </strong>
+                    </div>
+                  </div>
+                  <h3>Bestellverlauf</h3>
+                  {own.map((o) => (
+                    <div className="ledger-row" key={o.id}>
+                      <strong>EL-{o.number}</strong>
+                      <span>
+                        {o.status === "partial"
+                          ? "Restlieferung offen"
+                          : o.status === "completed"
+                            ? "Abgeschlossen"
+                            : o.status === "cancelled"
+                              ? "Storniert"
+                              : "Offen"}
+                      </span>
+                      <small>
+                        {o.items
+                          .map((i) => `${i.quantity} × ${i.name}`)
+                          .join(", ")}
+                      </small>
+                    </div>
+                  ))}
+                  <h3>Dokumente</h3>
+                  <DocumentsList
+                    deliveries={op.data.deliveries.filter(
+                      (d) => d.customer_id === c.id,
+                    )}
+                    invoices={op.data.invoices.filter(
+                      (i) => i.customer_id === c.id,
+                    )}
+                  />
+                  <h3>Lieferabos</h3>
+                  {op.data.subscriptions
+                    .filter((s) => s.customer_id === c.id)
+                    .map((s) => (
+                      <p key={s.id}>
+                        {s.active ? "Aktiv" : "Pausiert"} · nächster Auftrag{" "}
+                        {s.next_date} · {s.interval}
+                      </p>
+                    ))}
+                  <button
+                    className="button secondary"
+                    disabled={op.busy || !!c.user_id}
+                    onClick={() => op.act("customer-invite", { id: c.id })}
+                  >
+                    Kundenkonto per E-Mail einladen
+                  </button>
+                  <p className="fineprint">
+                    Eine Einladung wird über den eingerichteten
+                    Auth-E-Mail-Dienst versendet.
+                  </p>
+                </>
+              )}
             </>
           ) : (
             <div className="empty">

@@ -190,7 +190,7 @@ export async function POST(req: Request) {
       if (error) throw error;
       if (isSystemAccountEmail(c.email)) throw new Error("FORBIDDEN");
       const result = await db.auth.admin.inviteUserByEmail(c.email, {
-        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || "https://getraenke-elias.vercel.app"}/konto`,
+        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || "https://getraenke-elias.vercel.app"}/auth/callback?next=/passwort`,
       });
       if (result.error) throw result.error;
     } else if (action === "delivery") {

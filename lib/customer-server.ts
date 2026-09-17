@@ -1,7 +1,7 @@
 import "server-only";
 import { isSystemAccountEmail } from "./account-visibility";
 import { userDb, serviceDb } from "./server";
-export async function signedCustomer() {
+export async function signedCustomer(retry = true) {
   const auth = await userDb();
   const {
     data: { user },
@@ -38,6 +38,9 @@ export async function signedCustomer() {
     })
     .select("*")
     .single();
+  // First page load and an API request can provision the same verified account
+  // concurrently. The unique index decides the winner; the other reads it back.
+  if (insertError?.code === "23505" && retry) return signedCustomer(false);
   if (insertError) throw insertError;
   return data;
 }

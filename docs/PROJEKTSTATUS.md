@@ -58,3 +58,14 @@ Die frühere Angabe „Direktdruck nicht implementiert“ ist überholt: Netzwer
 ## Ergänzung: Finanzberichte und Kanzleizugang (17.09.2026)
 
 Helle Tages-/Monatsberichte im Querformat mit Original-Logo, Steuer-/Zahlartenübersicht und Belegjournal; einheitlicher CSV-/PDF-Datenumfang. `steuerberater` ist als Mitarbeiter mit ausschließlich lesendem Finanz-/Exportzugriff eingerichtet. Details: [Finanzberichte](FINANZBERICHTE.md).
+
+
+## Kundenkommunikation und Kontosicherheit (17.09.2026)
+
+- Registrierung mit eigenem Passwort, erneuter Bestätigungsmail und Passwort-vergessen-Seite ergänzt.
+- Bewusste Bestätigung schützt Einmallinks vor automatischen E-Mail-Vorschauen; Rücksetzung führt zur Passwortwahl.
+- Kundenkonto und CRM-Kundenakte besitzen die zweite Navigation „Kommunikation“ mit Nachrichten, Versandstatus und Originalanhängen.
+- Migration 019: privates, gegen Inhaltsänderungen geschütztes Archiv und verschlüsselte Auth-Versandwarteschlange. Fachbestände und Mitarbeiterrechte unverändert.
+- Echte Supabase-Bestätigung und Passwortwechsel, Zugriffsgrenzen, Originaldateien sowie Versandarbeiter mit isoliertem SMTP-Adapter geprüft.
+- Betriebsabhängigkeit: SMTP ist noch nicht eingerichtet. Tatsächliche Zustellung in externe Postfächer wurde nicht behauptet oder geprüft. Einrichtung unter Einstellungen → Schnittstellen erforderlich.
+- Einzelheiten: `docs/KUNDENKOMMUNIKATION.md`.

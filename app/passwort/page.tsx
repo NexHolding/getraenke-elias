@@ -30,7 +30,9 @@ export default function Password() {
                 data: { user },
               } = await db.auth.getUser();
               if (!user) {
-                setMessage("Bitte zuerst mit deinem Erstzugang anmelden.");
+                setMessage(
+                  "Bitte öffne zuerst den Link aus deiner E-Mail oder melde dich in deinem Konto an.",
+                );
                 return;
               }
               const { error } = await db.auth.updateUser({
@@ -40,6 +42,10 @@ export default function Password() {
                 error
                   ? "Passwort konnte nicht geändert werden. Bitte erneut anmelden."
                   : "Dein Passwort wurde geändert.",
+              );
+            } catch {
+              setMessage(
+                "Die Änderung ist fehlgeschlagen. Bitte erneut versuchen.",
               );
             } finally {
               setBusy(false);
@@ -74,6 +80,9 @@ export default function Password() {
               {message}
             </p>
           )}
+          <Link className="text-link" href="/passwort-vergessen">
+            Neuen Rücksetzlink anfordern
+          </Link>
           <Link className="text-link" href="/konto">
             Zum Kundenkonto
           </Link>

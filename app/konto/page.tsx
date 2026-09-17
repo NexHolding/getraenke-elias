@@ -8,6 +8,7 @@ import {
   DocumentsList,
   customerDefaults,
 } from "@/components/operations";
+import { CommunicationHistory } from "@/components/communication-history";
 import { ProductPhoto } from "@/components/product-photo";
 import type {
   Customer,
@@ -68,6 +69,13 @@ export default function Account() {
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (active) {
+          const params = new URLSearchParams(location.search);
+          if (params.get("error") === "confirmation")
+            setMessage(
+              "Der Bestätigungslink ist ungültig oder abgelaufen. Bitte fordere eine neue Bestätigungs-E-Mail oder einen neuen Rücksetzlink an.",
+            );
+          else if (params.has("bestaetigt"))
+            setMessage("Deine E-Mail-Adresse wurde bestätigt.");
           if (d) {
             setAccount(d);
             setProfile(d.customer);
@@ -144,11 +152,13 @@ export default function Account() {
                 const f = new FormData(e.currentTarget);
                 try {
                   const credentials = {
-                    email: String(f.get("email")),
+                    email: String(f.get("email")).trim().toLowerCase(),
                     password: String(f.get("password")),
                   };
                   const auth = db();
                   if (register) {
+                    if (f.get("password") !== f.get("confirm"))
+                      throw new Error("Die Passwörter stimmen nicht überein.");
                     const { error } = await auth.auth.signUp({
                       ...credentials,
                       options: {
@@ -156,7 +166,10 @@ export default function Account() {
                         data: { name: String(f.get("name")) },
                       },
                     });
-                    if (error) throw error;
+                    if (error)
+                      throw new Error(
+                        "Die Registrierung konnte gerade nicht abgeschlossen werden. Bitte versuche es später erneut oder nutze die Anmeldung, falls du bereits ein Konto hast.",
+                      );
                     setMessage(
                       "Bitte öffne die Bestätigungs-E-Mail, um dein Konto freizuschalten.",
                     );
@@ -197,11 +210,23 @@ export default function Account() {
                 <input
                   name="password"
                   type="password"
-                  minLength={10}
+                  minLength={register ? 12 : 8}
                   required
                   autoComplete={register ? "new-password" : "current-password"}
                 />
               </label>
+              {register && (
+                <label>
+                  Passwort wiederholen (mindestens 12 Zeichen)
+                  <input
+                    name="confirm"
+                    type="password"
+                    autoComplete="new-password"
+                    minLength={12}
+                    required
+                  />
+                </label>
+              )}
               {register && (
                 <label className="checkline">
                   <input required type="checkbox" />
@@ -213,6 +238,46 @@ export default function Account() {
                 {register ? "Konto erstellen" : "Anmelden"}
               </button>
             </form>
+            <div className="auth-help">
+              <Link className="text-link" href="/passwort-vergessen">
+                Passwort vergessen?
+              </Link>
+              <button
+                className="text-link"
+                disabled={busy}
+                onClick={async () => {
+                  const input = document.querySelector<HTMLInputElement>(
+                    '.account-auth input[name="email"]',
+                  );
+                  if (!input?.value || !input.reportValidity()) {
+                    setMessage("Bitte trage zuerst deine E-Mail-Adresse ein.");
+                    return;
+                  }
+                  setBusy(true);
+                  try {
+                    const { error } = await db().auth.resend({
+                      type: "signup",
+                      email: input.value.trim().toLowerCase(),
+                      options: {
+                        emailRedirectTo: location.origin + "/auth/callback",
+                      },
+                    });
+                    if (error) throw error;
+                    setMessage(
+                      "Falls dein Konto noch nicht bestätigt ist, erhältst du eine neue Bestätigungs-E-Mail.",
+                    );
+                  } catch {
+                    setMessage(
+                      "Die E-Mail konnte gerade nicht angefordert werden. Bitte versuche es später erneut.",
+                    );
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                Bestätigungs-E-Mail erneut anfordern
+              </button>
+            </div>
           </section>
         ) : (
           <>
@@ -222,6 +287,12 @@ export default function Account() {
                 onClick={() => setTab("orders")}
               >
                 Bestellungen & Belege
+              </button>
+              <button
+                className={tab === "communication" ? "selected" : ""}
+                onClick={() => setTab("communication")}
+              >
+                Kommunikation
               </button>
               <button
                 className={tab === "profile" ? "selected" : ""}
@@ -247,6 +318,7 @@ export default function Account() {
                 Passwort ändern
               </Link>
             </div>
+            {tab === "communication" && <CommunicationHistory />}
             {tab === "profile" && (
               <form
                 className="panel form-grid two-columns"

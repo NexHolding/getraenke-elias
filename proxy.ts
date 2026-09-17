@@ -35,6 +35,7 @@ export const config = {
     "/passwort",
     "/konto",
     "/api/customer",
+    "/api/communications/:path*",
     "/api/operations",
     "/api/terminal",
     "/api/upload",
