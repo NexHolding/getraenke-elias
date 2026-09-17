@@ -26,6 +26,12 @@ const clean = (text: string) =>
     .replace(/\u00a0/g, " ");
 type Block = { height: number; draw: (doc: jsPDF, y: number) => void };
 
+export function receiptOperatorName(name: string) {
+  return /^global[\s_-]*admin(?:istrator)?(?:@.*)?$/i.test(name.trim())
+    ? "Administration"
+    : name;
+}
+
 export async function createReceiptPdf(sale: Sale) {
   const { jsPDF } = await import("jspdf");
   const issuer = sale.issuer_snapshot || legacyIssuer;
@@ -146,13 +152,7 @@ export async function createReceiptPdf(sale: Sale) {
   );
   if (issuer.register_id) pair("Kasse", issuer.register_id, 7.5);
   if (sale.actor_name)
-    pair(
-      "Bedienung",
-      /global_admin/i.test(sale.actor_name)
-        ? "Administration"
-        : sale.actor_name,
-      7.5,
-    );
+    pair("Bedienung", receiptOperatorName(sale.actor_name), 7.5);
   rule();
   pair("ARTIKEL / MENGE", "EUR", 7.5, true);
   const rates = Object.keys(total.taxes)

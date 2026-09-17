@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createReceiptPdf } from "../lib/receipt";
+import { createReceiptPdf, receiptOperatorName } from "../lib/receipt";
 import { totals } from "../lib/money";
 import type { Sale } from "../lib/types";
 import { settingsSchema } from "../lib/validation";
@@ -117,4 +117,15 @@ test("tax defaults only accept current DE rates and tax ID has a separate valida
     settingsSchema.safeParse({ ...base, vat_id: "DE123" }).success,
     false,
   );
+});
+
+test("historical administrator labels remain hidden on customer receipts", () => {
+  for (const name of [
+    "Global Administrator",
+    "global_admin",
+    "GLOBAL ADMIN",
+    "global_admin@getraenke-elias.local",
+  ])
+    assert.equal(receiptOperatorName(name), "Administration");
+  assert.equal(receiptOperatorName("Frank Elias"), "Frank Elias");
 });
