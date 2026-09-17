@@ -6,7 +6,7 @@ await db.exec(
   `create role anon;create role authenticated;create role service_role;create schema auth;create schema storage;create table auth.users(id uuid primary key,email text);create function auth.uid() returns uuid language sql as $$select null::uuid$$;create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);`,
 );
 for (const file of (await readdir("supabase/migrations"))
-  .filter((f) => f.endsWith(".sql") && !f.includes("015_"))
+  .filter((f) => f.endsWith(".sql") && f < "202609170015")
   .sort())
   await db.exec(await readFile("supabase/migrations/" + file, "utf8"));
 const q = async (sql, args = []) => (await db.query(sql, args)).rows;
@@ -29,6 +29,10 @@ for (const [id, role, permissions, active] of [
 await db.exec(
   await readFile("supabase/migrations/202609170015_discounts.sql", "utf8"),
 );
+for (const file of (await readdir("supabase/migrations"))
+  .filter((f) => f.endsWith(".sql") && f > "202609170015_discounts.sql")
+  .sort())
+  await db.exec(await readFile("supabase/migrations/" + file, "utf8"));
 assert.deepEqual(
   (await q("select permissions from staff where user_id=$1", [staff]))[0]
     .permissions,
@@ -143,6 +147,47 @@ await assert.rejects(() =>
 );
 await assert.rejects(() => sale(staff, [{ id: first, quantity: 1 }], 10));
 await sale(staff, [{ id: first, quantity: 1 }], 0);
+// Settings apply to future articles and issuer snapshots, never to completed receipts.
+const prior = (
+  await q("select to_jsonb(s) value from sales s where id=$1", [id])
+)[0].value;
+assert.equal(
+  prior.issuer_snapshot.business_name,
+  "Getränkeshop Elias · Frank Elias",
+);
+assert.equal(prior.fiscal, null);
+await q(
+  `update settings set value=value || '{"default_tax_rate":7,"default_deposit_tax_rate":7,"business_name":"QA neuer Firmenname","tax_number":"QA-STEUERNUMMER"}'::jsonb where id=1`,
+);
+await q(
+  `insert into products(id,sku,name,category,pack_count,volume_ml,price_cents,deposit_cents,stock) values('qa-milk','QA-MILK','QA Milch','Limonade',1,1000,107,15,10)`,
+);
+const milk = (
+  await q("select tax_rate,deposit_tax_rate from products where id='qa-milk'")
+)[0];
+assert.deepEqual(milk, { tax_rate: 7, deposit_tax_rate: 7 });
+const updated = await sale(owner, [{ id: "qa-milk", quantity: 1 }]);
+assert.equal(updated.issuer_snapshot.business_name, "QA neuer Firmenname");
+assert.equal(updated.issuer_snapshot.tax_number, "QA-STEUERNUMMER");
+assert.equal(updated.items[0].tax_rate, 7);
+assert.equal(updated.total_cents, 122);
+await q("update products set tax_rate=19 where id='qa-milk'");
+assert.equal(
+  (await q("select items from sales where id=$1", [updated.id]))[0].items[0]
+    .tax_rate,
+  7,
+);
+assert.deepEqual(
+  (await q("select to_jsonb(s) value from sales s where id=$1", [id]))[0].value,
+  prior,
+);
+await assert.rejects(
+  () => q("update sales set issuer_snapshot='{}' where id=$1", [id]),
+  /immutable/,
+);
+console.log(
+  "PASS receipt snapshots: issuer and tax rates immutable after settings/product edits; new inventory products inherit configured defaults; setup fiscal data absent",
+);
 await db.exec(
   `update settings set value=jsonb_set(value,'{live_mode}','true') where id=1`,
 );

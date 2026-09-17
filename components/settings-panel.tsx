@@ -7,6 +7,7 @@ import { modules } from "@/lib/permissions";
 import { useOperations } from "./operations";
 const tabs = [
   ["betrieb", "Betrieb"],
+  ["steuern", "Steuern & Belege"],
   ["automatik", "Bestellautomatik"],
   ["lieferung", "Auslieferung"],
   ["schnittstellen", "Schnittstellen"],
@@ -125,7 +126,7 @@ export default function SettingsPanel({
                 <>
                   {text("business_name", "Unternehmensname")}
                   {text("business_address", "Geschäftsanschrift")}
-                  {text("tax_number", "Steuernummer / USt-IdNr.")}
+
                   {num(
                     "discount_percent",
                     "Rabattvorschlag für den Warenkorb (%)",
@@ -151,6 +152,73 @@ export default function SettingsPanel({
                       Fiskalisierung.
                     </p>
                   </div>
+                </>
+              )}
+              {tab === "steuern" && (
+                <>
+                  {text("tax_number", "Steuernummer")}
+                  {text("vat_id", "USt-IdNr. (DE + 9 Ziffern)")}
+                  {text("register_id", "Kassenkennung")}
+                  {(
+                    [
+                      ["default_tax_rate", "MwSt.-Vorgabe für neue Artikel"],
+                      [
+                        "default_deposit_tax_rate",
+                        "MwSt.-Vorgabe für Pfand neuer Artikel",
+                      ],
+                    ] as const
+                  ).map(([key, label]) => (
+                    <label key={key}>
+                      {label}
+                      <select
+                        aria-label={label}
+                        value={v[key] ?? 19}
+                        onChange={(e) =>
+                          setV({ ...v, [key]: Number(e.target.value) })
+                        }
+                      >
+                        <option value={19}>19 % - Regelsteuersatz</option>
+                        <option value={7}>7 % - ermäßigter Steuersatz</option>
+                      </select>
+                    </label>
+                  ))}
+                  <p className="notice span-two">
+                    Abgefülltes Wasser, Limonaden, Säfte, Bier, Wein und Sekt:
+                    19 %. Milch und begünstigte Milchmischgetränke mit
+                    mindestens 75 % Milchanteil: 7 %. Im aktuellen
+                    Elias-Sortiment sind 19 % zutreffend.
+                  </p>
+                  <p className="fineprint span-two">
+                    Die Vorgaben gelten für neu angelegte Artikel. Bestehende
+                    Artikel ändern Sie einzeln oder über „Mehrfach bearbeiten“.
+                    Bruttopreise bleiben dabei gleich; Netto und Umsatzsteuer
+                    werden neu berechnet. Bereits erstellte Belege behalten ihre
+                    gespeicherten Steuersätze und Unternehmensangaben.
+                  </p>
+                  <p className="fineprint span-two">
+                    Der Bon enthält das Elias-Logo und die beim Verkauf
+                    gespeicherten Betriebsdaten. Eine bestätigte Steuernummer
+                    oder USt-IdNr. bitte hier hinterlegen. TSE-Daten können
+                    ausschließlich aus der angebundenen Fiskalisierung stammen;
+                    aktuell werden Einrichtungsbelege erstellt.
+                  </p>
+                  <p className="fineprint span-two">
+                    <a
+                      href="https://www.gesetze-im-internet.de/ustg_1980/__12.html"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      § 12 UStG
+                    </a>{" "}
+                    ·{" "}
+                    <a
+                      href="https://www.gesetze-im-internet.de/ustg_1980/anlage_2.html"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Anlage 2
+                    </a>
+                  </p>
                 </>
               )}
               {tab === "automatik" && (

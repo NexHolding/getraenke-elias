@@ -139,7 +139,15 @@ export const settingsSchema = z.object({
     .default("18:00"),
   delivery_stop_minutes: z.number().int().min(1).max(120).default(10),
   discount_percent: z.number().int().min(0).max(100).default(10),
-  tax_number: z.string().max(80).default(""),
+  tax_number: z.string().trim().max(80).default(""),
+  vat_id: z
+    .string()
+    .trim()
+    .regex(/^(DE[0-9]{9})?$/, "Deutsche USt-IdNr.: DE und neun Ziffern.")
+    .default(""),
+  register_id: z.string().trim().min(1).max(60).default("ELIAS-KASSE-01"),
+  default_tax_rate: z.union([z.literal(7), z.literal(19)]).default(19),
+  default_deposit_tax_rate: z.union([z.literal(7), z.literal(19)]).default(19),
   business_name: z
     .string()
     .min(1)

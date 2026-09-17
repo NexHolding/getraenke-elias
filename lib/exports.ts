@@ -1,6 +1,7 @@
 import type { Product, Sale } from "./types";
 import { euro, pack, totals } from "./money";
-import { discountTotal } from "./discounts";
+export { createReceiptPdf } from "./receipt";
+import { createReceiptPdf } from "./receipt";
 export function csvDownload(name: string, rows: (string | number)[][]) {
   const text =
     "\ufeff" +
@@ -70,9 +71,10 @@ export async function catalogPdf(products: Product[]) {
   autoTable(doc, {
     startY: 50,
     margin: { left: 16, right: 16, bottom: 22 },
-    head: [["Artikel / Gebinde", "Netto", "Brutto", "Pfand"]],
+    head: [["Artikel / Gebinde", "MwSt.", "Netto", "Brutto", "Pfand"]],
     body: products.map((p) => [
       `${p.name}\n${pack(p)} · ${p.sku}`,
+      `${p.tax_rate} %`,
       euro(Math.round((p.price_cents * 100) / (100 + p.tax_rate))),
       euro(p.price_cents),
       p.deposit_cents === null ? "zu prüfen" : euro(p.deposit_cents),
@@ -164,118 +166,6 @@ export async function financePdf(
     );
   }
   await finish(doc, `Elias-Finanzen-${period}.pdf`);
-}
-export async function createReceiptPdf(sale: Sale) {
-  const { jsPDF } = await import("jspdf");
-  const height = Math.min(350, Math.max(180, 150 + sale.items.length * 38));
-  const doc = new jsPDF({ unit: "mm", format: [80, height] });
-  doc.setTextColor(35, 48, 34);
-  doc.setFontSize(17);
-  doc.text("ELIAS", 40, 12, { align: "center" });
-  doc.setFontSize(8);
-  doc.text(
-    [
-      "Getränkeshop · Frank Elias",
-      "Wartbergstraße 3 · 74076 Heilbronn",
-      sale.test_mode
-        ? "Einrichtungsbeleg · ohne Fiskalisierung"
-        : "Kassenbeleg",
-      `E-${sale.number} · ${new Date(sale.created_at).toLocaleString("de-DE", { timeZone: "Europe/Berlin" })}`,
-    ],
-    40,
-    18,
-    { align: "center" },
-  );
-  let y = 38;
-  function space(needed: number) {
-    if (y + needed <= height - 12) return;
-    doc.addPage();
-    doc.setFontSize(8);
-    doc.text(`ELIAS · E-${sale.number} · Fortsetzung`, 6, 12);
-    y = 22;
-  }
-  for (const line of sale.items) {
-    const name = doc.splitTextToSize(`${line.quantity} × ${line.name}`, 68);
-    const saving = discountTotal([line]);
-    const reason =
-      saving > 0 && line.discount_reason
-        ? doc.splitTextToSize(`Grund: ${line.discount_reason}`, 68)
-        : [];
-    space(name.length * 4 + 15 + (saving > 0 ? 14 + reason.length * 4 : 0));
-    doc.setFontSize(8);
-    doc.text(name, 6, y);
-    y += name.length * 4 + 2;
-    if (saving > 0) {
-      doc.text(
-        `Vor Rabatt: ${euro(line.quantity * (line.original_price_cents ?? line.price_cents))}`,
-        6,
-        y,
-      );
-      y += 5;
-      const label =
-        line.discount_scope === "cart"
-          ? "Warenkorbrabatt"
-          : line.discount_scope === "item"
-            ? "Artikelrabatt"
-            : "Rabatt";
-      doc.text(
-        `${label}${line.discount_percent ? ` ${line.discount_percent}%` : ""}: -${euro(saving)}`,
-        6,
-        y,
-      );
-      y += 5;
-      if (reason.length) {
-        doc.text(reason, 6, y);
-        y += reason.length * 4 + 1;
-      }
-    }
-    doc.text(
-      `${euro(line.quantity * line.price_cents)} + Pfand ${euro(line.quantity * line.deposit_cents)}`,
-      6,
-      y,
-    );
-    y += 8;
-  }
-  const total = totals(sale.items);
-  const saving = discountTotal(sale.items);
-  space(67 + Object.keys(total.taxes).length * 5 + (saving > 0 ? 12 : 0));
-  doc.setDrawColor(180, 190, 165);
-  doc.line(6, y - 2, 74, y - 2);
-  if (saving > 0) {
-    doc.text("Rabatt gesamt (bereits enthalten):", 6, y + 3);
-    doc.text(`-${euro(saving)}`, 74, y + 8, { align: "right" });
-    y += 15;
-  }
-  doc.setFontSize(11);
-  doc.text(
-    `${total.gross < 0 ? "AUSZAHLUNG" : "GESAMT"} ${euro(Math.abs(total.gross))}`,
-    6,
-    y + 3,
-  );
-  doc.setFontSize(8);
-  y += 12;
-  doc.text(`Netto ${euro(total.net)} · USt. ${euro(total.tax)}`, 6, y);
-  y += 6;
-  for (const [rate, value] of Object.entries(total.taxes)) {
-    doc.text(
-      `${rate}%: Netto ${euro(value.net)} / USt. ${euro(value.tax)}`,
-      6,
-      y,
-    );
-    y += 5;
-  }
-  doc.text(
-    [
-      `Zahlart: ${sale.payment === "cash" ? "Bar" : "Karte"}`,
-      `Pfand enthalten: ${euro(total.deposit)}`,
-      ...(saving > 0 ? ["Pfand ist vom Rabatt ausgenommen."] : []),
-      ...(sale.test_mode ? ["Einrichtungsmodus · keine TSE-Signatur"] : []),
-      "Vielen Dank für deinen Besuch!",
-    ],
-    6,
-    y + 5,
-  );
-  return doc;
 }
 export async function receiptPdf(sale: Sale) {
   const doc = await createReceiptPdf(sale);

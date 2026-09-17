@@ -79,7 +79,27 @@ export type Order = Partial<DeliveryAddress> & {
   status: string;
   created_at: string;
 };
+export type ReceiptIssuer = {
+  business_name: string;
+  business_address: string;
+  tax_number: string;
+  vat_id: string;
+  register_id: string;
+  website: string;
+};
+export type FiscalReceipt = {
+  transaction_number: string;
+  started_at: string;
+  finished_at: string;
+  register_serial: string;
+  tse_serial: string;
+  signature: string;
+  signature_counter: string;
+};
 export type Sale = {
+  issuer_snapshot?: ReceiptIssuer | null;
+  fiscal?: FiscalReceipt | null;
+  actor_name?: string;
   id: string;
   number: number;
   created_at: string;
@@ -123,6 +143,10 @@ export type Settings = {
   delivery_to?: string;
   delivery_stop_minutes?: number;
   tax_number?: string;
+  vat_id?: string;
+  register_id?: string;
+  default_tax_rate?: number;
+  default_deposit_tax_rate?: number;
   business_name?: string;
   business_address?: string;
   discount_percent?: number;

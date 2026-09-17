@@ -51,6 +51,7 @@ function ProductCard({ products }: { products: Product[] }) {
         <div className="product-price">
           <div>
             <strong>{euro(p.price_cents)}</strong>
+            <small>inkl. {p.tax_rate} % MwSt.</small>
             <small>
               {p.deposit_cents
                 ? `zzgl. ${euro(p.deposit_cents)} Pfand`

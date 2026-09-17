@@ -662,6 +662,9 @@ export default function AdminApp({ section }: { section: string }) {
                       onClick={() =>
                         setEdit({
                           ...defaults,
+                          tax_rate: data.settings.default_tax_rate ?? 19,
+                          deposit_tax_rate:
+                            data.settings.default_deposit_tax_rate ?? 19,
                           id: crypto.randomUUID(),
                           sku: `EL-${Date.now().toString().slice(-7)}`,
                         })
@@ -711,6 +714,7 @@ export default function AdminApp({ section }: { section: string }) {
                           <th>Artikel</th>
                           <th>Gebinde</th>
                           <th>Brutto / Netto</th>
+                          <th>MwSt.</th>
                           <th>Pfand</th>
                           <th>Bestand / Min.</th>
                           <th>Status</th>
@@ -751,6 +755,10 @@ export default function AdminApp({ section }: { section: string }) {
                                 )}{" "}
                                 netto
                               </small>
+                            </td>
+                            <td>
+                              <strong>{p.tax_rate} %</strong>
+                              <small>Pfand: {p.deposit_tax_rate} %</small>
                             </td>
                             <td>
                               {p.deposit_cents === null ? (
@@ -1119,6 +1127,7 @@ export default function AdminApp({ section }: { section: string }) {
                               <strong>{p.name}</strong>
                               <small>{pack(p)}</small>
                               <b>{euro(p.price_cents)}</b>
+                              <small>inkl. {p.tax_rate} % MwSt.</small>
                               <small>
                                 {p.deposit_cents === null
                                   ? "Pfand prüfen"
@@ -1894,6 +1903,7 @@ export default function AdminApp({ section }: { section: string }) {
             <label>
               Umsatzsteuer Artikel
               <select
+                aria-label="Umsatzsteuer Artikel"
                 value={edit.tax_rate}
                 onChange={(e) =>
                   setEdit({ ...edit, tax_rate: Number(e.target.value) })
@@ -1909,6 +1919,7 @@ export default function AdminApp({ section }: { section: string }) {
             <label>
               Umsatzsteuer Pfand
               <select
+                aria-label="Umsatzsteuer Pfand"
                 value={edit.deposit_tax_rate}
                 onChange={(e) =>
                   setEdit({ ...edit, deposit_tax_rate: Number(e.target.value) })
@@ -2075,6 +2086,9 @@ export default function AdminApp({ section }: { section: string }) {
                 patch.deposit_cents = Math.round(
                   Number(f.get("deposit")) * 100,
                 );
+              for (const key of ["tax_rate", "deposit_tax_rate"]) {
+                if (f.get(key) !== "") patch[key] = Number(f.get(key));
+              }
               if (f.get("supplier")) patch.supplier_id = f.get("supplier");
               if (f.get("active")) patch.active = f.get("active") === "true";
               if (
@@ -2092,6 +2106,26 @@ export default function AdminApp({ section }: { section: string }) {
             <p>
               Nur ausgefüllte Felder werden bei allen ausgewählten Artikeln
               geändert.
+            </p>
+            {(
+              [
+                ["tax_rate", "Umsatzsteuer Artikel"],
+                ["deposit_tax_rate", "Umsatzsteuer Pfand"],
+              ] as const
+            ).map(([key, label]) => (
+              <label key={key}>
+                {label}
+                <select aria-label={label} name={key} defaultValue="">
+                  <option value="">Unverändert</option>
+                  <option value="19">19 %</option>
+                  <option value="7">7 %</option>
+                  <option value="0">0 % (nur begründeter Sonderfall)</option>
+                </select>
+              </label>
+            ))}
+            <p className="fineprint">
+              Steueränderungen gelten für künftige Verkäufe. Die Bruttopreise
+              und abgeschlossene Belege bleiben unverändert.
             </p>
             <label>
               Neuer Bruttopreis (€)

@@ -69,6 +69,9 @@ export async function GET() {
           : {
               live_mode: results[5].data?.value?.live_mode,
               discount_percent: results[5].data?.value?.discount_percent,
+              default_tax_rate: results[5].data?.value?.default_tax_rate ?? 19,
+              default_deposit_tax_rate:
+                results[5].data?.value?.default_deposit_tax_rate ?? 19,
             },
         closings: can(access, "finanzen") ? results[6].data : [],
         mail: can(access, "einstellungen") ? results[7].data : [],
@@ -155,6 +158,12 @@ export async function POST(req: Request) {
         .object({
           price_cents: z.number().int().min(0).max(10000000).optional(),
           deposit_cents: z.number().int().min(0).max(100000).optional(),
+          tax_rate: z
+            .union([z.literal(0), z.literal(7), z.literal(19)])
+            .optional(),
+          deposit_tax_rate: z
+            .union([z.literal(0), z.literal(7), z.literal(19)])
+            .optional(),
           supplier_id: z.string().optional(),
           active: z.boolean().optional(),
         })
