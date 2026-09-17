@@ -72,7 +72,7 @@ npm run start -- --hostname 127.0.0.1 --port 3017
 node scripts/verify-native-bridge.mjs
 ```
 
-Die Foundation-UI-Tests verwenden `--uitesting`, lokale Beispieldaten und einen statischen Web-Arbeitsplatz. Der zusätzliche Kunden-Test lädt ausschließlich den öffentlichen echten Katalog, ohne Login oder Bestellungen. Der Browser-Brückentest simuliert alle APIs und den Druckerkanal. Keine echten Bestellungen, Finanzbuchungen, E-Mails oder Druckaufträge werden erzeugt.
+Die Foundation-UI-Tests verwenden `--uitesting`, lokale Beispieldaten und einen statischen Web-Arbeitsplatz. Die zusätzlichen Live-Tests laden den öffentlichen Katalog und öffnen einen ausschließlich lokal zusammengestellten Warenkorb im Web-Abschluss, ohne Login, Eingabe von Kundendaten oder Bestellabsendung. Der Browser-Brückentest simuliert alle APIs und den Druckerkanal. Keine echten Bestellungen, Finanzbuchungen, E-Mails oder Druckaufträge werden erzeugt.
 
 Vor einem Store-Release zusätzlich: Apple-Team/Vertriebsweg, Kontolöschung in der Kunden-App, vollständige Datenschutzerklärung und Store-Datenschutzangaben, reale E-Mail-Zustellung, echte Geräte-/Druckerabnahme, fiskalischer Livebetrieb und gewünschte Zahlungsabwicklung. Das Privacy-Manifest bildet den derzeitigen funktionalen Datenumfang ab und muss mit dem endgültigen Datenfluss abgeglichen werden.
 

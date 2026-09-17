@@ -2,6 +2,27 @@ import XCTest
 
 final class AppUITests: XCTestCase {
   #if CUSTOMER_APP
+    func testLiveCheckoutHandoffWithoutSubmission() throws {
+      let app = XCUIApplication()
+      app.launch()
+      let product = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "add-"))
+        .firstMatch
+      XCTAssertTrue(product.waitForExistence(timeout: 40))
+      app.swipeUp()
+      XCTAssertTrue(product.isHittable)
+      for _ in 0..<4 { product.tap() }
+      app.tabBars.buttons["Warenkorb"].tap()
+      let checkout = app.buttons["customer-checkout"]
+      XCTAssertTrue(checkout.waitForExistence(timeout: 5))
+      checkout.tap()
+      XCTAssertTrue(app.webViews.staticTexts["Deine Getränkeauswahl"].waitForExistence(timeout: 40))
+      let image = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+      image.name = "Native-WebKit-Live-Uebergabe"
+      image.lifetime = .keepAlways
+      add(image)
+      // Stop before entering customer details or submitting anything to /api/orders.
+      app.buttons["Schließen"].tap()
+    }
     func testLiveCatalogReadOnly() throws {
       let app = XCUIApplication()
       app.launch()

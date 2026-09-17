@@ -82,3 +82,13 @@ Abnahme: 34 Fachtests, vollständige bisherige Datenbankprüfungen, neue Archiv-
 ### Bestellungen / Lieferautomatik
 
 Vor Veröffentlichung der CRM-Erfassung Migration `202609170020_staff_orders.sql` anwenden. Der vorhandene Vercel-Cron `/api/cron/reorder` übernimmt fällige Folgeaufträge; keine zusätzliche Scheduler-Konfiguration nötig. Die neuen RPCs sind für öffentliche/authentifizierte Direktzugriffe gesperrt und prüfen intern den aktiven Mitarbeiter mit Bestellrecht. Prüfung: `node scripts/validate-staff-orders.mjs`; temporäre Browser-Fixtures ausschließlich privat speichern und anschließend entfernen.
+
+## iOS-Grundbasis: Kunden-App und iPad-Kasse
+
+Anwendungsstand `5177c4a` enthält zwei getrennte SwiftUI-Xcode-Targets ab iOS/iPadOS 17 und die veröffentlichte WebKit-Anbindung `/app/bestellen`. Vercel-Deployment `dpl_CsBwdYwfgipow9cskA5oDLtbz3aR` ist READY. Keine Supabase-Migration erforderlich; bestehende Authentifizierung und Geschäftsbuchungen bleiben zentral.
+
+Abnahme: 37 TypeScript-Fachtests, vier Swift-Core-Tests, erfolgreiche iPhone-/iPad-Simulatortests (einschließlich öffentlichem Live-Katalog und Querformat), beide unsignierten iOS-Gerätearchive, ESLint/TypeScript/Next-Produktionsbuild. Isolierter Browserablauf prüft Warenkorbimport, aktuelle Artikelpreise, Adressfelder, Wiederholung bei unklarem Bestellstatus, Freigabe nach eindeutiger Ablehnung, Abschlussbestätigung, Ablehnung veralteter Artikel und nativen Epson-Probetransport. Keine realen Bestellungen, E-Mails, Verkäufe oder Druckaufträge erzeugt.
+
+Die Apps sind eine ausführbare Grundbasis. Kundenkonto/Bestellabschluss und der Kassenarbeitsplatz sind zunächst eingebettete vorhandene Webabläufe; Katalog, Warenkorb, Geräteeinrichtung und Scanner besitzen native Oberflächen. Signierung/TestFlight, endgültige Verteilung, Kontolöschung für den Store-Release, APNs/Universal Links sowie reale Epson-/TSE-Abnahme bleiben weitere Schritte. [Startanleitung](../native/ios/README.md), [gesammelte Fragen für morgen](../native/ios/FRAGEN-FUER-MORGEN.md).
+
+Zusätzliche Live-Abnahme: Die echte SwiftUI-Kunden-App übergibt vier Alwa-Gourmet-Classic-Kisten über WKScriptMessageHandlerWithReply an die veröffentlichte Bestellseite. Artikel, Menge, aktueller Bruttobetrag und Pfand erscheinen korrekt im Web-Abschluss. Vor Kundendaten und Absenden beendet; kein Geschäftsvorgang angelegt. Test `testLiveCheckoutHandoffWithoutSubmission` bestanden.
