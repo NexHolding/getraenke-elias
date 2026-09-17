@@ -3640,3 +3640,19 @@ textarea {
 .pos-discount-fields input, .pos-discount-fields select { width: 100%; min-width: 0; min-height: 42px; padding: 8px; }
 .pos-discount-fields > small { grid-column: 1 / -1; }
 .discount-saving { color: #506423; }
+
+/* Guided receipt output and tablet printer setup. */
+.printer-wizard { border: 1px solid var(--line, #deded8); border-radius: 18px; padding: 24px; }
+.printer-wizard h3, .receipt-output h2 { margin: 4px 0 14px; }
+.printer-wizard p, .printer-wizard li, .receipt-output p { line-height: 1.55; }
+.printer-wizard label { display: grid; gap: 8px; margin: 16px 0; }
+.printer-wizard .checkline, .receipt-output .checkline { display: flex; align-items: flex-start; gap: 10px; }
+.printer-wizard .checkline input, .receipt-output .checkline input { width: 20px; min-width: 20px; height: 20px; }
+.printer-wizard .button, .printer-wizard .text-link { margin: 10px 12px 10px 0; }
+.wizard-steps { display: flex; flex-wrap: wrap; gap: 8px; margin: 22px 0; }
+.wizard-steps button { padding: 10px 14px; border: 1px solid #ccc; border-radius: 9px; background: #fff; }
+.wizard-steps button.active { background: #20281f; color: #fff; }
+.receipt-output { max-width: 640px; width: min(640px, 94vw); max-height: 92dvh; overflow-y: auto; padding: 28px; }
+.receipt-choices, .receipt-links { display: flex; flex-wrap: wrap; gap: 12px; margin: 18px 0; align-items: center; }
+.digital-receipt { padding: 18px; border: 1px solid #d9dfd4; border-radius: 12px; margin-top: 16px; }
+.digital-receipt img { display: block; max-width: 100%; height: auto; margin: 12px auto; }

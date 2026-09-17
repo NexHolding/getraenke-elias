@@ -1,4 +1,5 @@
 "use client";
+import EpsonWizard from "./epson-wizard";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -344,31 +345,14 @@ export default function SettingsPanel({
                 </>
               )}
               {tab === "drucker" && (
-                <>
-                  <label>
-                    Druckweg
-                    <select
-                      value={v.printer_mode}
-                      onChange={(e) =>
-                        setV({ ...v, printer_mode: e.target.value })
-                      }
-                    >
-                      <option value="browser">PDF / Browserdruck</option>
-                      <option value="epson">
-                        Epson ePOS (Hardwareanbindung geplant)
-                      </option>
-                      <option value="star">
-                        Star (Hardwareanbindung geplant)
-                      </option>
-                    </select>
-                  </label>
-                  {text("printer_address", "Druckeradresse / Gerätename")}
-                  <p className="span-two">
-                    Bons werden im 80-mm-Format über die PDF-Druckfunktion
-                    ausgegeben. Die direkte Druckeransteuerung wird mit dem
-                    konkreten Modell am iPad eingerichtet.
-                  </p>
-                </>
+                <EpsonWizard
+                  value={v}
+                  onChange={(next) =>
+                    setV({ ...next, smtp_password: v.smtp_password })
+                  }
+                  save={save}
+                  disabled={busy}
+                />
               )}
               {tab === "apps" && (
                 <>

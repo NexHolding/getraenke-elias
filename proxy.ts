@@ -28,6 +28,7 @@ export const config = {
   matcher: [
     "/crm/:path*",
     "/api/admin",
+    "/api/receipts/:path*",
     "/api/inventory/:path*",
     "/api/auth/:path*",
     "/passwort",

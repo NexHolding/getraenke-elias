@@ -50,3 +50,7 @@ Originaldomain und www sind bei Vercel hinterlegt, zeigen jedoch noch auf den bi
 
 ## Global-Login
 `global_admin` wird im Login als zusätzlicher Benutzername akzeptiert und auf ein eigenes Supabase-Auth-Konto abgebildet. Dieses Konto besitzt die serverseitig geprüfte Rolle `owner` mit vollständigen CRM-Verwaltungsrechten. Es gibt keinen Kennwortvergleich oder Authentifizierungs-Bypass im Quellcode. Das vom Auftraggeber vorgegebene Kennwort wird ausschließlich durch Supabase Auth verwaltet. Der bisherige Inhaberzugang bleibt erhalten.
+
+## Ergänzung: Bezahlablauf und Epson-Ausgabe (17.09.2026)
+
+Die frühere Angabe „Direktdruck nicht implementiert“ ist überholt: Netzwerk-Direktdruck über Epson ePOS-Print XML, Einrichtungsassistent, archivierte Bons, Wiederaufnahme offener Ausgabe, kontrollierter Kopiedruck und Digitalbon sind implementiert. Physischer Gerätetest und native USB-/Bluetooth-Anbindung bleiben offen. Einzelheiten und Prüfnachweise: [Epson und Bezahlen](EPSON-UND-BEZAHLEN.md). Live-TSE-Modus weiterhin gesperrt.

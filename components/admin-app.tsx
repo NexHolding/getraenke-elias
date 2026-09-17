@@ -1,4 +1,5 @@
 "use client";
+import CheckoutFlow, { receiptDownload } from "./checkout-flow";
 import InventoryPanel from "./inventory-panel";
 import SettingsPanel from "./settings-panel";
 import { CustomerManager, DeliveryManager, InvoiceLedger } from "./operations";
@@ -44,7 +45,7 @@ import {
   discountReasons,
   discountTotal,
 } from "@/lib/discounts";
-import { catalogPdf, financePdf, receiptPdf, csvDownload } from "@/lib/exports";
+import { catalogPdf, financePdf, csvDownload } from "@/lib/exports";
 import { categories } from "@/lib/catalog";
 import type {
   Product,
@@ -71,6 +72,8 @@ type Closing = {
   created_at: string;
 };
 type Data = {
+  operatorId: string;
+  pendingReceipt?: string | null;
   products: Product[];
   suppliers: Supplier[];
   orders: Order[];
@@ -1481,64 +1484,56 @@ export default function AdminApp({ section }: { section: string }) {
                           </button>
                         ))}
                       </div>
-                      <button
-                        className="button full"
+                      <CheckoutFlow
+                        key={data.operatorId}
+                        settings={data.settings}
+                        operatorId={data.operatorId}
+                        pendingReceipt={data.pendingReceipt}
                         disabled={busy || !lines.length}
-                        onClick={async () => {
-                          const s = await act(
-                            "sale",
-                            {
-                              value: {
-                                id: saleId,
-                                lines: cart.map((line) => ({
-                                  id: line.id,
-                                  quantity: line.quantity,
-                                  discount_percent:
-                                    can(data, "rabatt") &&
-                                    discountMode === "item"
-                                      ? line.discount_percent || 0
-                                      : 0,
-                                  discount_reason: can(data, "rabatt")
-                                    ? discountMode === "cart"
-                                      ? discountReason
-                                      : discountMode === "item"
-                                        ? line.discount_reason ||
-                                          discountReasons[0]
-                                        : ""
-                                    : "",
-                                })),
-                                payment,
-                                discount:
-                                  can(data, "rabatt") && discountMode === "cart"
-                                    ? discount
-                                    : 0,
-                                returns: Object.entries(returns)
-                                  .filter(([, q]) => q > 0)
-                                  .map(([d, q]) => ({
-                                    deposit_cents: Number(d),
-                                    quantity: q,
-                                  })),
-                              },
-                            },
-                            "Beleg gespeichert und Lagerbestand aktualisiert.",
-                          );
-                          if (s) {
-                            setLastSale(s);
-                            setCart([]);
-                            setDiscountMode("none");
-                            setDiscount(0);
-                            setDiscountReason("Aktion");
-                            setReturns({});
-                            setSaleId(crypto.randomUUID());
-                          }
+                        onRefresh={load}
+                        payload={{
+                          id: saleId,
+                          lines: cart.map((line) => ({
+                            id: line.id,
+                            quantity: line.quantity,
+                            discount_percent:
+                              can(data, "rabatt") && discountMode === "item"
+                                ? line.discount_percent || 0
+                                : 0,
+                            discount_reason: can(data, "rabatt")
+                              ? discountMode === "cart"
+                                ? discountReason
+                                : discountMode === "item"
+                                  ? line.discount_reason || discountReasons[0]
+                                  : ""
+                              : "",
+                          })),
+                          payment,
+                          discount:
+                            can(data, "rabatt") && discountMode === "cart"
+                              ? discount
+                              : 0,
+                          returns: Object.entries(returns)
+                            .filter(([, q]) => q > 0)
+                            .map(([d, q]) => ({
+                              deposit_cents: Number(d),
+                              quantity: q,
+                            })),
                         }}
-                      >
-                        Beleg erstellen <Check size={18} />
-                      </button>
+                        onBooked={(s) => {
+                          setLastSale(s);
+                          setCart([]);
+                          setDiscountMode("none");
+                          setDiscount(0);
+                          setDiscountReason("Aktion");
+                          setReturns({});
+                          setSaleId(crypto.randomUUID());
+                        }}
+                      />
                       {lastSale && (
                         <button
                           className="button secondary full"
-                          onClick={() => receiptPdf(lastSale)}
+                          onClick={() => receiptDownload(lastSale.id)}
                         >
                           <Printer size={18} /> Bon als PDF
                         </button>
@@ -1683,7 +1678,7 @@ export default function AdminApp({ section }: { section: string }) {
                             <td>
                               <button
                                 className="table-action"
-                                onClick={() => receiptPdf(s)}
+                                onClick={() => receiptDownload(s.id)}
                               >
                                 PDF-Bon
                               </button>

@@ -2,7 +2,7 @@
 Recherche: 17.09.2026. Die Quellen ersetzen keine Einzelfallprüfung durch den Steuerberater.
 
 ## Aktueller Entwicklungsstand
-Die Browserkasse erzeugt ausschließlich unveränderbare Testbelege. Keine TSE-Signatur, keine reale Zahlung und keine Verkaufslagerbuchung. Test- und Finanzexporte sind ausdrücklich als TESTDATEN markiert. Eine technisch vorbereitete Kasse ist noch keine gesetzeskonform in Betrieb genommene Registrierkasse.
+Die Browserkasse erzeugt ausschließlich Einrichtungsbelege mit unveränderbarem Beleginhalt. Keine TSE-Signatur und keine automatische Kartenautorisierung. Verkäufe reduzieren bereits erfasste Warenbestände nachvollziehbar; der Einrichtungsreset berücksichtigt die dokumentierte Inventurbasis. Test- und Finanzexporte sind ausdrücklich als TESTDATEN markiert. Eine technisch vorbereitete Kasse ist noch keine gesetzeskonform in Betrieb genommene Registrierkasse.
 
 ## Erforderlicher Fiskalablauf
 1. Kassensystem und Betriebsstätte eindeutig registrieren; Kassenseriennummer und TSE-Seriennummer verwalten.
@@ -25,7 +25,7 @@ Die Mitteilung nach § 146a Abs. 4 AO erfolgt über Mein ELSTER bzw. ERiC. Für 
 fiskaly bietet getrennte APIs für SIGN DE, DSFinV-K, Archivierung und Mitteilungen. Eine SIGN-DE-Anbindung allein deckt nicht alle Kassensystempflichten ab. Vor Implementierung des Echtbetriebs: Vertrag, Sandbox-Zugang, Live-Zugang, Kassenanzahl, Zertifikatsstatus, Datenstandort, Ausfallszenarien und Kosten klären. Es wurden keine Verträge abgeschlossen und keine TSE kostenpflichtig aktiviert.
 
 ## Drucker / iPad
-- Aktuell: 80-mm-Testbon als PDF; Ausdruck über den Systemdruckdialog bzw. ein kompatibles Druckziel.
+- Aktuell: archivierter 80-mm-Einrichtungsbon mit Logo, Epson-ePOS-Print-XML-Direktdruck für geeignete HTTPS-Netzwerkgeräte und Einrichtungsassistent. Manuelle PDF-Ersatzausgabe und Digitalbon sind dokumentiert. Hardwareprüfung steht aus; siehe [Epson und Bezahlen](EPSON-UND-BEZAHLEN.md).
 - Epson: ePOS SDK for JavaScript für geeignete Netzwerkdrucker; ePOS SDK für native iOS-Anwendungen. Exaktes Modell, Firmware, HTTPS/Zertifikate und Netzwerkzugang prüfen.
 - Star: eigenes SDK/geeignete Druckerschnittstelle; nach Modellwahl konkretisieren.
 - Ein beliebiger Bluetooth-Bondrucker ist nicht automatisch aus Safari steuerbar. Die native iPad-App benötigt das passende SDK und eine Hardwareprüfung.

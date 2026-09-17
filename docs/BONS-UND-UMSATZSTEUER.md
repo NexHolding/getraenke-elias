@@ -40,3 +40,7 @@ Quellen: [§ 6 KassenSichV](https://www.gesetze-im-internet.de/kassensichv/__6.h
 - Gemischte Steuersätze, Rabatte, Pfand, Rücknahme, 100-%-Rabatt und Belegsumme geprüft.
 - Datenbanktests: Vorgaben bei Artikelanlage, unveränderbare Betriebs-/Steuersnapshots und weiterhin möglicher Einrichtungsreset.
 - PDF-Ausgabe mit Logo, kurzen/lange Namen und Fortsetzungsseiten gerendert; 80-mm-Format und Seitenränder geprüft.
+
+## Ergänzung Bezahlablauf / Druck
+
+**Bezahlen** ersetzt „Beleg erstellen“. PDF-Bons werden jetzt serverseitig unveränderlich archiviert und für Download und Epson-Ausgabe aus diesem Archiv verwendet. Vor der Erfassung einer Kartenzahlung bestätigt der Mitarbeiter die erfolgreiche Zahlung am separaten Terminal. Details: [Epson und Bezahlen](EPSON-UND-BEZAHLEN.md).

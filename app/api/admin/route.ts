@@ -1,3 +1,5 @@
+import { printerEndpoint } from "@/lib/epson";
+import { receiptArchive } from "@/lib/receipt-archive";
 import { z } from "zod";
 import { saleItemSchema } from "@/lib/sale-validation";
 import { can } from "@/lib/permissions";
@@ -44,8 +46,20 @@ export async function GET() {
         .limit(100),
     ]);
     if (results.some((r) => r.error)) throw new Error("Database error");
+    const pending = can(access, "kasse")
+      ? await db
+          .from("receipt_workflows")
+          .select("sale_id,sales!inner(actor)")
+          .neq("stage", "done")
+          .eq("sales.actor", access.user.id)
+          .order("created_at")
+          .limit(1)
+      : { data: [], error: null };
+    if (pending.error) throw pending.error;
     return Response.json(
       {
+        operatorId: access.user.id,
+        pendingReceipt: pending.data?.[0]?.sale_id ?? null,
         products: ["artikel", "kasse"].some((m) => can(access, m))
           ? results[0].data
           : [],
@@ -68,6 +82,11 @@ export async function GET() {
             }
           : {
               live_mode: results[5].data?.value?.live_mode,
+              printer_mode: results[5].data?.value?.printer_mode,
+              printer_address: results[5].data?.value?.printer_address,
+              printer_model: results[5].data?.value?.printer_model,
+              printer_device_id: results[5].data?.value?.printer_device_id,
+              printer_width_dots: results[5].data?.value?.printer_width_dots,
               discount_percent: results[5].data?.value?.discount_percent,
               default_tax_rate: results[5].data?.value?.default_tax_rate ?? 19,
               default_deposit_tax_rate:
@@ -192,6 +211,15 @@ export async function POST(req: Request) {
       if (error) throw error;
     } else if (action === "settings") {
       const v = settingsSchema.parse(body.value);
+      if (v.printer_mode === "epson") {
+        try {
+          printerEndpoint(v);
+        } catch {
+          throw new Error(
+            "HINWEIS:Bitte die HTTPS-Adresse und Gerätekennung im Epson-Assistenten prüfen.",
+          );
+        }
+      }
       if (v.live_mode)
         throw new Error(
           "HINWEIS:Live-Aktivierung erfolgt nach Einrichtung und Abnahme des TSE-Adapters. Alle Abläufe sind im Einrichtungsmodus verfügbar.",
@@ -284,8 +312,28 @@ export async function POST(req: Request) {
         p_returns: v.returns,
         p_discount: v.discount,
       });
-      if (error) throw error;
-      result = data;
+      if (error) {
+        if (error.code === "P0001")
+          return Response.json(
+            {
+              booking_failed: true,
+              error: error.message.startsWith("HINWEIS:")
+                ? error.message.slice(8)
+                : "Verkauf nicht gebucht. Bitte Bestand, Artikel und Berechtigungen prüfen.",
+            },
+            { status: 400 },
+          );
+        throw error;
+      }
+      // Booking is already committed. An archive failure must never imply a failed payment.
+      let archived = false;
+      try {
+        await receiptArchive(data);
+        archived = true;
+      } catch {
+        /* Output dialog retries archive only. */
+      }
+      result = { ...data, archive_status: archived ? "saved" : "pending" };
     } else if (action === "closing") {
       const v = z
         .object({

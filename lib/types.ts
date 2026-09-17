@@ -156,6 +156,9 @@ export type Settings = {
   domain: string;
   printer_mode: string;
   printer_address: string;
+  printer_model?: string;
+  printer_device_id?: string;
+  printer_width_dots?: 512 | 576;
   tse_provider: string;
   smtp_enabled: boolean;
   smtp_host: string;

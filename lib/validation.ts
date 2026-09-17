@@ -173,6 +173,12 @@ export const settingsSchema = z.object({
     .regex(/^[a-z0-9.-]+$/),
   printer_mode: z.enum(["browser", "epson", "star"]),
   printer_address: z.string().max(200),
+  printer_model: z.string().max(100).optional(),
+  printer_device_id: z
+    .string()
+    .regex(/^[a-zA-Z0-9_-]{1,64}$/)
+    .optional(),
+  printer_width_dots: z.union([z.literal(512), z.literal(576)]).optional(),
   tse_provider: z.enum(["", "fiskaly", "other"]),
   smtp_enabled: z.boolean().default(false),
   smtp_host: z.string().max(200),

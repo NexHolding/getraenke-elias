@@ -38,3 +38,16 @@ Die bislang auf localhost stehende `site_url` zeigt jetzt auf die veröffentlich
 Der interne Systemzugang bleibt in Supabase Auth und als Inhaber erhalten. Kunden- und Mitarbeiterverzeichnisse filtern ihn serverseitig anhand der reservierten Identität und der verknüpften Benutzer-ID. Er wird nicht in der Mitarbeiter-PIN-Auswahl angeboten; die eigene Sitzungsanzeige lautet neutral „Administration“. Der Aufruf des Kundenportals legt für dieses Konto keine Kundenakte mehr an. Eine bereits angelegte Kundenakte bleibt unsichtbar erhalten. Passwort, Administratorrechte und interne Buchungsnachweise werden nicht verändert.
 
 Prüfung: 12 Fachtests, Lint, Produktionsbuild und isolierter kompletter Browserablauf einschließlich erhaltener Inhaberrechte, ausgeblendeter Verzeichnisse und gesperrter Kundenanlage bestanden. Keine Datenbankmigration erforderlich.
+
+## Ergänzung 017: Belegarchiv, Bezahlen und Epson-Assistent
+
+Migration `202609170017_receipt_output.sql` erfolgreich auf `sfggvhjtsiitqnocridz` angewendet. Vorabprüfung zeigte ausschließlich diese neue Migration. Prüfsummen von Artikeln, Verkäufen, Mitarbeiterrechten, Einstellungen, Lagerbewegungen, Bestellungen und Einkauf vor/nach Migration identisch.
+
+- **Bezahlen** bucht einmalig und öffnet die Belegausgabe. Ausstehende Ausgaben werden wiederaufgenommen.
+- Serverseitig gespeicherte, unveränderbare PDF-Bons; Epson-Direktdruck mit Statusprotokoll, ausdrücklicher Kopie bei Wiederholung und Einrichtungsassistent pro Tablet.
+- Digitalbon mit Kundenzustimmung und befristetem QR-Download; bewusst bestätigte manuelle Papier-Ersatzausgabe.
+- 28 Fach-/Validierungstests, vier Datenbank-Prüfskripte mit allen Migrationen, TypeScript, ESLint und Produktionsbuild bestanden.
+- Vollständiger Browsertest mit simulierten Geschäftsdaten und Epson-Antworten: Testbon-Rasterisierung, Doppelklick, unterbrochener Druck, Wiederaufnahme/Kopie, verlorene Buchungsantwort, QR-Code und manuelle Papierausgabe.
+- Echte API-Prüfung anhand des bereits vorhandenen Einrichtungsbelegs: archiviert, wiederholter Abruf bytegleich, SHA-256 stimmt; anonymer Zugriff 401, fremder Origin 403, unbekannter Digitalbon-Link 404. Dabei keine neuen Verkäufe, Zahlungen, Lagerbewegungen oder öffentlichen Freigabelinks angelegt.
+
+Hardware noch nicht vor Ort geprüft. Epson-Modell/Netzwerkadresse und Zertifikatsfreigabe auf dem iPad sind im Assistenten einzurichten. Einrichtungsmodus, fehlende TSE-Anbindung und native Folgephase bleiben bestehen. [Bedienung, technische Details und Quellen](EPSON-UND-BEZAHLEN.md).

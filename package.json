@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "test": "node --import tsx --test tests/*.test.ts",
-    "test:db": "node scripts/validate-database.mjs && node scripts/validate-inventory.mjs && node scripts/validate-discounts.mjs"
+    "test:db": "node scripts/validate-database.mjs && node scripts/validate-inventory.mjs && node scripts/validate-discounts.mjs && node scripts/validate-receipts.mjs",
+    "prebuild": "node scripts/prepare-print-assets.mjs",
+    "predev": "node scripts/prepare-print-assets.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -18,6 +20,8 @@
     "lucide-react": "^1.47.0",
     "next": "16.3.5",
     "nodemailer": "^10.0.10",
+    "pdfjs-dist": "^6.3.289",
+    "qrcode": "^1.5.4",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "zod": "^4.6.5"
@@ -28,6 +32,7 @@
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/nodemailer": "^8.0.2",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
