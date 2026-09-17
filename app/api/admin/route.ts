@@ -1,3 +1,4 @@
+import { manualPurchaseSchema } from "@/lib/purchase-validation";
 import { printerEndpoint } from "@/lib/epson";
 import { receiptArchive } from "@/lib/receipt-archive";
 import { z } from "zod";
@@ -44,6 +45,12 @@ export async function GET() {
         .select("id,kind,recipient,subject,status,error,created_at")
         .order("created_at", { ascending: false })
         .limit(100),
+      can(access, "einkauf")
+        ? readAllRows("mail_outbox", {
+            kind: "purchase",
+            columns: "id,reference_id,status,error,sent_at",
+          }).then((data) => ({ data, error: null }))
+        : { data: [], error: null },
     ]);
     if (results.some((r) => r.error)) throw new Error("Database error");
     const pending = can(access, "kasse")
@@ -61,7 +68,7 @@ export async function GET() {
         operatorId: access.user.id,
         finance_readonly: financeReadOnly(access),
         pendingReceipt: pending.data?.[0]?.sale_id ?? null,
-        products: ["artikel", "kasse", "bestellungen"].some((m) =>
+        products: ["artikel", "kasse", "bestellungen", "einkauf"].some((m) =>
           can(access, m),
         )
           ? results[0].data
@@ -77,7 +84,13 @@ export async function GET() {
           ? results[2].data
           : [],
         sales: can(access, "finanzen") ? results[3].data : [],
-        purchases: can(access, "einkauf") ? results[4].data : [],
+        purchases: can(access, "einkauf")
+          ? results[4].data?.map((p) => ({
+              ...p,
+              dispatch:
+                results[8].data?.find((m) => m.reference_id === p.id) ?? null,
+            }))
+          : [],
         settings: can(access, "einstellungen")
           ? {
               ...results[5].data?.value,
@@ -85,6 +98,7 @@ export async function GET() {
             }
           : {
               live_mode: results[5].data?.value?.live_mode,
+              auto_reorder: results[5].data?.value?.auto_reorder,
               printer_mode: results[5].data?.value?.printer_mode,
               printer_address: results[5].data?.value?.printer_address,
               printer_model: results[5].data?.value?.printer_model,
@@ -135,6 +149,9 @@ export async function POST(req: Request) {
       receive: "einkauf",
       "order-status": "bestellungen",
       "purchase-status": "einkauf",
+      "purchase-create": "einkauf",
+      "purchase-send": "einkauf",
+      "purchase-external": "einkauf",
       "smtp-test": "einstellungen",
       reorder: "einkauf",
       sale: "kasse",
@@ -252,13 +269,29 @@ export async function POST(req: Request) {
         p_actor: user.id,
       });
       if (error) throw error;
-    } else if (action === "purchase-status") {
-      const { error } = await db
-        .from("purchases")
-        .update({ status: "cancelled" })
-        .eq("id", z.uuid().parse(body.id))
-        .eq("status", "draft");
-      if (error) throw error;
+    } else if (action === "purchase-create") {
+      const value = manualPurchaseSchema.parse(body.value);
+      const { data, error } = await db.rpc("create_manual_purchase", {
+        p_value: value,
+        p_actor: user.id,
+      });
+      if (error) throw new Error(error.message);
+      result = data;
+    } else if (
+      ["purchase-status", "purchase-send", "purchase-external"].includes(action)
+    ) {
+      const { data, error } = await db.rpc("manage_purchase", {
+        p_id: z.uuid().parse(body.id),
+        p_action:
+          action === "purchase-status"
+            ? "cancel"
+            : action === "purchase-send"
+              ? "email"
+              : "external",
+        p_actor: user.id,
+      });
+      if (error) throw new Error(error.message);
+      result = data;
     } else if (action === "order-status") {
       const { data: changed, error } = await db
         .from("orders")

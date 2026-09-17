@@ -1,5 +1,15 @@
 # Veröffentlichung vom 17.09.2026
 
+## Ergänzung 021: Manuelle Lieferantenbestellungen
+
+Migration `202609170021_manual_purchases.sql` im vorhandenen Supabase-Projekt angewendet und registriert. Lesender Vorher-/Nachhervergleich: alle 177 vorhandenen Artikel, Lieferant und Einstellungen unverändert; keine Testbestellungen im Produktivsystem angelegt.
+
+Einkauf enthält getrennte manuelle Zusatzbestellungen für Inhaber und Mitarbeiter mit Einkaufsrecht. Offene manuelle Mengen mindern die automatische Bestellmenge nicht. Expliziter E-Mail-Versand, externe Bestellung, Stornierung und Wareneingang sind dokumentiert. Tatsächlicher E-Mail-Versand setzt die noch ausstehende SMTP-Einrichtung voraus.
+
+Prüfung: isolierte Datenbank mit Migrationen 001–021, 100-Kisten-Beispiel einschließlich Berechtigungen, Doppelübermittlung, Versandstatus und einmaligem Wareneingang; Mail-Worker mit lokalem SMTP-Adapter; reale Formkomponente mit simulierten API-Antworten auf Desktop, Tablet und Mobilgerät; 36 Fachtests, bestehende Datenbankprüfungen, ESLint, TypeScript und Produktionsbuild. Produktive Schreibtests mit temporären Konten wurden von der automatischen Freigabeprüfung abgelehnt und durch isolierte Prüfungen ersetzt.
+
+Bedienung: [Manuelle Lieferantenbestellungen](MANUELLE-LIEFERANTENBESTELLUNGEN.md).
+
 Nach ausdrücklicher Freigabe der konkreten Produktionsmigrationen wurden Supabase und die zugehörige Anwendung aktualisiert.
 
 ## Veröffentlicht

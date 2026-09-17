@@ -56,7 +56,7 @@ export async function dispatchMail() {
       if (m.kind === "purchase") {
         const { data: p } = await db
           .from("purchases")
-          .select("status,supplier_id")
+          .select("status,supplier_id,source,dispatch_method")
           .eq("id", m.reference_id)
           .single();
         const { data: s } = await db
@@ -68,7 +68,8 @@ export async function dispatchMail() {
           !p ||
           p.status !== "queued" ||
           !s ||
-          !s.auto_send ||
+          (!(p.source === "manual" && p.dispatch_method === "email") &&
+            !s.auto_send) ||
           s.email !== m.recipient
         ) {
           await db

@@ -1,4 +1,5 @@
 "use client";
+import ManualPurchase from "./manual-purchase";
 import StaffOrders from "./staff-orders";
 import CheckoutFlow, { receiptDownload } from "./checkout-flow";
 import InventoryPanel from "./inventory-panel";
@@ -894,6 +895,11 @@ export default function AdminApp({ section }: { section: string }) {
               )}
               {section === "einkauf" && (
                 <>
+                  <ManualPurchase
+                    products={data.products}
+                    suppliers={data.suppliers}
+                    reload={load}
+                  />
                   <div className="notice">
                     <Truck size={22} />
                     <div>
@@ -901,8 +907,10 @@ export default function AdminApp({ section }: { section: string }) {
                       <p>
                         Bei aktivierter Automatik werden unterhalb des
                         Mindestbestands Entwürfe bis zum Zielbestand erstellt.
-                        Offene Bestellmengen werden berücksichtigt. Der Bedarf
-                        wird bis zum konfigurierten Bestelltermin gesammelt.
+                        Nur offene automatische Bestellmengen werden
+                        berücksichtigt. Manuelle Zusatzbestellungen bleiben
+                        zusätzlich. Der Bedarf wird bis zum konfigurierten
+                        Bestelltermin gesammelt.
                       </p>
                     </div>
                   </div>
@@ -960,13 +968,68 @@ export default function AdminApp({ section }: { section: string }) {
                               }
                             </span>
                           </div>
+                          <p>
+                            <span className="badge">
+                              {p.source === "manual"
+                                ? "Manuelle Zusatzbestellung"
+                                : "Bestellautomatik"}
+                            </span>
+                            {p.dispatch_method === "external" && (
+                              <span className="badge">
+                                Telefonisch / extern bestellt
+                              </span>
+                            )}
+                          </p>
+                          {p.reference && (
+                            <p>
+                              <strong>Bezug:</strong> {p.reference}
+                            </p>
+                          )}
+                          {p.requested_date && (
+                            <p>
+                              Wunschtermin:{" "}
+                              {new Date(
+                                p.requested_date + "T12:00:00Z",
+                              ).toLocaleDateString("de-DE")}
+                            </p>
+                          )}
+                          {p.notes && <p>{p.notes}</p>}
+                          {p.dispatch && (
+                            <p
+                              className={p.dispatch.error ? "notice" : "muted"}
+                            >
+                              E-Mail:{" "}
+                              {(
+                                {
+                                  pending: "wartet auf Versand",
+                                  sending: "wird versendet",
+                                  sent: "an Mailserver übergeben",
+                                  failed: "nicht versendet",
+                                  uncertain:
+                                    "Versand unklar – vor Wiederholung prüfen",
+                                } as Record<string, string>
+                              )[p.dispatch.status] || p.dispatch.status}
+                              {p.dispatch.error ? ` · ${p.dispatch.error}` : ""}
+                            </p>
+                          )}
+                          {p.source === "manual" && (
+                            <p className="muted">
+                              Zusätzlicher Bedarf · wird nicht auf automatische
+                              Bestellmengen angerechnet.
+                            </p>
+                          )}
                           {p.items.map((i) => (
                             <div className="line-row" key={i.id}>
-                              <span>{i.name}</span>
+                              <span>
+                                {i.name}
+                                {i.pack_count && i.volume_ml
+                                  ? ` · ${pack({ pack_count: i.pack_count, volume_ml: i.volume_ml })}`
+                                  : ""}
+                              </span>
                               <strong>{i.quantity} Gebinde</strong>
                             </div>
                           ))}
-                          {p.status === "draft" && (
+                          {["draft", "sent"].includes(p.status) && (
                             <div className="toolbar">
                               <button
                                 disabled={busy}
@@ -975,19 +1038,49 @@ export default function AdminApp({ section }: { section: string }) {
                               >
                                 Wareneingang buchen
                               </button>
-                              <button
-                                disabled={busy}
-                                className="text-link"
-                                onClick={() =>
-                                  act(
-                                    "purchase-status",
-                                    { id: p.id },
-                                    "Entwurf storniert.",
-                                  )
-                                }
-                              >
-                                Entwurf stornieren
-                              </button>
+                              {p.status === "draft" && (
+                                <>
+                                  <button
+                                    className="button small secondary"
+                                    disabled={busy}
+                                    onClick={() =>
+                                      act(
+                                        "purchase-send",
+                                        { id: p.id },
+                                        "Bestellung zum E-Mail-Versand vorgemerkt. Den Versandstatus findest du in der Übersicht.",
+                                      )
+                                    }
+                                  >
+                                    Bestellung per E-Mail senden
+                                  </button>
+                                  <button
+                                    className="button small secondary"
+                                    disabled={busy}
+                                    onClick={() =>
+                                      act(
+                                        "purchase-external",
+                                        { id: p.id },
+                                        "Bestellung als telefonisch / extern bestellt markiert.",
+                                      )
+                                    }
+                                  >
+                                    Als extern bestellt markieren
+                                  </button>
+                                  <button
+                                    disabled={busy}
+                                    className="text-link"
+                                    onClick={() =>
+                                      act(
+                                        "purchase-status",
+                                        { id: p.id },
+                                        "Entwurf storniert.",
+                                      )
+                                    }
+                                  >
+                                    Entwurf stornieren
+                                  </button>
+                                </>
+                              )}
                             </div>
                           )}
                         </div>

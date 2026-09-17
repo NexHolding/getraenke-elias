@@ -23,6 +23,8 @@ const tables = {
   communication_attachments: [],
   invoices: [{ id: "invoice-1", order_id: "order-1" }],
   orders: [{ id: "order-1" }],
+  purchases: [],
+  suppliers: [],
 };
 const encryptionKey = randomBytes(32);
 process.env.SETTINGS_ENCRYPTION_KEY = encryptionKey.toString("hex");
@@ -246,6 +248,59 @@ try {
   );
   assert.equal(mail.text, "Originalnachricht");
   assert.equal((await dispatchMail()).sent, 0);
+  tables.suppliers.push({
+    id: "supplier-qa",
+    email: "supplier@example.test",
+    auto_send: false,
+  });
+  tables.purchases.push({
+    id: "purchase-manual",
+    supplier_id: "supplier-qa",
+    source: "manual",
+    dispatch_method: "email",
+    status: "queued",
+  });
+  tables.mail_outbox.push({
+    id: "manual-mail",
+    kind: "purchase",
+    reference_id: "purchase-manual",
+    recipient: "supplier@example.test",
+    subject: "Zusatzbestellung",
+    body: "100 Kisten",
+    status: "pending",
+  });
+  assert.equal(
+    (await dispatchMail()).sent,
+    1,
+    "Explicit manual send is independent of supplier automatic-dispatch switch",
+  );
+  assert.equal(tables.purchases[0].status, "sent");
+  assert.equal(sent.at(-1).text, "100 Kisten");
+  tables.purchases.push({
+    id: "purchase-automatic",
+    supplier_id: "supplier-qa",
+    source: "automatic",
+    dispatch_method: "email",
+    status: "queued",
+  });
+  tables.mail_outbox.push({
+    id: "automatic-mail",
+    kind: "purchase",
+    reference_id: "purchase-automatic",
+    recipient: "supplier@example.test",
+    subject: "Automatik",
+    body: "7 Kisten",
+    status: "pending",
+  });
+  assert.equal(
+    (await dispatchMail()).sent,
+    0,
+    "Automatic dispatch still requires supplier approval",
+  );
+  assert.equal(tables.mail_outbox.at(-1).status, "failed");
+  console.log(
+    "PASS: manual supplier mail dispatches only after explicit queueing; automatic supplier permission remains required. No outgoing mail.",
+  );
   console.log(
     "PASS: encrypted auth queue -> SMTP -> sent archive -> secret removal; duplicate suppression; uncertain SMTP status; archived document byte-for-byte equals transmitted attachment. Isolated adapters, no outgoing mail.",
   );

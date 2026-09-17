@@ -76,3 +76,7 @@ Helle Tages-/Monatsberichte im Querformat mit Original-Logo, Steuer-/Zahlartenü
 - Einmalig oder regelmäßig: wöchentlich, zweiwöchentlich, monatlich, vierteljährlich, halbjährlich, jährlich. Abos im CRM bearbeiten, pausieren und fortsetzen; Mitarbeiter benötigen das Bestellmodul.
 - Atomare Anlage mit Schutz vor Doppelbestellungen; revisionsgesicherte Aboänderung, Kalenderanker, sichtbare Automatikfehler und Schutz gegen vorzeitige Tourenplanung.
 - Umsetzung und Bedienung: [Manuelle Bestellungen](MANUELLE-BESTELLUNGEN.md). Echtes SMTP bleibt separat einzurichten.
+
+## Manuelle Lieferantenbestellungen (Migration 021)
+
+Unter Einkauf können Inhaber und Mitarbeiter mit Einkaufsrecht Zusatzbestellungen mit Lieferant, Artikeln, Mengen, Wunschtermin und Kundenauftragsbezug erfassen. Offene manuelle Mengen sind ausdrücklich von der automatischen Bedarfsminderung ausgeschlossen. Entwürfe werden nur nach expliziter Auswahl per E-Mail verschickt oder als extern bestellt dokumentiert. Versandstatus und Wareneingang sind in der Einkaufsübersicht enthalten. Siehe [Manuelle Lieferantenbestellungen](MANUELLE-LIEFERANTENBESTELLUNGEN.md).

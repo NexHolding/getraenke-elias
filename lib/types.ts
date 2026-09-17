@@ -129,10 +129,28 @@ export type SaleLine = {
   deposit_tax_rate: number;
 };
 export type Purchase = {
+  dispatch?: {
+    status: string;
+    error: string | null;
+    sent_at: string | null;
+  } | null;
+  source: "automatic" | "manual";
+  created_by?: string | null;
+  requested_date?: string | null;
+  reference?: string;
+  notes?: string;
+  dispatch_method?: "email" | "external" | null;
   id: string;
   supplier_id: string;
   status: string;
-  items: { id: string; name: string; quantity: number }[];
+  items: {
+    id: string;
+    name: string;
+    quantity: number;
+    sku?: string;
+    pack_count?: number;
+    volume_ml?: number;
+  }[];
   created_at: string;
 };
 export type Settings = {
