@@ -358,6 +358,7 @@ export async function POST(req: Request) {
     if (e instanceof z.ZodError)
       return Response.json(
         {
+          booking_failed: true,
           error: e.issues
             .map((i) => `${i.path.join(".")}: ${i.message}`)
             .join(" · "),
