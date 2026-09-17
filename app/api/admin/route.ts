@@ -116,6 +116,16 @@ export async function POST(req: Request) {
       throw new Error("FORBIDDEN");
     if (action === "product") {
       const value = productSchema.parse(body.value);
+      const { data: oldStock, error: stockError } = await db
+        .from("products")
+        .select("stock")
+        .eq("id", value.id)
+        .maybeSingle();
+      if (stockError) throw stockError;
+      if (value.stock !== (oldStock?.stock ?? null))
+        throw new Error(
+          "HINWEIS:Bestände bitte über Inventur oder eine begründete Bestandskorrektur ändern.",
+        );
       value.deposit_cents = depositFor(
         value.deposit_profile,
         value.pack_count,
@@ -126,6 +136,8 @@ export async function POST(req: Request) {
         p_expected_revision: value.revision ?? null,
         p_actor: user.id,
       });
+      if (error?.message?.startsWith("HINWEIS:"))
+        throw new Error(error.message);
       if (error || !saved)
         throw new Error(
           "Artikel wurde zwischenzeitlich geändert. Bitte neu laden.",

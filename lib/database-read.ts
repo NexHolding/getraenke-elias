@@ -4,12 +4,18 @@ import { serviceDb } from "./server";
 // delivery backlogs, or a finance export at that boundary.
 export async function readAllRows<T = Record<string, unknown>>(
   table: string,
-  options: { customerId?: string; order?: string; ascending?: boolean } = {},
+  options: {
+    customerId?: string;
+    runId?: string;
+    order?: string;
+    ascending?: boolean;
+  } = {},
 ): Promise<T[]> {
   const rows: T[] = [];
   const db = serviceDb();
   for (let offset = 0; offset < 100000; offset += 1000) {
     let query = db.from(table).select("*");
+    if (options.runId) query = query.eq("run_id", options.runId);
     if (options.customerId) query = query.eq("customer_id", options.customerId);
     query = query.order(options.order || "id", {
       ascending: options.ascending ?? true,

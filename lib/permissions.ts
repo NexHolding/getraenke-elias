@@ -3,6 +3,8 @@ export const modules = {
   finanzen: "Finanzen",
   kasse: "Kasse",
   artikel: "Artikel & Lager",
+  inventur: "Inventur",
+  bestandskorrektur: "Bruch / Bestandskorrektur buchen (zusätzlich zu Inventur)",
   bestellungen: "Bestellungen",
   kunden: "Kunden",
   lieferung: "Lieferplanung",

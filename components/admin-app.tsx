@@ -1,4 +1,5 @@
 "use client";
+import InventoryPanel from "./inventory-panel";
 import SettingsPanel from "./settings-panel";
 import { CustomerManager, DeliveryManager, InvoiceLedger } from "./operations";
 import { ProductPhoto } from "./product-photo";
@@ -9,6 +10,7 @@ import Link from "next/link";
 import { useDialog } from "./use-dialog";
 import { useRouter } from "next/navigation";
 import {
+  ClipboardList,
   LayoutDashboard,
   Package,
   Truck,
@@ -88,6 +90,7 @@ const nav = [
   ["finanzen", "Finanzen", Wallet],
   ["kasse", "Kasse", Store],
   ["artikel", "Artikel & Lager", Package],
+  ["inventur", "Inventur", ClipboardList],
   ["bestellungen", "Bestellungen", ShoppingCart],
   ["kunden", "Kunden", Users],
   ["lieferung", "Lieferplanung", Truck],
@@ -411,6 +414,9 @@ export default function AdminApp({ section }: { section: string }) {
             </div>
           ) : (
             <>
+              {section === "inventur" && (
+                <InventoryPanel onStockChange={load} />
+              )}
               {section === "kunden" && <CustomerManager orders={data.orders} />}
               {section === "lieferung" && (
                 <DeliveryManager orders={data.orders} reload={load} />
@@ -740,6 +746,11 @@ export default function AdminApp({ section }: { section: string }) {
                                 }
                               >
                                 {p.stock ?? "—"} / {p.min_stock}
+                                {!!p.loose_stock && (
+                                  <small>
+                                    + {p.loose_stock} lose Einheiten
+                                  </small>
+                                )}
                               </span>
                             </td>
                             <td>
@@ -1311,6 +1322,13 @@ export default function AdminApp({ section }: { section: string }) {
               {section === "finanzen" && (
                 <>
                   <InvoiceLedger />
+                  {can(data, "inventur") && (
+                    <p>
+                      <Link className="text-link" href="/crm/inventur">
+                        Inventurberichte und Bestandskorrekturbelege öffnen →
+                      </Link>
+                    </p>
+                  )}
                   <div className="toolbar">
                     <div className="segmented">
                       <button
@@ -1679,11 +1697,14 @@ export default function AdminApp({ section }: { section: string }) {
                 ))}
               </select>
             </label>
-            <NumberField
-              label="Istbestand (Gebinde) · leer = unbekannt"
-              value={edit.stock}
-              onChange={(v) => setEdit({ ...edit, stock: v })}
-            />
+            <label>
+              Istbestand (volle Gebinde)
+              <input readOnly value={edit.stock ?? "Unbekannt"} />
+              <small>
+                Zusätzlich {edit.loose_stock || 0} lose Einheiten. Änderungen
+                über Inventur oder Bruch & Bestandskorrekturen buchen.
+              </small>
+            </label>
             <NumberField
               label="Mindestbestand"
               value={edit.min_stock}

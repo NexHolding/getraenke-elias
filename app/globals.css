@@ -3472,3 +3472,134 @@ textarea {
     max-height: 50px;
   }
 }
+
+.inventory-workspace {
+  display:grid;
+  gap:22px
+}
+.inventory-intro {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:24px
+}
+.inventory-intro p {
+  max-width:700px
+}
+.inventory-runs {
+  display:flex;
+  gap:12px;
+  overflow:auto;
+  padding-bottom:4px
+}
+.inventory-run {
+  min-width:245px;
+  text-align:left;
+  display:grid;
+  gap:8px
+}
+.inventory-run.selected {
+  border-color:var(--olive);
+  background:#eff4df
+}
+.inventory-metrics {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:20px;
+  margin:22px 0
+}
+.inventory-metrics>div {
+  display:grid;
+  gap:5px
+}
+.inventory-metrics strong {
+  font-size:27px
+}
+.inventory-metrics span {
+  font-size:13px;
+  color:#67705d
+}
+.inventory-count-heading {
+  display:flex;
+  gap:24px;
+  align-items:center;
+  margin-bottom:24px
+}
+.inventory-count-heading .product-photo {
+  width:95px;
+  height:130px;
+  flex:none
+}
+.inventory-count-card {
+  scroll-margin-top:24px
+}
+.inventory-number input {
+  font-size:36px;
+  min-height:80px
+}
+.inventory-workspace .inline-actions {
+  margin-top:18px;
+  flex-wrap:wrap
+}
+.inventory-workspace .table-wrap small {
+  display:block;
+  white-space:normal;
+  max-width:280px
+}
+.inventory-workspace table {
+  min-width:840px
+}
+.inventory-workspace details p {
+  font-size:13px;
+  border-bottom:1px solid #e4e8dc;
+  padding:10px 0
+}
+.inventory-workspace .modal {
+  max-height:90vh;
+  overflow:auto
+}
+.inventory-workspace .notice {
+  white-space:normal
+}
+.inventory-workspace .table-toolbar input {
+  flex:1;
+  min-width:180px
+}
+@media(max-width:700px) {
+  .inventory-intro {
+  display:grid
+}
+.inventory-metrics {
+  grid-template-columns:1fr 1fr
+}
+.inventory-count-heading {
+  gap:12px
+}
+.inventory-count-heading h2 {
+  font-size:23px
+}
+.inventory-count-heading .product-photo {
+  width:65px;
+  height:95px
+}
+.inventory-number input {
+  font-size:32px
+}
+.inventory-workspace .table-toolbar {
+  flex-wrap:wrap
+}
+.inventory-workspace .inline-actions .button {
+  flex:1;
+  justify-content:center
+}
+.inventory-workspace .panel-head {
+  flex-wrap:wrap
+}
+.inventory-workspace .inventory-count-card .two-columns {
+  grid-template-columns:1fr
+}
+.inventory-workspace .modal {
+  width:calc(100vw - 24px)
+}
+
+}

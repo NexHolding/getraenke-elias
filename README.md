@@ -37,3 +37,7 @@ Vercel prüft stündlich den eingerichteten Bestellrhythmus, Lieferabos und die 
 Einrichtungsbelege sind keine fiskalisierten Kassenbelege. Die Live-Aktivierung bleibt bis zur Implementierung und Abnahme eines TSE-Adapters gesperrt. Kartenauswahl dokumentiert die Zahlungsart; sie belastet keine Karte. PDF/CSV sind keine DSFinV-K-/DATEV-Schnittstelle. SMTP-/Registrierungsversand, TSE, direkter Bondruck, Kartenterminal und native App-Pakete benötigen ihre konkreten Anbieter und gesonderte Abnahme. Die Tourplanung berücksichtigt Zeitfenster und Entfernungen, aber keine Echtzeit-Straßendaten.
 
 Das Original-Logo liegt in `public/images/elias-logo.png`. Das Hero-Foto ist eine generierte illustrative Getränkeszene, keine Aufnahme des Ladens. Produktfotos stammen aus den dokumentierten Herstellerquellen; fehlende Packshots lassen sich im CRM hochladen.
+
+## Inventur
+
+Tablet-Zählung, Eigentümerfreigabe, begründete Bestandskorrekturen und PDF-/CSV-Berichte: [Bedienung und technische Dokumentation](docs/INVENTUR.md). Die isolierte Browserprüfung ist `node scripts/inventory-browser-check.mjs` (dieselbe lokale Testumgebung wie oben).

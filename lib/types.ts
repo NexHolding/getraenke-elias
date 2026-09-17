@@ -1,4 +1,7 @@
 export type Product = {
+  loose_stock?: number;
+  cost_net_cents?: number | null;
+  stock_version?: number;
   revision?: number;
   group_name?: string;
   variant?: string;
