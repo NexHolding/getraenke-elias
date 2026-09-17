@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, LockKeyhole } from "lucide-react";
 import { Logo } from "@/components/site-shell";
+import { resolveLoginEmail } from "@/lib/login-identity";
 export default function Login() {
   const router = useRouter();
   const [error, setError] = useState(""),
@@ -20,14 +21,14 @@ export default function Login() {
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       );
       const { error } = await db.auth.signInWithPassword({
-        email: String(f.get("email")),
+        email: resolveLoginEmail(String(f.get("email"))),
         password: String(f.get("password")),
       });
       if (error) throw error;
       router.push("/crm");
       router.refresh();
     } catch {
-      setError("Anmeldung fehlgeschlagen. Bitte E-Mail und Passwort prüfen.");
+      setError("Anmeldung fehlgeschlagen. Bitte Benutzername oder E-Mail und Passwort prüfen.");
     } finally {
       setBusy(false);
     }
@@ -44,8 +45,15 @@ export default function Login() {
         <p>Artikel, Bestellungen und Kasse – alles an einem Ort.</p>
         <form className="form-grid" onSubmit={login}>
           <label>
-            E-Mail-Adresse
-            <input type="email" name="email" autoComplete="username" required />
+            E-Mail-Adresse oder Benutzername
+            <input
+              type="text"
+              name="email"
+              autoComplete="username"
+              autoCapitalize="none"
+              spellCheck={false}
+              required
+            />
           </label>
           <label>
             Passwort

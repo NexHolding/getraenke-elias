@@ -45,3 +45,6 @@ Weitere fachliche Details und Primärquellen: [TSE und Betrieb](TSE-UND-BETRIEB.
 Die beschriebenen Browser- und API-Prüfungen wurden zusätzlich erfolgreich gegen die öffentliche Vercel-Adresse ausgeführt. Der abschließende Datenbankbestand enthält 108 Artikel, einen Inhaberzugang und keine verbliebenen Testanfragen, Testverkäufe oder E-Mails. Eine lokale 6-seitige PDF-Prüfausgabe enthält alle 108 Artikel; ein 80-mm-Musterbon wurde ohne Datenbankbuchung gerendert und visuell kontrolliert.
 
 Originaldomain und www sind bei Vercel hinterlegt, zeigen jedoch noch auf den bisherigen manitu-Webserver. Konkrete DNS-Einträge: [Domainumschaltung](DOMAIN-UMSTELLUNG.md).
+
+## Global-Login
+`global_admin` wird im Login als zusätzlicher Benutzername akzeptiert und auf ein eigenes Supabase-Auth-Konto abgebildet. Dieses Konto besitzt die serverseitig geprüfte Rolle `owner` mit vollständigen CRM-Verwaltungsrechten. Es gibt keinen Kennwortvergleich oder Authentifizierungs-Bypass im Quellcode. Das vom Auftraggeber vorgegebene Kennwort wird ausschließlich durch Supabase Auth verwaltet. Der bisherige Inhaberzugang bleibt erhalten.
