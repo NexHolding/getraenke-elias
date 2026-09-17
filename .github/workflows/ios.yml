@@ -1,0 +1,17 @@
+name: iOS foundation
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test shared Swift core
+        run: swift test --package-path native/ios
+      - name: Build customer and iPad apps without signing
+        run: |
+          xcodebuild -project native/ios/EliasApps.xcodeproj -scheme EliasCustomer -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+          xcodebuild -project native/ios/EliasApps.xcodeproj -scheme EliasPOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build

@@ -1,4 +1,5 @@
 "use client";
+import { nativeApp } from "@/lib/native-app";
 import ManualPurchase from "./manual-purchase";
 import StaffOrders from "./staff-orders";
 import CheckoutFlow, { receiptDownload } from "./checkout-flow";
@@ -184,6 +185,22 @@ export default function AdminApp({ section }: { section: string }) {
     if (!r.ok) throw new Error(d.error);
     setData(d);
   }, [router]);
+  useEffect(() => {
+    if (nativeApp() !== "pos" || section !== "kasse") return;
+    const scan = (event: Event) => {
+      const barcode: unknown = (event as CustomEvent).detail?.barcode;
+      if (
+        typeof barcode !== "string" ||
+        !/^[A-Za-z0-9 ._-]{1,80}$/.test(barcode)
+      )
+        return;
+      setCategory("Alle Getränke");
+      setQuery(barcode);
+      setNotice("Barcode übernommen. Bitte den passenden Artikel antippen.");
+    };
+    window.addEventListener("elias:native-scan", scan);
+    return () => window.removeEventListener("elias:native-scan", scan);
+  }, [section]);
   useEffect(() => {
     let live = true;
     fetch("/api/admin", { cache: "no-store" })

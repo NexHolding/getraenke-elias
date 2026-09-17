@@ -1,4 +1,5 @@
 "use client";
+import { nativeApp, nativeCartSchema, nativeRequest } from "@/lib/native-app";
 import { DeliveryAddressFields } from "./delivery-address-fields";
 import type { DeliveryAddress } from "@/lib/delivery-address";
 import Link from "next/link";
@@ -55,6 +56,7 @@ export function Logo() {
 export default function SiteShell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const [menu, setMenu] = useState(false),
+    [nativeSubmitted, setNativeSubmitted] = useState(false),
     [open, setOpen] = useState(false),
     [message, setMessage] = useState(""),
     [busy, setBusy] = useState(false),
@@ -89,6 +91,53 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
       return [];
     }
   }, [cartJson]);
+  useEffect(() => {
+    if (path !== "/app/bestellen" || nativeApp() !== "customer") return;
+    let active = true;
+    void (async () => {
+      try {
+        const incoming = nativeCartSchema.parse(
+          await nativeRequest({ type: "checkout.load" }),
+        );
+        const response = await fetch("/api/catalog", { cache: "no-store" });
+        if (!response.ok)
+          throw new Error(
+            "Sortiment nicht erreichbar. Bitte erneut versuchen.",
+          );
+        const catalog: { products: Product[] } = await response.json();
+        const lines = incoming.items.map((item) => {
+          const product = catalog.products.find(
+            (p) => p.id === item.id && p.active,
+          );
+          if (!product)
+            throw new Error(
+              "Ein Artikel ist nicht mehr verfügbar. Bitte den Warenkorb in der App aktualisieren.",
+            );
+          return { product, quantity: item.quantity };
+        });
+        if (!active) return;
+        sessionStorage.setItem("elias-cart", JSON.stringify(lines));
+        window.dispatchEvent(new Event("elias-cart-change"));
+        setRequestId(incoming.request_id);
+        setNativeSubmitted(incoming.pending === true);
+        setOpen(true);
+      } catch (e) {
+        if (active) {
+          sessionStorage.setItem("elias-cart", "[]");
+          window.dispatchEvent(new Event("elias-cart-change"));
+          setMessage(
+            e instanceof Error
+              ? e.message
+              : "Warenkorb konnte nicht übernommen werden.",
+          );
+          setOpen(true);
+        }
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [path]);
   useEffect(() => {
     fetch("/api/catalog")
       .then((r) => r.json())
@@ -145,6 +194,20 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
     setMessage("");
     const f = new FormData(e.currentTarget);
     try {
+      if (path === "/app/bestellen" && nativeApp() === "customer") {
+        await nativeRequest({
+          type: "checkout.submitting",
+          cart: {
+            version: 1,
+            request_id: requestId,
+            items: cart.map((l) => ({
+              id: l.product.id,
+              quantity: l.quantity,
+            })),
+          },
+        });
+        setNativeSubmitted(true);
+      }
       const r = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -155,8 +218,30 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
         }),
       });
       const d = await r.json();
-      if (!r.ok) throw new Error(d.error);
+      if (!r.ok) {
+        if (
+          [400, 401, 403, 413, 429].includes(r.status) &&
+          path === "/app/bestellen" &&
+          nativeApp() === "customer"
+        ) {
+          await nativeRequest({
+            type: "checkout.rejected",
+            request_id: requestId,
+          });
+          setNativeSubmitted(false);
+        }
+        throw new Error(d.error);
+      }
+      if (path === "/app/bestellen" && nativeApp() === "customer") {
+        // Only the successful server response clears the native cart. No native auto-submit.
+        void nativeRequest({
+          type: "checkout.completed",
+          request_id: requestId,
+          number: d.number,
+        }).catch(() => {});
+      }
       update([]);
+      setNativeSubmitted(false);
       setRequestId(crypto.randomUUID());
       setMessage(
         `Danke! Deine Anfrage ${d.number} ist eingegangen. Deine gewählten Sorten und der Pfandbetrag wurden übernommen. Elias bestätigt den Liefertermin.`,
@@ -349,6 +434,13 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
                 <p className="muted">
                   Unverbindliche Lieferanfrage · Mindestmenge 4 Kisten
                 </p>
+                {nativeSubmitted && (
+                  <p className="notice">
+                    Dieser Vorgang wurde bereits begonnen. Bitte mit
+                    unveränderter Artikelauswahl erneut prüfen; dieselbe
+                    Vorgangsnummer verhindert eine zweite Bestellung.
+                  </p>
+                )}
                 <div className="cart-lines">
                   {cart.map((l) => (
                     <div className="cart-line" key={l.product.id}>
@@ -360,6 +452,7 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
                         <div className="stepper">
                           <button
                             aria-label={`${l.product.name} weniger`}
+                            disabled={busy || nativeSubmitted}
                             onClick={() =>
                               update(
                                 cart.flatMap((x) =>
@@ -377,6 +470,7 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
                           <span>{l.quantity}</span>
                           <button
                             aria-label={`${l.product.name} mehr`}
+                            disabled={busy || nativeSubmitted}
                             onClick={() =>
                               update(
                                 cart.map((x) =>
@@ -401,6 +495,7 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
                         <button
                           className="icon-button"
                           aria-label={`${l.product.name} entfernen`}
+                          disabled={busy || nativeSubmitted}
                           onClick={() =>
                             update(
                               cart.filter((x) => x.product.id !== l.product.id),

@@ -80,3 +80,7 @@ Helle Tages-/Monatsberichte im Querformat mit Original-Logo, Steuer-/Zahlartenü
 ## Manuelle Lieferantenbestellungen (Migration 021)
 
 Unter Einkauf können Inhaber und Mitarbeiter mit Einkaufsrecht Zusatzbestellungen mit Lieferant, Artikeln, Mengen, Wunschtermin und Kundenauftragsbezug erfassen. Offene manuelle Mengen sind ausdrücklich von der automatischen Bedarfsminderung ausgeschlossen. Entwürfe werden nur nach expliziter Auswahl per E-Mail verschickt oder als extern bestellt dokumentiert. Versandstatus und Wareneingang sind in der Einkaufsübersicht enthalten. Siehe [Manuelle Lieferantenbestellungen](MANUELLE-LIEFERANTENBESTELLUNGEN.md).
+
+## iOS-App-Basis (17.09.2026)
+
+Zwei eigenständige SwiftUI-Xcode-Targets sind unter `native/ios` angelegt: Kunden-App für iPhone/iPad und Kassen-App für iPad. Nativer Katalog mit echten Produktdaten, persistenter Warenkorb und geschützter Bestellübergabe; bestehendes Kundenportal/Kassen-CRM in WKWebView, native Kamera-Barcodesuche, Epson-HTTPS-Transport und lokaler Einrichtungsdialog. Beide Simulatorabläufe und unsignierte Geräte-Builds geprüft; kein TestFlight-/App-Store-Upload und kein echter Drucker-/TSE-Test. Die frühere Aussage, es gebe noch keine native Codebasis, ist damit überholt. [Architektur, Umfang und Startanleitung](../native/ios/README.md), [Fragen für die nächste Runde](../native/ios/FRAGEN-FUER-MORGEN.md).

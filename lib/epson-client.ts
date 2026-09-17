@@ -7,6 +7,7 @@ import {
   soapPrint,
   type EpsonConfig,
 } from "./epson";
+import { nativeApp, nativeRequest } from "./native-app";
 export function printerVerified(config: EpsonConfig) {
   try {
     return (
@@ -24,15 +25,30 @@ async function send(config: EpsonConfig, content: string) {
   const url = printerEndpoint(config);
   let response: Response;
   try {
-    response = await fetch(url, {
-      method: "POST",
-      mode: "cors",
-      credentials: "omit",
-      redirect: "error",
-      headers: { "Content-Type": "text/xml; charset=utf-8", SOAPAction: '""' },
-      body: soapPrint(content),
-      signal: AbortSignal.timeout(75000),
-    });
+    response =
+      nativeApp() === "pos"
+        ? new Response(
+            String(
+              await nativeRequest({
+                type: "printer.send",
+                endpoint: url,
+                body: soapPrint(content),
+              }),
+            ),
+            { status: 200 },
+          )
+        : await fetch(url, {
+            method: "POST",
+            mode: "cors",
+            credentials: "omit",
+            redirect: "error",
+            headers: {
+              "Content-Type": "text/xml; charset=utf-8",
+              SOAPAction: '""',
+            },
+            body: soapPrint(content),
+            signal: AbortSignal.timeout(75000),
+          });
   } catch {
     throw new EpsonError(
       "Keine bestätigte Druckerantwort. Netzwerk, HTTPS-Zertifikat und lokalen Netzwerkzugriff prüfen. Ein Ausdruck kann trotzdem erfolgt sein; nicht ungeprüft wiederholen.",

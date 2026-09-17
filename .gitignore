@@ -53,3 +53,11 @@ supabase/.temp/
 
 # Generated from pinned pdfjs-dist at build time
 /public/vendor/
+
+# Local Xcode/Swift outputs; shared project and schemes stay tracked
+native/ios/.build/
+native/ios/.swiftpm/
+native/ios/DerivedData/
+**/xcuserdata/
+*.xcresult
+*.xcarchive
