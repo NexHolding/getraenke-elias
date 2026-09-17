@@ -126,7 +126,12 @@ export default function SettingsPanel({
                   {text("business_name", "Unternehmensname")}
                   {text("business_address", "Geschäftsanschrift")}
                   {text("tax_number", "Steuernummer / USt-IdNr.")}
-                  {num("discount_percent", "Mitarbeiterrabatt (%)", 0, 100)}
+                  {num(
+                    "discount_percent",
+                    "Rabattvorschlag für den Warenkorb (%)",
+                    0,
+                    100,
+                  )}
                   {toggle(
                     "guest_orders",
                     "Bestellungen ohne Kundenkonto erlauben",
@@ -367,7 +372,7 @@ export default function SettingsPanel({
                       address: "",
                       notes: "",
                       active: true,
-                      permissions: ["uebersicht", "kasse"],
+                      permissions: ["uebersicht", "kasse", "rabatt"],
                     })
                   }
                 >

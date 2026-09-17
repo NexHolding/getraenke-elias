@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { saleItemSchema } from "@/lib/sale-validation";
 import { can } from "@/lib/permissions";
 import { depositFor } from "@/lib/deposits";
 import type { Sale, Order } from "@/lib/types";
@@ -237,14 +238,7 @@ export async function POST(req: Request) {
       const v = z
         .object({
           id: z.uuid(),
-          lines: z
-            .array(
-              z.object({
-                id: z.string(),
-                quantity: z.number().int().min(1).max(1000),
-              }),
-            )
-            .max(200),
+          lines: z.array(saleItemSchema).max(200),
           payment: z.enum(["cash", "card"]),
           discount: z.number().int().min(0).max(100).default(0),
           returns: z
@@ -264,6 +258,15 @@ export async function POST(req: Request) {
             .max(11),
         })
         .parse(body.value);
+      if (
+        (v.discount > 0 || v.lines.some((l) => l.discount_percent > 0)) &&
+        !can(access, "rabatt")
+      )
+        throw new Error("FORBIDDEN");
+      if (v.discount > 0 && v.lines.some((l) => l.discount_percent > 0))
+        throw new Error(
+          "HINWEIS: Bitte Artikelrabatt oder Warenkorbrabatt wählen.",
+        );
       const { data, error } = await db.rpc("save_sale", {
         p_id: v.id,
         p_lines: v.lines,

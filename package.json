@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "node --import tsx --test tests/*.test.ts",
-    "test:db": "node scripts/validate-database.mjs && node scripts/validate-inventory.mjs"
+    "test:db": "node scripts/validate-database.mjs && node scripts/validate-inventory.mjs && node scripts/validate-discounts.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

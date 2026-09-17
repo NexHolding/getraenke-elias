@@ -39,6 +39,11 @@ import {
 } from "lucide-react";
 import { Logo } from "./site-shell";
 import { euro, pack, totals } from "@/lib/money";
+import {
+  discountedPrice,
+  discountReasons,
+  discountTotal,
+} from "@/lib/discounts";
 import { catalogPdf, financePdf, receiptPdf, csvDownload } from "@/lib/exports";
 import { categories } from "@/lib/catalog";
 import type {
@@ -138,9 +143,20 @@ export default function AdminApp({ section }: { section: string }) {
     [edit, setEdit] = useState<Product | null>(null),
     [supplier, setSupplier] = useState<Supplier | null>(null),
     [bulk, setBulk] = useState(false),
-    [cart, setCart] = useState<{ id: string; quantity: number }[]>([]),
+    [cart, setCart] = useState<
+      {
+        id: string;
+        quantity: number;
+        discount_percent?: number;
+        discount_reason?: string;
+      }[]
+    >([]),
     [returns, setReturns] = useState<Record<string, number>>({}),
-    [discount, setDiscount] = useState(false),
+    [discountMode, setDiscountMode] = useState<"none" | "item" | "cart">(
+      "none",
+    ),
+    [discount, setDiscount] = useState(0),
+    [discountReason, setDiscountReason] = useState<string>("Aktion"),
     [opening, setOpening] = useState(0),
     [counted, setCounted] = useState(0),
     [payment, setPayment] = useState("cash"),
@@ -227,17 +243,23 @@ export default function AdminApp({ section }: { section: string }) {
     sum = (k: "total_cents" | "net_cents" | "tax_cents" | "deposit_cents") =>
       periodSales.reduce((s, x) => s + x[k], 0);
   const lines: SaleLine[] = cart
-    .map((l) => {
+    .map<SaleLine>((l) => {
       const p = products.find((p) => p.id === l.id)!;
+      const rate =
+        data && can(data, "rabatt")
+          ? discountMode === "cart"
+            ? discount
+            : discountMode === "item"
+              ? l.discount_percent || 0
+              : 0
+          : 0;
       return {
         id: p.id,
         name: p.name,
         quantity: l.quantity,
-        price_cents: Math.round(
-          (p.price_cents *
-            (100 - (discount ? data?.settings.discount_percent || 0 : 0))) /
-            100,
-        ),
+        original_price_cents: p.price_cents,
+        discount_percent: rate,
+        price_cents: discountedPrice(p.price_cents, rate),
         deposit_cents: p.deposit_cents ?? 0,
         tax_rate: p.tax_rate,
         deposit_tax_rate: p.deposit_tax_rate,
@@ -1070,6 +1092,11 @@ export default function AdminApp({ section }: { section: string }) {
                               key={p.id}
                               onClick={() => {
                                 setLastSale(null);
+                                if (cart.length === 0) {
+                                  setDiscountMode("none");
+                                  setDiscount(0);
+                                  setDiscountReason("Aktion");
+                                }
                                 setCart((c) =>
                                   c.some((l) => l.id === p.id)
                                     ? c.map((l) =>
@@ -1109,6 +1136,9 @@ export default function AdminApp({ section }: { section: string }) {
                           aria-label="Bon leeren"
                           onClick={() => {
                             setCart([]);
+                            setDiscountMode("none");
+                            setDiscount(0);
+                            setDiscountReason("Aktion");
                             setReturns({});
                             setSaleId(crypto.randomUUID());
                           }}
@@ -1121,56 +1151,236 @@ export default function AdminApp({ section }: { section: string }) {
                           Artikel auswählen oder Pfand zurücknehmen.
                         </p>
                       )}
+                      {can(data, "rabatt") && (
+                        <fieldset
+                          className="pos-discount-panel"
+                          disabled={busy || cart.length === 0}
+                        >
+                          <legend>Rabatt</legend>
+                          <div
+                            className="segmented"
+                            role="group"
+                            aria-label="Rabattart"
+                          >
+                            {(
+                              [
+                                ["none", "Kein Rabatt"],
+                                ["item", "Einzelartikel"],
+                                ["cart", "Warenkorb"],
+                              ] as const
+                            ).map(([value, label]) => (
+                              <button
+                                type="button"
+                                key={value}
+                                aria-pressed={discountMode === value}
+                                className={
+                                  discountMode === value ? "active" : ""
+                                }
+                                onClick={() => {
+                                  setDiscountMode(value);
+                                  setDiscount(
+                                    value === "cart"
+                                      ? (data.settings.discount_percent ?? 10)
+                                      : 0,
+                                  );
+                                  setDiscountReason("Aktion");
+                                  setCart((c) =>
+                                    c.map((line) => ({
+                                      ...line,
+                                      discount_percent: 0,
+                                      discount_reason: "",
+                                    })),
+                                  );
+                                }}
+                              >
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+                          {discountMode === "cart" && (
+                            <div className="pos-discount-fields">
+                              <label>
+                                Warenkorbrabatt (%)
+                                <input
+                                  aria-label="Warenkorbrabatt (%)"
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  step="1"
+                                  value={discount}
+                                  onChange={(e) =>
+                                    setDiscount(
+                                      Math.max(
+                                        0,
+                                        Math.min(
+                                          100,
+                                          Math.trunc(
+                                            Number(e.target.value) || 0,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  }
+                                />
+                              </label>
+                              <label>
+                                Rabattgrund
+                                <select
+                                  value={discountReason}
+                                  onChange={(e) =>
+                                    setDiscountReason(e.target.value)
+                                  }
+                                >
+                                  {discountReasons.map((reason) => (
+                                    <option key={reason}>{reason}</option>
+                                  ))}
+                                </select>
+                              </label>
+                            </div>
+                          )}
+                          <small className="muted">
+                            {discountMode === "item"
+                              ? "Rabatt an der jeweiligen Position eingeben. "
+                              : ""}
+                            Pfand und Pfandrücknahmen bleiben unverändert.
+                            Rabatte werden je Einheit auf Cent gerundet.
+                          </small>
+                        </fieldset>
+                      )}
                       {cart.map((l) => {
                         const p = products.find((p) => p.id === l.id)!;
+                        const priced = lines.find((line) => line.id === l.id)!;
                         return (
-                          <div className="pos-line" key={l.id}>
-                            <div>
-                              <strong>{p.name}</strong>
-                              <small>
-                                {euro(p.price_cents)} +{" "}
-                                {euro(p.deposit_cents ?? 0)} Pfand
-                              </small>
+                          <div className="pos-item" key={l.id}>
+                            <div className="pos-line">
+                              <div>
+                                <strong>{p.name}</strong>
+                                <small>
+                                  {priced.price_cents !== p.price_cents && (
+                                    <del>{euro(p.price_cents)} </del>
+                                  )}
+                                  {euro(priced.price_cents)} +{" "}
+                                  {euro(p.deposit_cents ?? 0)} Pfand
+                                </small>
+                              </div>
+                              <div className="stepper">
+                                <button
+                                  aria-label={`${p.name} reduzieren`}
+                                  onClick={() =>
+                                    setCart(
+                                      cart.flatMap((x) =>
+                                        x.id === l.id
+                                          ? x.quantity > 1
+                                            ? [
+                                                {
+                                                  ...x,
+                                                  quantity: x.quantity - 1,
+                                                },
+                                              ]
+                                            : []
+                                          : [x],
+                                      ),
+                                    )
+                                  }
+                                >
+                                  <Minus size={13} />
+                                </button>
+                                <span>{l.quantity}</span>
+                                <button
+                                  aria-label={`${p.name} erhöhen`}
+                                  onClick={() =>
+                                    setCart(
+                                      cart.map((x) =>
+                                        x.id === l.id
+                                          ? {
+                                              ...x,
+                                              quantity: Math.min(
+                                                1000,
+                                                x.quantity + 1,
+                                              ),
+                                            }
+                                          : x,
+                                      ),
+                                    )
+                                  }
+                                >
+                                  <Plus size={13} />
+                                </button>
+                              </div>
                             </div>
-                            <div className="stepper">
-                              <button
-                                aria-label={`${p.name} reduzieren`}
-                                onClick={() =>
-                                  setCart(
-                                    cart.flatMap((x) =>
-                                      x.id === l.id
-                                        ? x.quantity > 1
-                                          ? [{ ...x, quantity: x.quantity - 1 }]
-                                          : []
-                                        : [x],
-                                    ),
-                                  )
-                                }
-                              >
-                                <Minus size={13} />
-                              </button>
-                              <span>{l.quantity}</span>
-                              <button
-                                aria-label={`${p.name} erhöhen`}
-                                onClick={() =>
-                                  setCart(
-                                    cart.map((x) =>
-                                      x.id === l.id
-                                        ? {
-                                            ...x,
-                                            quantity: Math.min(
-                                              1000,
-                                              x.quantity + 1,
-                                            ),
-                                          }
-                                        : x,
-                                    ),
-                                  )
-                                }
-                              >
-                                <Plus size={13} />
-                              </button>
-                            </div>
+                            {can(data, "rabatt") && discountMode === "item" && (
+                              <div className="pos-discount-fields">
+                                <label>
+                                  Rabatt (%)
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    step="1"
+                                    aria-label={`Rabatt für ${p.name} (%)`}
+                                    value={l.discount_percent || 0}
+                                    onChange={(e) =>
+                                      setCart((c) =>
+                                        c.map((x) =>
+                                          x.id === l.id
+                                            ? {
+                                                ...x,
+                                                discount_percent: Math.max(
+                                                  0,
+                                                  Math.min(
+                                                    100,
+                                                    Math.trunc(
+                                                      Number(e.target.value) ||
+                                                        0,
+                                                    ),
+                                                  ),
+                                                ),
+                                                discount_reason:
+                                                  x.discount_reason ||
+                                                  discountReasons[0],
+                                              }
+                                            : x,
+                                        ),
+                                      )
+                                    }
+                                  />
+                                </label>
+                                {!!l.discount_percent && (
+                                  <label>
+                                    Grund
+                                    <select
+                                      aria-label={`Rabattgrund für ${p.name}`}
+                                      value={
+                                        l.discount_reason || discountReasons[0]
+                                      }
+                                      onChange={(e) =>
+                                        setCart((c) =>
+                                          c.map((x) =>
+                                            x.id === l.id
+                                              ? {
+                                                  ...x,
+                                                  discount_reason:
+                                                    e.target.value,
+                                                }
+                                              : x,
+                                          ),
+                                        )
+                                      }
+                                    >
+                                      {discountReasons.map((reason) => (
+                                        <option key={reason}>{reason}</option>
+                                      ))}
+                                    </select>
+                                  </label>
+                                )}
+                                {!!l.discount_percent && (
+                                  <small className="muted">
+                                    Nachlass für diese Position:{" "}
+                                    {euro(discountTotal([priced]))}
+                                  </small>
+                                )}
+                              </div>
+                            )}
                           </div>
                         );
                       })}
@@ -1222,19 +1432,13 @@ export default function AdminApp({ section }: { section: string }) {
                           </div>
                         ))}
                       </div>
-                      {can(data, "rabatt") && (
-                        <label className="checkline">
-                          <input
-                            type="checkbox"
-                            checked={discount}
-                            onChange={(e) => setDiscount(e.target.checked)}
-                          />
-                          Mitarbeiterrabatt{" "}
-                          {data.settings.discount_percent || 0}% · Pfand
-                          ausgenommen
-                        </label>
-                      )}
-                      <div className="cart-totals">
+                      <div className="cart-totals" aria-live="polite">
+                        {discountTotal(lines) > 0 && (
+                          <div className="discount-saving">
+                            <span>Rabatt gesamt (ohne Pfand)</span>
+                            <strong>−{euro(discountTotal(lines))}</strong>
+                          </div>
+                        )}
                         <div>
                           <span>Netto</span>
                           <span>{euro(total.net)}</span>
@@ -1277,11 +1481,28 @@ export default function AdminApp({ section }: { section: string }) {
                             {
                               value: {
                                 id: saleId,
-                                lines: cart,
+                                lines: cart.map((line) => ({
+                                  id: line.id,
+                                  quantity: line.quantity,
+                                  discount_percent:
+                                    can(data, "rabatt") &&
+                                    discountMode === "item"
+                                      ? line.discount_percent || 0
+                                      : 0,
+                                  discount_reason: can(data, "rabatt")
+                                    ? discountMode === "cart"
+                                      ? discountReason
+                                      : discountMode === "item"
+                                        ? line.discount_reason ||
+                                          discountReasons[0]
+                                        : ""
+                                    : "",
+                                })),
                                 payment,
-                                discount: discount
-                                  ? data.settings.discount_percent || 0
-                                  : 0,
+                                discount:
+                                  can(data, "rabatt") && discountMode === "cart"
+                                    ? discount
+                                    : 0,
                                 returns: Object.entries(returns)
                                   .filter(([, q]) => q > 0)
                                   .map(([d, q]) => ({
@@ -1295,6 +1516,9 @@ export default function AdminApp({ section }: { section: string }) {
                           if (s) {
                             setLastSale(s);
                             setCart([]);
+                            setDiscountMode("none");
+                            setDiscount(0);
+                            setDiscountReason("Aktion");
                             setReturns({});
                             setSaleId(crypto.randomUUID());
                           }

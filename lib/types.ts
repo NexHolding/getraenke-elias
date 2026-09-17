@@ -92,6 +92,10 @@ export type Sale = {
   test_mode: boolean;
 };
 export type SaleLine = {
+  original_price_cents?: number;
+  discount_percent?: number;
+  discount_reason?: string;
+  discount_scope?: "cart" | "item" | "none";
   id: string;
   name: string;
   quantity: number;

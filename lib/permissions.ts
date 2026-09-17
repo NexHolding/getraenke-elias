@@ -4,14 +4,15 @@ export const modules = {
   kasse: "Kasse",
   artikel: "Artikel & Lager",
   inventur: "Inventur",
-  bestandskorrektur: "Bruch / Bestandskorrektur buchen (zusätzlich zu Inventur)",
+  bestandskorrektur:
+    "Bruch / Bestandskorrektur buchen (zusätzlich zu Inventur)",
   bestellungen: "Bestellungen",
   kunden: "Kunden",
   lieferung: "Lieferplanung",
   einkauf: "Einkauf",
   lieferanten: "Lieferanten",
   einstellungen: "Einstellungen",
-  rabatt: "Mitarbeiterrabatt vergeben",
+  rabatt: "Rabatte auf Artikel und Warenkorb vergeben",
 } as const;
 export type Permission = keyof typeof modules;
 export type StaffAccess = {
