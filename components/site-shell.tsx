@@ -212,16 +212,33 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
               Mein Konto
             </Link>
             <button
+              type="button"
               className="bag-button"
-              onClick={() => setOpen(true)}
+              aria-haspopup="dialog"
+              aria-expanded={open}
+              aria-controls="elias-order-window"
+              onClick={() => {
+                setMenu(false);
+                setOpen(true);
+              }}
               aria-label={`Warenkorb, ${count} Artikel`}
             >
               <ShoppingBag size={20} />
               {count > 0 && <span>{count}</span>}
             </button>
-            <Link href="/sortiment" className="button small desktop-order">
+            <button
+              type="button"
+              className="button small desktop-order"
+              aria-haspopup="dialog"
+              aria-expanded={open}
+              aria-controls="elias-order-window"
+              onClick={() => {
+                setMenu(false);
+                setOpen(true);
+              }}
+            >
               Getränke bestellen <ArrowUpRight size={17} />
-            </Link>
+            </button>
             <button
               aria-label="Menü öffnen"
               className="icon-button mobile-menu"
@@ -288,6 +305,7 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
       {open && (
         <div className="drawer-backdrop" onClick={() => setOpen(false)}>
           <section
+            id="elias-order-window"
             className="cart-drawer"
             role="dialog"
             aria-modal="true"
