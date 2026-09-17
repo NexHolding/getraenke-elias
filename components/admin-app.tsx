@@ -1,4 +1,9 @@
 "use client";
+import SettingsPanel from "./settings-panel";
+import { CustomerManager, DeliveryManager, InvoiceLedger } from "./operations";
+import { ProductPhoto } from "./product-photo";
+import { can } from "@/lib/permissions";
+import { depositProfiles, depositFor, returnTypes } from "@/lib/deposits";
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useDialog } from "./use-dialog";
@@ -20,16 +25,13 @@ import {
   RefreshCw,
   Check,
   ArrowRight,
-  AlertTriangle,
   X,
   Minus,
   Trash2,
   Store,
+  BottleWine,
   CheckCircle2,
-  Mail,
-  Globe,
   ShieldCheck,
-  Smartphone,
   ChevronRight,
   FileText,
 } from "lucide-react";
@@ -50,7 +52,15 @@ type Closing = {
   id: string;
   kind: string;
   period: string;
-  totals: { gross: number; count: number };
+  totals: {
+    gross: number;
+    count: number;
+    cash?: number;
+    card?: number;
+    opening?: number;
+    counted?: number;
+    difference?: number;
+  };
   created_at: string;
 };
 type Data = {
@@ -69,13 +79,18 @@ type Data = {
     error: string | null;
   }[];
   role: string;
+  permissions: string[];
+  name: string;
+  summary?: { open: number; partial: number };
 };
 const nav = [
   ["uebersicht", "Übersicht", LayoutDashboard],
   ["finanzen", "Finanzen", Wallet],
   ["kasse", "Kasse", Store],
   ["artikel", "Artikel & Lager", Package],
-  ["bestellungen", "Kundenanfragen", ShoppingCart],
+  ["bestellungen", "Bestellungen", ShoppingCart],
+  ["kunden", "Kunden", Users],
+  ["lieferung", "Lieferplanung", Truck],
   ["einkauf", "Einkauf", Truck],
   ["lieferanten", "Lieferanten", Users],
   ["einstellungen", "Einstellungen", Settings],
@@ -114,6 +129,7 @@ export default function AdminApp({ section }: { section: string }) {
     [notice, setNotice] = useState(""),
     [busy, setBusy] = useState(false),
     [query, setQuery] = useState(""),
+    [showArchived, setShowArchived] = useState(false),
     [category, setCategory] = useState("Alle Getränke"),
     [selected, setSelected] = useState<string[]>([]),
     [edit, setEdit] = useState<Product | null>(null),
@@ -121,6 +137,9 @@ export default function AdminApp({ section }: { section: string }) {
     [bulk, setBulk] = useState(false),
     [cart, setCart] = useState<{ id: string; quantity: number }[]>([]),
     [returns, setReturns] = useState<Record<string, number>>({}),
+    [discount, setDiscount] = useState(false),
+    [opening, setOpening] = useState(0),
+    [counted, setCounted] = useState(0),
     [payment, setPayment] = useState("cash"),
     [saleId, setSaleId] = useState(() => crypto.randomUUID()),
     [lastSale, setLastSale] = useState<Sale | null>(null),
@@ -186,6 +205,7 @@ export default function AdminApp({ section }: { section: string }) {
   const products = data?.products || [],
     filtered = products.filter(
       (p) =>
+        (showArchived || p.active) &&
         (category === "Alle Getränke" || p.category === category) &&
         `${p.name} ${p.sku} ${p.barcode}`
           .toLowerCase()
@@ -193,7 +213,10 @@ export default function AdminApp({ section }: { section: string }) {
     ),
     low = products.filter((p) => p.stock !== null && p.stock < p.min_stock),
     unverified = products.filter((p) => !p.verified),
-    pending = data?.orders.filter((o) => o.status === "new") || [],
+    pending =
+      data?.orders.filter(
+        (o) => !["completed", "cancelled"].includes(o.status),
+      ) || [],
     periodSales = (data?.sales || []).filter(
       (s) =>
         dateKey(s.created_at).slice(0, mode === "month" ? 7 : 10) === period,
@@ -207,7 +230,11 @@ export default function AdminApp({ section }: { section: string }) {
         id: p.id,
         name: p.name,
         quantity: l.quantity,
-        price_cents: p.price_cents,
+        price_cents: Math.round(
+          (p.price_cents *
+            (100 - (discount ? data?.settings.discount_percent || 0 : 0))) /
+            100,
+        ),
         deposit_cents: p.deposit_cents ?? 0,
         tax_rate: p.tax_rate,
         deposit_tax_rate: p.deposit_tax_rate,
@@ -229,10 +256,10 @@ export default function AdminApp({ section }: { section: string }) {
   const total = totals(lines);
   const heading = nav.find((n) => n[0] === section)?.[1] || "Übersicht";
   function exportFinance() {
-    csvDownload(`Elias-TEST-${period}.csv`, [
-      ["TESTDATEN - NICHT FÜR STEUERLICHE BUCHUNG"],
+    csvDownload(`Elias-Finanzen-${period}.csv`, [
+      ["Einrichtungsdaten · vor Echtbetrieb zurücksetzen"],
       [
-        "Testbon",
+        "Bon",
         "Zeitpunkt UTC",
         "Zahlart",
         "Netto EUR",
@@ -277,7 +304,7 @@ export default function AdminApp({ section }: { section: string }) {
           <div>
             <span className="avatar">FE</span>
             <span>
-              <strong>Getränke Elias</strong>
+              <strong>{data?.name || "Getränke Elias"}</strong>
               <small>
                 {data?.role === "owner" ? "Inhaber" : "Mitarbeiterbereich"}
               </small>
@@ -303,7 +330,23 @@ export default function AdminApp({ section }: { section: string }) {
           </span>
           <div>
             <span className="status-dot" /> Supabase{" "}
-            <span className="test-pill">Kasse: Testbetrieb</span>
+            <span className="test-pill">
+              {data?.settings.live_mode ? "Live-Modus" : "Einrichtung"}
+            </span>
+            <button
+              className="text-link"
+              onClick={async () => {
+                await fetch("/api/terminal", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ action: "lock" }),
+                });
+                router.push("/kassenzugang");
+                router.refresh();
+              }}
+            >
+              Mitarbeiter wechseln
+            </button>
             <span className="avatar small-avatar">FE</span>
           </div>
         </header>
@@ -357,20 +400,48 @@ export default function AdminApp({ section }: { section: string }) {
                 ? "Daten konnten nicht geladen werden."
                 : "Dein Arbeitsplatz wird geladen …"}
             </div>
+          ) : !can(data, section) ? (
+            <div className="panel empty">
+              <ShieldCheck size={38} />
+              <h2>Du hast keinen Zugriff auf diese Inhalte.</h2>
+              <p>
+                Der Inhaber kann den Bereich in deinen Mitarbeiterrechten
+                freischalten.
+              </p>
+            </div>
           ) : (
             <>
+              {section === "kunden" && <CustomerManager orders={data.orders} />}
+              {section === "lieferung" && (
+                <DeliveryManager orders={data.orders} reload={load} />
+              )}
               {section === "uebersicht" && (
                 <>
+                  {section === "uebersicht" && (
+                    <Link className="partial-banner" href="/crm/lieferung">
+                      <Truck size={22} />
+                      <span>
+                        <strong>
+                          {data.summary?.partial || 0} offene Restlieferungen
+                        </strong>
+                        <small>
+                          Fehlende Artikel bleiben bis zur vollständigen
+                          Übergabe vorgemerkt.
+                        </small>
+                      </span>
+                      <ArrowRight />
+                    </Link>
+                  )}
                   <div className="stats-grid">
                     <Stat
                       title="Artikel im Sortiment"
-                      value={String(products.length)}
+                      value={String(products.filter((p) => p.active).length)}
                       detail="Aus der Elias-Lieferliste"
                       icon={Package}
                     />
                     <Stat
                       title="Neue Lieferanfragen"
-                      value={String(pending.length)}
+                      value={String(data.summary?.open ?? pending.length)}
                       detail="Warten auf deine Bestätigung"
                       icon={ShoppingCart}
                     />
@@ -381,7 +452,7 @@ export default function AdminApp({ section }: { section: string }) {
                       icon={Truck}
                     />
                     <Stat
-                      title="Testumsatz heute"
+                      title="Umsatz heute"
                       value={euro(
                         data.sales
                           .filter(
@@ -410,7 +481,7 @@ export default function AdminApp({ section }: { section: string }) {
                         ],
                         [
                           "Lieferanten vervollständigen",
-                          "Der Demo-Lieferant versendet keine Bestellungen.",
+                          "Bestelladresse und Versandfreigabe am Lieferanten pflegen.",
                           "lieferanten",
                           Truck,
                         ],
@@ -448,7 +519,7 @@ export default function AdminApp({ section }: { section: string }) {
                         <Link href="/crm/kasse">
                           <Store />
                           <strong>Kasse öffnen</strong>
-                          <small>Testverkauf starten</small>
+                          <small>Verkauf starten</small>
                         </Link>
                         <Link href="/crm/artikel">
                           <Plus />
@@ -484,6 +555,14 @@ export default function AdminApp({ section }: { section: string }) {
                           <div>
                             <strong>{o.customer_name}</strong>
                             <p>{o.address}</p>
+                            {!["new", "cancelled", "completed"].includes(
+                              o.status,
+                            ) && (
+                              <Link className="text-link" href="/crm/lieferung">
+                                Lieferschein & Übergabe öffnen{" "}
+                                <ArrowRight size={16} />
+                              </Link>
+                            )}
                           </div>
                           <span className="badge">
                             EL-{String(o.number).padStart(5, "0")}
@@ -497,22 +576,30 @@ export default function AdminApp({ section }: { section: string }) {
                       />
                     )}
                   </section>
-                  <div className="notice">
-                    <ShieldCheck size={21} />
-                    <div>
-                      <strong>Die Kasse ist bewusst im Testbetrieb.</strong>
-                      <p>
-                        Für echte Verkäufe fehlen TSE-Vertrag, vollständige
-                        Fiskalisierung und Hardwareabnahme. Testbelege verändern
-                        keine Lagerbestände.
-                      </p>
-                    </div>
-                  </div>
                 </>
               )}
               {section === "artikel" && (
                 <>
+                  <div className="category-tabs">
+                    {categories.map((c) => (
+                      <button
+                        key={c}
+                        className={category === c ? "selected" : ""}
+                        onClick={() => setCategory(c)}
+                      >
+                        {c}
+                      </button>
+                    ))}
+                  </div>
                   <div className="panel toolbar">
+                    <label className="checkline">
+                      <input
+                        type="checkbox"
+                        checked={showArchived}
+                        onChange={(e) => setShowArchived(e.target.checked)}
+                      />
+                      Archiv anzeigen
+                    </label>
                     <label className="search-field">
                       <Search size={18} />
                       <input
@@ -715,7 +802,7 @@ export default function AdminApp({ section }: { section: string }) {
                           <span
                             className={`badge ${s.is_demo ? "warning" : "green"}`}
                           >
-                            {s.is_demo ? "Demo" : "Angelegt"}
+                            {`L-${String(s.number || 0).padStart(5, "0")}`}
                           </span>
                         </div>
                         <h2>{s.name}</h2>
@@ -757,8 +844,8 @@ export default function AdminApp({ section }: { section: string }) {
                       <p>
                         Bei aktivierter Automatik werden unterhalb des
                         Mindestbestands Entwürfe bis zum Zielbestand erstellt.
-                        Offene Bestellmengen werden berücksichtigt.
-                        Demo-Bestellungen werden niemals versendet.
+                        Offene Bestellmengen werden berücksichtigt. Der Bedarf
+                        wird bis zum konfigurierten Bestelltermin gesammelt.
                       </p>
                     </div>
                   </div>
@@ -872,6 +959,11 @@ export default function AdminApp({ section }: { section: string }) {
                           <select
                             value={o.status}
                             aria-label={`Status Anfrage ${o.number}`}
+                            disabled={[
+                              "partial",
+                              "completed",
+                              "cancelled",
+                            ].includes(o.status)}
                             onChange={(e) =>
                               act(
                                 "order-status",
@@ -883,11 +975,25 @@ export default function AdminApp({ section }: { section: string }) {
                             <option value="new">Neu</option>
                             <option value="confirmed">Bestätigt</option>
                             <option value="delivering">In Lieferung</option>
-                            <option value="completed">Abgeschlossen</option>
+
+                            <option value="partial" disabled>
+                              Restlieferung offen
+                            </option>
+                            <option value="completed" disabled>
+                              Vollständig geliefert
+                            </option>
                             <option value="cancelled">Storniert</option>
                           </select>
                         </div>
                         <p>{o.address}</p>
+                        {!["new", "cancelled", "completed"].includes(
+                          o.status,
+                        ) && (
+                          <Link className="text-link" href="/crm/lieferung">
+                            Lieferschein & Übergabe öffnen{" "}
+                            <ArrowRight size={16} />
+                          </Link>
+                        )}
                         <p>
                           <a href={`mailto:${o.email}`}>{o.email}</a> ·{" "}
                           <a href={`tel:${o.phone}`}>{o.phone}</a>
@@ -923,16 +1029,16 @@ export default function AdminApp({ section }: { section: string }) {
               )}
               {section === "kasse" && (
                 <>
-                  <div className="notice warning">
-                    <AlertTriangle size={21} />
-                    <div>
-                      <strong>Testkasse · kein echter Verkauf</strong>
-                      <p>
-                        Keine TSE-Signierung, keine Zahlungsabwicklung und keine
-                        Lagerbuchung. Nur Artikel mit bestätigtem Preis und
-                        Pfand sind auswählbar.
-                      </p>
-                    </div>
+                  <div className="category-tabs">
+                    {categories.map((c) => (
+                      <button
+                        key={c}
+                        className={category === c ? "selected" : ""}
+                        onClick={() => setCategory(c)}
+                      >
+                        {c}
+                      </button>
+                    ))}
                   </div>
                   <div className="pos-layout">
                     <section>
@@ -949,7 +1055,7 @@ export default function AdminApp({ section }: { section: string }) {
                           .filter((p) => p.active)
                           .map((p) => (
                             <button
-                              disabled={!p.verified || p.deposit_cents === null}
+                              disabled={p.deposit_cents === null}
                               key={p.id}
                               onClick={() => {
                                 setLastSale(null);
@@ -970,6 +1076,7 @@ export default function AdminApp({ section }: { section: string }) {
                                 );
                               }}
                             >
+                              <ProductPhoto product={p} />
                               <span className="badge">{p.category}</span>
                               <strong>{p.name}</strong>
                               <small>{pack(p)}</small>
@@ -985,10 +1092,10 @@ export default function AdminApp({ section }: { section: string }) {
                     </section>
                     <aside className="panel pos-cart">
                       <div className="panel-head">
-                        <h2>Aktueller Testbon</h2>
+                        <h2>Aktueller Bon</h2>
                         <button
                           className="icon-button"
-                          aria-label="Testbon leeren"
+                          aria-label="Bon leeren"
                           onClick={() => {
                             setCart([]);
                             setReturns({});
@@ -1058,30 +1165,64 @@ export default function AdminApp({ section }: { section: string }) {
                       })}
                       <h3 className="pos-subhead">Pfandrücknahme</h3>
                       <div className="return-grid">
-                        {[8, 15, 25, 150].map((d) => (
-                          <label key={d}>
-                            {euro(d)}
-                            <input
-                              type="number"
-                              min="0"
-                              max="1000"
-                              value={returns[d] || 0}
-                              onChange={(e) =>
+                        {returnTypes.map((d) => (
+                          <div className="return-tile" key={d.cents}>
+                            <button
+                              onClick={() =>
                                 setReturns({
                                   ...returns,
-                                  [d]: Math.max(
-                                    0,
-                                    Math.min(
-                                      1000,
-                                      Math.floor(Number(e.target.value)),
-                                    ),
+                                  [d.cents]: Math.min(
+                                    1000,
+                                    (returns[d.cents] || 0) + 1,
                                   ),
                                 })
                               }
-                            />
-                          </label>
+                            >
+                              {d.kind === "bottle" ? (
+                                <BottleWine size={22} />
+                              ) : (
+                                <Package size={22} />
+                              )}
+                              <strong>{d.label}</strong>
+                              <span>{euro(d.cents)}</span>
+                            </button>
+                            <label>
+                              Menge
+                              <input
+                                aria-label={`Rückgabe ${d.label}`}
+                                type="number"
+                                min="0"
+                                max="1000"
+                                value={returns[d.cents] || 0}
+                                onChange={(e) =>
+                                  setReturns({
+                                    ...returns,
+                                    [d.cents]: Math.max(
+                                      0,
+                                      Math.min(
+                                        1000,
+                                        Math.floor(Number(e.target.value)),
+                                      ),
+                                    ),
+                                  })
+                                }
+                              />
+                            </label>
+                          </div>
                         ))}
                       </div>
+                      {can(data, "rabatt") && (
+                        <label className="checkline">
+                          <input
+                            type="checkbox"
+                            checked={discount}
+                            onChange={(e) => setDiscount(e.target.checked)}
+                          />
+                          Mitarbeiterrabatt{" "}
+                          {data.settings.discount_percent || 0}% · Pfand
+                          ausgenommen
+                        </label>
+                      )}
                       <div className="cart-totals">
                         <div>
                           <span>Netto</span>
@@ -1127,6 +1268,9 @@ export default function AdminApp({ section }: { section: string }) {
                                 id: saleId,
                                 lines: cart,
                                 payment,
+                                discount: discount
+                                  ? data.settings.discount_percent || 0
+                                  : 0,
                                 returns: Object.entries(returns)
                                   .filter(([, q]) => q > 0)
                                   .map(([d, q]) => ({
@@ -1135,7 +1279,7 @@ export default function AdminApp({ section }: { section: string }) {
                                   })),
                               },
                             },
-                            "Testbeleg gespeichert. Es wurde keine echte Zahlung ausgeführt.",
+                            "Beleg gespeichert und Lagerbestand aktualisiert.",
                           );
                           if (s) {
                             setLastSale(s);
@@ -1145,20 +1289,20 @@ export default function AdminApp({ section }: { section: string }) {
                           }
                         }}
                       >
-                        Testbeleg erstellen <Check size={18} />
+                        Beleg erstellen <Check size={18} />
                       </button>
                       {lastSale && (
                         <button
                           className="button secondary full"
                           onClick={() => receiptPdf(lastSale)}
                         >
-                          <Printer size={18} /> Testbon als PDF
+                          <Printer size={18} /> Bon als PDF
                         </button>
                       )}
                       <p className="fineprint">
-                        Rücknahmen verwenden im Test 19 % USt. Artikelbezogene
-                        Pfandsteuer vor Echtbetrieb prüfen. Kartenzahlung ist
-                        eine Simulation.
+                        Kartenbeträge werden dokumentiert. Eine automatische
+                        Abbuchung über ein Kartenterminal ist noch nicht
+                        angebunden.
                       </p>
                     </aside>
                   </div>
@@ -1166,18 +1310,7 @@ export default function AdminApp({ section }: { section: string }) {
               )}
               {section === "finanzen" && (
                 <>
-                  <div className="notice">
-                    <ShieldCheck size={21} />
-                    <div>
-                      <strong>Finanzansicht im Testbetrieb</strong>
-                      <p>
-                        Alle Werte stammen aus Testbelegen. Diese Exporte sind
-                        keine Steuerberater- oder DSFinV-K-Abgabe.
-                        Abgeschlossene Testperioden sind gegen weitere
-                        Testbuchungen gesperrt.
-                      </p>
-                    </div>
-                  </div>
+                  <InvoiceLedger />
                   <div className="toolbar">
                     <div className="segmented">
                       <button
@@ -1215,32 +1348,35 @@ export default function AdminApp({ section }: { section: string }) {
                     </button>
                     <button
                       className="button secondary small"
-                      onClick={() => financePdf(periodSales, period)}
+                      onClick={() =>
+                        financePdf(
+                          periodSales,
+                          period,
+                          data.closings.find(
+                            (c) => c.kind === mode && c.period === period,
+                          )?.totals,
+                        )
+                      }
                     >
                       <Printer size={16} /> PDF
                     </button>
                     <button
                       className="button small"
                       onClick={() => setConfirmClose(true)}
-                      disabled={
-                        !period ||
-                        data.closings.some(
-                          (c) => c.kind === mode && c.period === period,
-                        )
-                      }
+                      disabled={!period}
                     >
                       {data.closings.some(
                         (c) => c.kind === mode && c.period === period,
                       )
-                        ? "Abgeschlossen"
+                        ? "Abschluss aktualisieren"
                         : `${mode === "day" ? "Tages" : "Monats"}abschluss`}
                     </button>
                   </div>
                   <div className="stats-grid">
                     <Stat
-                      title="Testumsatz brutto"
+                      title="Umsatz brutto"
                       value={euro(sum("total_cents"))}
-                      detail={`${periodSales.length} Testbelege`}
+                      detail={`${periodSales.length} Belege`}
                       icon={Wallet}
                     />
                     <Stat
@@ -1252,7 +1388,7 @@ export default function AdminApp({ section }: { section: string }) {
                     <Stat
                       title="Umsatzsteuer"
                       value={euro(sum("tax_cents"))}
-                      detail="Aus den Testbelegpositionen"
+                      detail="Aus den Belegpositionen"
                       icon={FileText}
                     />
                     <Stat
@@ -1264,12 +1400,12 @@ export default function AdminApp({ section }: { section: string }) {
                   </div>
                   <div className="panel table-wrap">
                     <div className="panel-head">
-                      <h2>Testbelege im Zeitraum</h2>
+                      <h2>Belege im Zeitraum</h2>
                     </div>
                     <table>
                       <thead>
                         <tr>
-                          <th>Testbon</th>
+                          <th>Bon</th>
                           <th>Datum</th>
                           <th>Zahlart</th>
                           <th>Netto</th>
@@ -1281,7 +1417,7 @@ export default function AdminApp({ section }: { section: string }) {
                       <tbody>
                         {periodSales.map((s) => (
                           <tr key={s.id}>
-                            <td>T-{s.number}</td>
+                            <td>E-{s.number}</td>
                             <td>
                               {new Date(s.created_at).toLocaleString("de-DE", {
                                 timeZone: "Europe/Berlin",
@@ -1306,19 +1442,19 @@ export default function AdminApp({ section }: { section: string }) {
                       </tbody>
                     </table>
                     {!periodSales.length && (
-                      <Empty text="Keine Testbelege in diesem Zeitraum." />
+                      <Empty text="Keine Belege in diesem Zeitraum." />
                     )}
                   </div>
                   <section className="panel">
                     <div className="panel-head">
-                      <h2>Festgeschriebene Testabschlüsse</h2>
+                      <h2>Gespeicherte Abschlüsse</h2>
                     </div>
                     {data.closings.length ? (
                       data.closings.map((c) => (
                         <div className="line-row" key={c.id}>
                           <span>
                             {c.kind === "day" ? "Tag" : "Monat"} · {c.period} ·{" "}
-                            {c.totals.count} Testbelege
+                            {c.totals.count} Belege
                           </span>
                           <strong>{euro(c.totals.gross)}</strong>
                           <span className="badge green">Festgeschrieben</span>
@@ -1331,24 +1467,15 @@ export default function AdminApp({ section }: { section: string }) {
                 </>
               )}
               {section === "einstellungen" && (
-                <SettingsForm
-                  mail={data.mail}
-                  testMail={() =>
-                    act(
-                      "smtp-test",
-                      {},
-                      "SMTP-Verbindung erfolgreich geprüft. Es wurde keine Nachricht verschickt.",
-                    ).then(() => {})
-                  }
+                <SettingsPanel
+                  key={JSON.stringify(data.settings)}
                   settings={data.settings}
+                  owner={data.role === "owner"}
                   busy={busy}
-                  save={(v) =>
-                    act(
-                      "settings",
-                      { value: v },
-                      "Einstellungen gespeichert. Zugangsdaten werden serverseitig verschlüsselt.",
-                    ).then(() => {})
+                  testMail={() =>
+                    act("smtp-test", {}, "SMTP-Verbindung geprüft.")
                   }
+                  save={(v) => act("settings", { value: v })}
                 />
               )}
             </>
@@ -1418,7 +1545,17 @@ export default function AdminApp({ section }: { section: string }) {
               label="Flaschen / Einheiten pro Gebinde"
               value={edit.pack_count}
               min={1}
-              onChange={(v) => setEdit({ ...edit, pack_count: v ?? 1 })}
+              onChange={(v) =>
+                setEdit({
+                  ...edit,
+                  pack_count: v ?? 1,
+                  deposit_cents: depositFor(
+                    edit.deposit_profile || "custom",
+                    v ?? 1,
+                    edit.deposit_cents || 0,
+                  ),
+                })
+              }
             />
             <NumberField
               label="Inhalt pro Flasche / Dose (ml)"
@@ -1430,10 +1567,87 @@ export default function AdminApp({ section }: { section: string }) {
               value={edit.price_cents}
               onChange={(v) => setEdit({ ...edit, price_cents: v ?? 0 })}
             />
+            <Field
+              label="Sortengruppe im Shop"
+              required={false}
+              value={edit.group_name || ""}
+              onChange={(v) => setEdit({ ...edit, group_name: v })}
+            />
+            <Field
+              label="Sorte / Variante"
+              required={false}
+              value={edit.variant || ""}
+              onChange={(v) => setEdit({ ...edit, variant: v })}
+            />
+            <label>
+              Pfandprofil
+              <select
+                value={edit.deposit_profile || "custom"}
+                onChange={(e) =>
+                  setEdit({
+                    ...edit,
+                    deposit_profile: e.target.value,
+                    deposit_cents: depositFor(
+                      e.target.value,
+                      edit.pack_count,
+                      edit.deposit_cents || 0,
+                    ),
+                  })
+                }
+              >
+                {depositProfiles.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Produktfoto hochladen
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={async (e) => {
+                  const f = e.target.files?.[0];
+                  if (!f) return;
+                  const form = new FormData();
+                  form.set("file", f);
+                  try {
+                    const r = await fetch("/api/upload", {
+                      method: "POST",
+                      body: form,
+                    });
+                    const d = await r.json();
+                    if (!r.ok) throw new Error(d.error);
+                    setEdit({
+                      ...edit,
+                      image_url: d.url,
+                      image_source: "Eigener Upload",
+                    });
+                  } catch (err) {
+                    setError(
+                      err instanceof Error
+                        ? err.message
+                        : "Upload fehlgeschlagen.",
+                    );
+                  }
+                }}
+              />
+            </label>
+            {edit.image_url && <ProductPhoto product={edit} />}
+            {edit.data_note && (
+              <p className="notice span-two">{edit.data_note}</p>
+            )}
             <MoneyField
-              label="Pfand pro Gebinde (€) · leer = unbekannt"
+              label="Pfand pro Gebinde (€)"
               value={edit.deposit_cents}
-              onChange={(v) => setEdit({ ...edit, deposit_cents: v })}
+              onChange={(v) =>
+                setEdit({
+                  ...edit,
+                  deposit_cents: v,
+                  deposit_profile: "custom",
+                })
+              }
             />
             <label>
               Umsatzsteuer Artikel
@@ -1522,7 +1736,7 @@ export default function AdminApp({ section }: { section: string }) {
                   setEdit({ ...edit, verified: e.target.checked })
                 }
               />{" "}
-              Preis, Pfand und Steuersätze geprüft; für Testkasse freigeben
+              Preis, Pfand und Steuersätze geprüft; fachlich geprüft
             </label>
             <p className="fineprint span-two">
               Netto:{" "}
@@ -1564,24 +1778,28 @@ export default function AdminApp({ section }: { section: string }) {
               value={supplier.phone}
               onChange={(v) => setSupplier({ ...supplier, phone: v })}
             />
+            {(["company", "address", "contact", "notes"] as const).map(
+              (key, i) => (
+                <Field
+                  key={key}
+                  label={
+                    ["Firma", "Anschrift", "Ansprechpartner", "Notizen"][i]
+                  }
+                  required={false}
+                  value={supplier[key] || ""}
+                  onChange={(v) => setSupplier({ ...supplier, [key]: v })}
+                />
+              ),
+            )}
+            <p className="fineprint">
+              Lieferantennummer:{" "}
+              {supplier.number
+                ? `L-${String(supplier.number).padStart(5, "0")}`
+                : "wird automatisch vergeben"}
+            </p>
             <label className="checkline">
               <input
                 type="checkbox"
-                checked={supplier.is_demo}
-                onChange={(e) =>
-                  setSupplier({
-                    ...supplier,
-                    is_demo: e.target.checked,
-                    auto_send: e.target.checked ? false : supplier.auto_send,
-                  })
-                }
-              />{" "}
-              Demo-Lieferant (kein Versand)
-            </label>
-            <label className="checkline">
-              <input
-                type="checkbox"
-                disabled={supplier.is_demo}
                 checked={supplier.auto_send}
                 onChange={(e) =>
                   setSupplier({ ...supplier, auto_send: e.target.checked })
@@ -1665,14 +1883,23 @@ export default function AdminApp({ section }: { section: string }) {
       )}
       {confirmClose && (
         <Modal
-          title="Testperiode festschreiben"
+          title="Zeitraum abschließen"
           close={() => setConfirmClose(false)}
         >
           <p>
-            Der {mode === "day" ? "Tag" : "Monat"} <strong>{period}</strong>{" "}
-            wird abgeschlossen. Danach können für diesen Zeitraum keine
-            Testbelege mehr gebucht werden. Der Abschluss bleibt unveränderbar.
+            Auswertung für {period}. Im Einrichtungsmodus kann der Abschluss
+            nach weiteren Buchungen aktualisiert werden.
           </p>
+          <MoneyField
+            label="Kassenanfangsbestand (€)"
+            value={opening}
+            onChange={(v) => setOpening(v || 0)}
+          />
+          <MoneyField
+            label="Gezählter Bargeldbestand (€)"
+            value={counted}
+            onChange={(v) => setCounted(v || 0)}
+          />
           <button
             className="button"
             disabled={busy}
@@ -1680,14 +1907,14 @@ export default function AdminApp({ section }: { section: string }) {
               if (
                 await act(
                   "closing",
-                  { value: { kind: mode, period } },
-                  "Testabschluss festgeschrieben.",
+                  { value: { kind: mode, period, opening, counted } },
+                  "Abschluss gespeichert.",
                 )
               )
                 setConfirmClose(false);
             }}
           >
-            Testabschluss verbindlich speichern
+            Abschluss speichern
           </button>
         </Modal>
       )}
@@ -1870,259 +2097,5 @@ function MoneyField({
         }
       />
     </label>
-  );
-}
-function SettingsForm({
-  settings,
-  busy,
-  save,
-  testMail,
-  mail,
-}: {
-  mail: Data["mail"];
-  testMail: () => Promise<void>;
-  settings: Config;
-  busy: boolean;
-  save: (v: Config & { smtp_password?: string }) => Promise<void>;
-}) {
-  const [s, setS] = useState(settings),
-    [password, setPassword] = useState("");
-  return (
-    <form
-      className="settings-form"
-      onSubmit={async (e) => {
-        e.preventDefault();
-        await save({ ...s, smtp_password: password });
-        setPassword("");
-      }}
-    >
-      <section className="panel">
-        <div className="panel-head">
-          <h2>
-            <Truck size={20} /> Bestellautomatik
-          </h2>
-        </div>
-        <label className="checkline">
-          <input
-            type="checkbox"
-            checked={s.auto_reorder}
-            onChange={(e) => setS({ ...s, auto_reorder: e.target.checked })}
-          />{" "}
-          Bei unterschrittenem Mindestbestand automatisch Bestellentwürfe
-          erstellen
-        </label>
-        <p className="fineprint">
-          Prüfung nach Artikeländerungen und stündlich. Zielbestand, Lieferant
-          und Automatik werden zusätzlich pro Artikel gepflegt. Echte
-          Lieferanten können nach Einrichtung des E-Mail-Servers separat für den
-          Versand freigegeben werden.
-        </p>
-      </section>
-      <section className="panel">
-        <div className="panel-head">
-          <h2>
-            <Mail size={20} /> E-Mail-Server
-          </h2>
-          <span className="badge">
-            {s.smtp_enabled ? "Versand aktiviert" : "Versand pausiert"}
-          </span>
-        </div>
-        <label className="checkline">
-          <input
-            type="checkbox"
-            checked={s.smtp_enabled || false}
-            onChange={(e) => setS({ ...s, smtp_enabled: e.target.checked })}
-          />{" "}
-          Automatische E-Mails aktivieren (Anfragebestätigung & freigegebene
-          Lieferanten)
-        </label>
-        <div className="form-grid two-columns">
-          <Field
-            label="SMTP-Server"
-            value={s.smtp_host}
-            required={false}
-            onChange={(v) => setS({ ...s, smtp_host: v })}
-          />
-          <label>
-            Port / Verschlüsselung
-            <select
-              value={s.smtp_port}
-              onChange={(e) =>
-                setS({ ...s, smtp_port: Number(e.target.value) })
-              }
-            >
-              <option value={465}>465 · TLS</option>
-              <option value={587}>587 · STARTTLS</option>
-            </select>
-          </label>
-          <Field
-            label="Benutzername"
-            value={s.smtp_user}
-            required={false}
-            onChange={(v) => setS({ ...s, smtp_user: v })}
-          />
-          <Field
-            label={`Passwort ${settings.smtp_password_set ? "(gespeichert; leer lassen zum Beibehalten)" : ""}`}
-            type="password"
-            value={password}
-            required={false}
-            onChange={setPassword}
-          />
-          <Field
-            label="Absenderadresse"
-            type="email"
-            value={s.smtp_from}
-            required={false}
-            onChange={(v) => setS({ ...s, smtp_from: v })}
-          />
-        </div>
-        <p className="fineprint">
-          Das Passwort wird serverseitig verschlüsselt und nicht zurück an den
-          Browser übertragen. Versand läuft alle fünf Minuten. Unklare
-          Zustellungen werden nicht automatisch erneut versendet.
-        </p>
-        <button
-          type="button"
-          className="button secondary small"
-          disabled={busy}
-          onClick={testMail}
-        >
-          Gespeicherte SMTP-Verbindung prüfen
-        </button>
-      </section>
-      <section className="panel">
-        <div className="panel-head">
-          <h2>
-            <Globe size={20} /> Domain & Instagram
-          </h2>
-        </div>
-        <div className="form-grid two-columns">
-          <Field
-            label="Gewünschte Domain"
-            value={s.domain}
-            onChange={(v) => setS({ ...s, domain: v })}
-          />
-          <Field
-            label="Instagram-Profil (vollständige URL)"
-            type="url"
-            required={false}
-            value={s.instagram}
-            onChange={(v) => setS({ ...s, instagram: v })}
-          />
-        </div>
-        <p className="fineprint">
-          Die Domain wird hier als Einstellung hinterlegt. Ihre Aktivierung
-          benötigt die Domainzuordnung in Vercel und passende DNS-Einträge beim
-          bisherigen Anbieter. Instagram wird nach dem Speichern automatisch auf
-          der Website verlinkt.
-        </p>
-      </section>
-      <section className="panel">
-        <div className="panel-head">
-          <h2>
-            <ShieldCheck size={20} /> TSE & Fiskalisierung
-          </h2>
-          <span className="badge warning">Nicht verbunden</span>
-        </div>
-        <label>
-          Anbieter
-          <select
-            value={s.tse_provider}
-            onChange={(e) => setS({ ...s, tse_provider: e.target.value })}
-          >
-            <option value="">Noch nicht gewählt</option>
-            <option value="fiskaly">fiskaly SIGN DE (vorbereitet)</option>
-            <option value="other">Anderer zertifizierter TSE-Anbieter</option>
-          </select>
-        </label>
-        <p>
-          Die Auswahl aktiviert keine TSE. Erforderlich sind Vertrag,
-          API-Zugang, Kassenregistrierung, Transaktionssignierung,
-          DSFinV-K-Export, Archivierung und eine geprüfte Ausfallbehandlung.
-        </p>
-        <a
-          className="text-link"
-          target="_blank"
-          rel="noreferrer"
-          href="https://www.bundesfinanzministerium.de/Content/DE/FAQ/FAQ-steuergerechtigkeit-belegpflicht.html"
-        >
-          Offizielle BMF-Informationen <ArrowUpRight size={15} />
-        </a>
-      </section>
-      <section className="panel">
-        <div className="panel-head">
-          <h2>
-            <Printer size={20} /> Bondrucker
-          </h2>
-        </div>
-        <div className="form-grid two-columns">
-          <label>
-            Druckverfahren
-            <select
-              value={s.printer_mode}
-              onChange={(e) => setS({ ...s, printer_mode: e.target.value })}
-            >
-              <option value="browser">PDF / Systemdruckdialog</option>
-              <option value="epson">Epson ePOS (Integration ausstehend)</option>
-              <option value="star">Star (Integration ausstehend)</option>
-            </select>
-          </label>
-          <Field
-            label="Druckeradresse / Gerätekennung"
-            value={s.printer_address}
-            required={false}
-            onChange={(v) => setS({ ...s, printer_address: v })}
-          />
-        </div>
-        <p className="fineprint">
-          Die aktuelle Version erzeugt 80-mm-Testbons als PDF. Direkter
-          Tablet-Druck wird nach Festlegung des Druckermodells mit dem passenden
-          SDK umgesetzt und am Gerät geprüft.
-        </p>
-      </section>
-      <section className="panel">
-        <div className="panel-head">
-          <h2>
-            <Smartphone size={20} /> Apps & Zugang
-          </h2>
-          <span className="badge">Nächste Projektphase</span>
-        </div>
-        <p>
-          Die Website kann zum iPad-Home-Bildschirm hinzugefügt werden. Die
-          native iPad-Kassen-App und Kunden-App folgen nach finaler Web-Abnahme.
-          Apple-Entwicklerkonto, Signierung und Druckerhardware werden dafür
-          benötigt.
-        </p>
-        <Link href="/passwort" className="text-link">
-          Eigenes Passwort ändern <ArrowRight size={16} />
-        </Link>
-      </section>
-      <section className="panel">
-        <div className="panel-head">
-          <h2>
-            <Mail size={20} /> Versandprotokoll
-          </h2>
-        </div>
-        {mail.length ? (
-          mail.map((m) => (
-            <div className="line-row" key={m.id}>
-              <div>
-                <strong>{m.subject}</strong>
-                <small>{m.recipient}</small>
-                {m.error && <p>{m.error}</p>}
-              </div>
-              <span className="badge">{m.status}</span>
-            </div>
-          ))
-        ) : (
-          <p>Noch keine E-Mails in der Warteschlange.</p>
-        )}
-      </section>
-      <div className="settings-save">
-        <button className="button" disabled={busy}>
-          Einstellungen speichern <Check size={18} />
-        </button>
-      </div>
-    </form>
   );
 }

@@ -1,5 +1,7 @@
 # Projektstatus und Übergabe
 
+> Dieser Bericht dokumentiert den bereits veröffentlichten Ausgangsstand. Der neu vorbereitete Ausbau (149 SKUs, Kundenportal, Mitarbeiterrechte und Auslieferung) ist separat unter [Erweiterung vom 17.09.2026](ERWEITERUNG-2026-09-17.md) beschrieben und noch nicht veröffentlicht.
+
 ## Implementiert und geprüft
 - Eigenständige moderne Website im Original-Elias-Farbsystem, lokal gespeichertes Logo und illustrative Getränkefotografie.
 - Übernommene Unternehmensdaten, Öffnungszeiten, Kontakt, datensparsam aktivierbare Google-Karte, konfigurierbarer Instagram-Link.

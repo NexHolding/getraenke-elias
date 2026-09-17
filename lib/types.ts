@@ -1,5 +1,11 @@
 export type Product = {
   revision?: number;
+  group_name?: string;
+  variant?: string;
+  image_url?: string;
+  image_source?: string;
+  deposit_profile?: string;
+  data_note?: string;
   id: string;
   sku: string;
   name: string;
@@ -27,11 +33,29 @@ export type Supplier = {
   name: string;
   email: string;
   phone: string;
+  number?: number;
+  company?: string;
+  address?: string;
+  contact?: string;
+  notes?: string;
   is_demo: boolean;
   auto_send: boolean;
 };
 export type CartLine = { product: Product; quantity: number };
 export type Order = {
+  customer_id?: string | null;
+  delivery_date?: string | null;
+  eta_start?: string | null;
+  eta_end?: string | null;
+  route_position?: number | null;
+  delivered?: Record<string, number>;
+  preference_snapshot?: {
+    windows?: { day: number; from: string; to: string }[];
+    dropoff_allowed?: boolean;
+    dropoff_note?: string;
+    latitude?: number | null;
+    longitude?: number | null;
+  };
   id: string;
   number: number;
   customer_name: string;
@@ -40,6 +64,9 @@ export type Order = {
   address: string;
   notes: string;
   items: {
+    id: string;
+    tax_rate?: number;
+    deposit_tax_rate?: number;
     name: string;
     quantity: number;
     price_cents: number;
@@ -77,6 +104,21 @@ export type Purchase = {
   created_at: string;
 };
 export type Settings = {
+  live_mode?: boolean;
+  guest_orders?: boolean;
+  reorder_days?: number[];
+  reorder_time?: string;
+  reorder_weeks?: number;
+  reorder_anchor?: string;
+  delivery_days?: number[];
+  delivery_from?: string;
+  delivery_to?: string;
+  delivery_stop_minutes?: number;
+  tax_number?: string;
+  business_name?: string;
+  business_address?: string;
+  discount_percent?: number;
+  route_geocoding?: boolean;
   auto_reorder: boolean;
   instagram: string;
   domain: string;
@@ -89,4 +131,72 @@ export type Settings = {
   smtp_user: string;
   smtp_from: string;
   smtp_password_set?: boolean;
+};
+export type Customer = {
+  id: string;
+  number: number;
+  user_id: string | null;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  notes: string;
+  invoice_email: boolean;
+  dropoff_allowed: boolean;
+  dropoff_note: string;
+  windows: { day: number; from: string; to: string }[];
+  latitude: number | null;
+  longitude: number | null;
+  created_at: string;
+};
+export type Employee = {
+  user_id: string;
+  number: number;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  notes: string;
+  role: string;
+  active: boolean;
+  permissions: string[];
+  has_pin: boolean;
+};
+export type Delivery = {
+  id: string;
+  number: number;
+  order_id: string;
+  customer_id: string | null;
+  items: SaleLine[];
+  status: string;
+  signature: string | null;
+  signed_name: string;
+  delivered_at: string | null;
+  created_at: string;
+  revision: number;
+  mode: string;
+};
+export type Invoice = {
+  id: string;
+  number: number;
+  order_id: string;
+  delivery_id: string;
+  customer_id: string | null;
+  items: SaleLine[];
+  customer_snapshot: { name: string; email: string; address: string };
+  total_cents: number;
+  net_cents: number;
+  tax_cents: number;
+  deposit_cents: number;
+  status: string;
+  mode: string;
+  created_at: string;
+};
+export type Subscription = {
+  id: string;
+  customer_id: string;
+  items: { id: string; quantity: number }[];
+  interval: string;
+  next_date: string;
+  active: boolean;
 };

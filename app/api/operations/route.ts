@@ -1,0 +1,314 @@
+import { z } from "zod";
+import { requireStaff, serviceDb, sameOrigin, safeError } from "@/lib/server";
+import { can } from "@/lib/permissions";
+import { employeeSchema, customerSchema } from "@/lib/operations-validation";
+import { hashPin } from "@/lib/terminal";
+import { readAllRows } from "@/lib/database-read";
+import { planDay } from "@/lib/delivery-plan";
+export async function GET() {
+  try {
+    const a = await requireStaff();
+    const read = (table: string, allowed: boolean) =>
+      allowed
+        ? readAllRows(table, { order: table === "staff" ? "user_id" : "id" })
+        : Promise.resolve([]);
+    const [customers, employees, deliveries, invoices, subscriptions] =
+      await Promise.all([
+        read(
+          "customers",
+          ["kunden", "lieferung", "bestellungen"].some((m) => can(a, m)),
+        ),
+        read("staff", a.role === "owner"),
+        read(
+          "deliveries",
+          ["lieferung", "bestellungen", "kunden"].some((m) => can(a, m)),
+        ),
+        read(
+          "invoices",
+          ["finanzen", "kunden"].some((m) => can(a, m)),
+        ),
+        read("subscriptions", can(a, "kunden")),
+      ]);
+    return Response.json(
+      {
+        customers,
+        employees: employees.map((row) => {
+          const { pin_hash, ...rest } = row as unknown as Record<
+            string,
+            unknown
+          >;
+          return { ...rest, has_pin: !!pin_hash };
+        }),
+        deliveries,
+        invoices,
+        subscriptions,
+      },
+      { headers: { "Cache-Control": "no-store" } },
+    );
+  } catch (e) {
+    return safeError(e);
+  }
+}
+export async function POST(req: Request) {
+  try {
+    sameOrigin(req);
+    const a = await requireStaff();
+    const db = serviceDb();
+    const b = await req.json();
+    const action = z.string().parse(b.action);
+    const check = (module: string) => {
+      if (!can(a, module)) throw new Error("FORBIDDEN");
+    };
+    const owner = () => {
+      if (a.role !== "owner") throw new Error("FORBIDDEN");
+    };
+    if (action === "employee") {
+      owner();
+      const v = employeeSchema.parse(b.value);
+      const { pin, password, user_id, ...record } = v;
+      let id = user_id;
+      if (id === a.user.id && !v.active)
+        throw new Error(
+          "HINWEIS:Der eigene Zugang kann nicht deaktiviert werden.",
+        );
+      if (id) {
+        const { data: old } = await db
+          .from("staff")
+          .select("role,email")
+          .eq("user_id", id)
+          .single();
+        if (old?.role === "owner" && id !== a.user.id)
+          throw new Error("HINWEIS:Andere Inhaberkonten bleiben geschützt.");
+        if (!old) throw new Error("HINWEIS:Mitarbeiter wurde nicht gefunden.");
+        if (old.role === "owner" && record.email !== old.email)
+          throw new Error(
+            "HINWEIS:Die Anmeldeadresse des Inhabers bleibt geschützt.",
+          );
+        const emailChanged = old.role !== "owner" && record.email !== old.email;
+        if (emailChanged && !record.email)
+          throw new Error(
+            "HINWEIS:Eine bestehende Anmeldeadresse kann nicht gelöscht werden.",
+          );
+        if (password || emailChanged) {
+          const { error } = await db.auth.admin.updateUserById(id, {
+            ...(password ? { password } : {}),
+            ...(emailChanged
+              ? { email: record.email, email_confirm: true }
+              : {}),
+          });
+          if (error) throw error;
+        }
+      } else {
+        if (!password && !pin)
+          throw new Error(
+            "HINWEIS:Bitte ein Passwort oder eine Kassen-PIN vergeben.",
+          );
+        const { data, error } = await db.auth.admin.createUser({
+          email:
+            record.email ||
+            `mitarbeiter-${crypto.randomUUID()}@getraenke-elias.local`,
+          password: password || crypto.randomUUID() + crypto.randomUUID(),
+          email_confirm: true,
+          user_metadata: { name: record.name },
+        });
+        if (error) throw error;
+        id = data.user.id;
+      }
+      const payload = {
+        ...record,
+        user_id: id,
+        ...(pin ? { pin_hash: hashPin(pin) } : {}),
+        ...(!user_id ? { role: "staff" } : {}),
+      };
+      const { error } = user_id
+        ? await db.from("staff").update(payload).eq("user_id", id)
+        : await db.from("staff").insert(payload);
+      if (error) {
+        if (!user_id) await db.auth.admin.deleteUser(id!);
+        throw error;
+      }
+      await db.from("audit_log").insert({
+        table_name: "staff",
+        record_id: id,
+        action: "access_changed",
+        actor: a.user.id,
+      });
+    } else if (action === "customer") {
+      check("kunden");
+      const v = customerSchema.parse(b.value);
+      const { id, ...record } = v;
+      const { error } = id
+        ? await db.from("customers").update(record).eq("id", id)
+        : await db.from("customers").insert(record);
+      if (error) throw error;
+    } else if (action === "customer-invite") {
+      owner();
+      const { data: c, error } = await db
+        .from("customers")
+        .select("email")
+        .eq("id", z.uuid().parse(b.id))
+        .single();
+      if (error) throw error;
+      const result = await db.auth.admin.inviteUserByEmail(c.email, {
+        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || "https://getraenke-elias.vercel.app"}/konto`,
+      });
+      if (result.error) throw result.error;
+    } else if (action === "delivery") {
+      check("lieferung");
+      const v = z
+        .object({
+          order_id: z.uuid(),
+          id: z.uuid(),
+          revision: z.number().int().min(0),
+          items: z
+            .array(
+              z.object({
+                id: z.string().max(80),
+                quantity: z.number().int().min(0).max(1000),
+              }),
+            )
+            .min(1)
+            .max(200),
+          finalize: z.boolean(),
+          signature: z
+            .string()
+            .max(180000)
+            .nullable()
+            .refine(
+              (s) => !s || /^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(s),
+            ),
+          signed_name: z.string().max(150),
+        })
+        .parse(b.value);
+      const { data, error } = await db.rpc("save_delivery", {
+        p_order: v.order_id,
+        p_id: v.id,
+        p_items: v.items,
+        p_revision: v.revision,
+        p_actor: a.user.id,
+        p_finalize: v.finalize,
+        p_signature: v.signature,
+        p_signed_name: v.signed_name,
+      });
+      if (error)
+        throw new Error(
+          "HINWEIS:Lieferung nicht gespeichert. Bitte Restmengen, Lagerbestand und Unterschrift prüfen und bei paralleler Bearbeitung neu laden.",
+        );
+      return Response.json(data);
+    } else if (action === "plan") {
+      check("lieferung");
+      const date = z.iso.date().parse(b.date);
+      const { data: cfg } = await db
+        .from("settings")
+        .select("value")
+        .eq("id", 1)
+        .single();
+      const { data: orders, error } = await db
+        .from("orders")
+        .select("*")
+        .in("status", ["confirmed", "partial", "delivering"])
+        .or(`delivery_date.is.null,delivery_date.eq.${date}`);
+      if (error) throw error;
+      const plan = planDay(orders || [], date, cfg?.value || {});
+      for (const stop of plan.stops) {
+        const { error } = await db
+          .from("orders")
+          .update({
+            delivery_date: date,
+            eta_start: stop.eta_start,
+            eta_end: stop.eta_end,
+            route_position: stop.position,
+          })
+          .eq("id", stop.id);
+        if (error) throw error;
+      }
+      return Response.json(plan);
+    } else if (action === "geocode") {
+      check("lieferung");
+      const { data: cfg } = await db
+        .from("settings")
+        .select("value")
+        .eq("id", 1)
+        .single();
+      if (!cfg?.value?.route_geocoding)
+        throw new Error(
+          "HINWEIS:Adress-Geocodierung zuerst in den Liefer-Einstellungen aktivieren.",
+        );
+      const { error: rateError } = await db.from("automation_runs").insert({
+        kind: "geocode-rate",
+        slot: new Date().toISOString().slice(0, 19),
+      });
+      if (rateError)
+        throw new Error(
+          "HINWEIS:Bitte eine Sekunde bis zur nächsten Adressabfrage warten.",
+        );
+      const id = z.uuid().parse(b.id);
+      const { data: c } = await db
+        .from("customers")
+        .select("address")
+        .eq("id", id)
+        .single();
+      if (!c) throw new Error("Missing");
+      const r = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=de&q=${encodeURIComponent(c.address)}`,
+        {
+          headers: {
+            "User-Agent": "GetraenkeElias/1.0 (info@getraenke-elias.de)",
+          },
+          signal: AbortSignal.timeout(10000),
+        },
+      );
+      if (!r.ok) throw new Error("HINWEIS:Adressdienst nicht erreichbar.");
+      const rows = await r.json();
+      if (!rows[0])
+        throw new Error(
+          "HINWEIS:Adresse nicht gefunden. Bitte Stammdaten prüfen.",
+        );
+      const { error } = await db
+        .from("customers")
+        .update({
+          latitude: Number(rows[0].lat),
+          longitude: Number(rows[0].lon),
+        })
+        .eq("id", id);
+      if (error) throw error;
+      const { data: orders } = await db
+        .from("orders")
+        .select("id,preference_snapshot")
+        .eq("customer_id", id)
+        .in("status", ["new", "confirmed", "partial"]);
+      for (const o of orders || [])
+        await db
+          .from("orders")
+          .update({
+            preference_snapshot: {
+              ...o.preference_snapshot,
+              latitude: Number(rows[0].lat),
+              longitude: Number(rows[0].lon),
+            },
+          })
+          .eq("id", o.id);
+    } else if (action === "invoice-paid") {
+      check("finanzen");
+      const { error } = await db
+        .from("invoices")
+        .update({
+          status: "paid",
+          paid_at: new Date().toISOString(),
+          paid_by: a.user.id,
+        })
+        .eq("id", z.uuid().parse(b.id))
+        .eq("status", "open");
+      if (error) throw error;
+    } else if (action === "reset") {
+      owner();
+      if (b.confirm !== "EINRICHTUNG ZURÜCKSETZEN")
+        throw new Error("FORBIDDEN");
+      const { error } = await db.rpc("reset_setup", { p_actor: a.user.id });
+      if (error) throw error;
+    } else throw new Error("Invalid action");
+    return Response.json({ ok: true });
+  } catch (e) {
+    return safeError(e);
+  }
+}

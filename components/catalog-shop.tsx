@@ -1,28 +1,83 @@
 "use client";
-import { useEffect, useState } from "react";
-import {
-  Plus,
-  Search,
-  Droplets,
-  Beer,
-  Wine,
-  GlassWater,
-  ArrowDownToLine,
-  SlidersHorizontal,
-} from "lucide-react";
+import { useState, useEffect } from "react";
+import { Plus, Search, ArrowDownToLine } from "lucide-react";
 import { categories, initialProducts } from "@/lib/catalog";
 import { euro, pack } from "@/lib/money";
+import type { Product } from "@/lib/types";
 import { useShop } from "./site-shell";
+import { ProductPhoto } from "./product-photo";
+function ProductCard({ products }: { products: Product[] }) {
+  const [choice, setChoice] = useState("");
+  const { add } = useShop();
+  const p = products.find((x) => x.id === choice) || products[0];
+  return (
+    <article className="product-card">
+      <div
+        className={`product-visual ${p.category === "Bier" ? "beer" : p.category === "Mineralwasser" ? "water" : "soda"}`}
+      >
+        <span>{p.category}</span>
+        <ProductPhoto product={p} />
+        <small>{pack(p)}</small>
+      </div>
+      <div className="product-info">
+        <small>
+          {products.length > 1
+            ? `${products.length} Sorten zur Auswahl`
+            : p.sku}
+        </small>
+        <h3>{p.group_name || p.name}</h3>
+        <p>
+          {pack(p)}
+          {p.volume_ml > 0 &&
+            ` · ${euro(Math.round(p.price_cents / ((p.pack_count * p.volume_ml) / 1000)))}/l`}
+        </p>
+        {products.length > 1 && (
+          <label className="variant-select">
+            Sorte auswählen
+            <select
+              aria-label={`Sorte ${p.group_name}`}
+              value={choice}
+              onChange={(e) => setChoice(e.target.value)}
+            >
+              <option value="">Bitte wählen …</option>
+              {products.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.variant || v.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        <div className="product-price">
+          <div>
+            <strong>{euro(p.price_cents)}</strong>
+            <small>
+              {p.deposit_cents
+                ? `zzgl. ${euro(p.deposit_cents)} Pfand`
+                : "pfandfrei"}
+            </small>
+          </div>
+          <button
+            disabled={products.length > 1 && !choice}
+            aria-label={`${p.name} zur Auswahl hinzufügen`}
+            onClick={() => add(p)}
+          >
+            <Plus size={20} />
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+}
 export default function CatalogShop({
   initialCategory = "Alle Getränke",
 }: {
   initialCategory?: string;
 }) {
-  const [products, setProducts] = useState(initialProducts),
-    [category, setCategory] = useState(initialCategory),
-    [query, setQuery] = useState(""),
-    [sort, setSort] = useState("name");
-  const { add } = useShop();
+  const [products, setProducts] = useState(initialProducts);
+  const [category, setCategory] = useState(initialCategory);
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState("name");
   useEffect(() => {
     fetch("/api/catalog")
       .then((r) => r.json())
@@ -31,18 +86,30 @@ export default function CatalogShop({
       })
       .catch(() => {});
   }, []);
-  const shown = products
-    .filter(
-      (p) =>
-        p.active &&
-        (category === "Alle Getränke" || p.category === category) &&
-        `${p.name} ${p.sku}`.toLowerCase().includes(query.toLowerCase()),
-    )
-    .sort((a, b) =>
-      sort === "price"
-        ? a.price_cents - b.price_cents
-        : a.name.localeCompare(b.name, "de"),
-    );
+  const filtered = products.filter(
+    (p) =>
+      p.active &&
+      (category === "Alle Getränke" || p.category === category) &&
+      `${p.name} ${p.group_name} ${p.variant} ${p.sku}`
+        .toLowerCase()
+        .includes(query.toLowerCase()),
+  );
+  const groups = Object.values(
+    filtered.reduce<Record<string, Product[]>>((a, p) => {
+      const key = p.group_name
+        ? `${p.group_name}-${p.pack_count}-${p.volume_ml}`
+        : p.id;
+      (a[key] ??= []).push(p);
+      return a;
+    }, {}),
+  ).sort((a, b) =>
+    sort === "price"
+      ? a[0].price_cents - b[0].price_cents
+      : (a[0].group_name || a[0].name).localeCompare(
+          b[0].group_name || b[0].name,
+          "de",
+        ),
+  );
   return (
     <>
       <div className="catalog-toolbar">
@@ -55,23 +122,21 @@ export default function CatalogShop({
             onChange={(e) => setQuery(e.target.value)}
           />
         </label>
-        <label className="sort-field">
-          <SlidersHorizontal size={17} />
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value)}
-            aria-label="Sortierung"
-          >
-            <option value="name">Name A–Z</option>
-            <option value="price">Preis aufsteigend</option>
-          </select>
-        </label>
+        <select
+          aria-label="Sortierung"
+          value={sort}
+          onChange={(e) => setSort(e.target.value)}
+        >
+          <option value="name">Name A–Z</option>
+          <option value="price">Preis aufsteigend</option>
+        </select>
         <a
           href="/elias-lieferliste-original.pdf"
           target="_blank"
           className="text-link"
         >
-          <ArrowDownToLine size={17} /> Lieferliste
+          <ArrowDownToLine size={17} />
+          Original-Lieferliste
         </a>
       </div>
       <div
@@ -90,62 +155,23 @@ export default function CatalogShop({
         ))}
       </div>
       <div className="catalog-count">
-        <span>{shown.length} Artikel für deinen Geschmack</span>
-        <span>Lieferpreise inkl. MwSt., zzgl. Pfand · Stand Februar 2026</span>
+        <span>
+          {groups.length} Getränke · {filtered.length} Sorten und Gebinde
+        </span>
+        <span>Lieferpreise inkl. MwSt. · Pfand separat ausgewiesen</span>
       </div>
       <div className="product-grid">
-        {shown.map((p) => {
-          const Icon =
-            p.category === "Bier"
-              ? Beer
-              : ["Wein", "Sekt"].includes(p.category)
-                ? Wine
-                : p.category === "Mineralwasser"
-                  ? Droplets
-                  : GlassWater;
-          return (
-            <article className="product-card" key={p.id}>
-              <div
-                className={`product-visual ${p.category === "Bier" ? "beer" : p.category === "Mineralwasser" ? "water" : p.category === "Wein" ? "wine" : "soda"}`}
-              >
-                <span>{p.category}</span>
-                <Icon size={66} strokeWidth={1} />
-                <small>{pack(p)}</small>
-              </div>
-              <div className="product-info">
-                <small>{p.sku}</small>
-                <h3>{p.name}</h3>
-                <p>
-                  {pack(p)}
-                  {p.volume_ml > 0 &&
-                    ` · ${euro(Math.round(p.price_cents / ((p.pack_count * p.volume_ml) / 1000)))}/l`}
-                </p>
-                <div className="product-price">
-                  <div>
-                    <strong>{euro(p.price_cents)}</strong>
-                    <small>
-                      {p.deposit_cents === null
-                        ? "zzgl. Pfand · Betrag auf Anfrage"
-                        : `zzgl. ${euro(p.deposit_cents)} Pfand`}
-                    </small>
-                  </div>
-                  <button
-                    aria-label={`${p.name} zur Auswahl hinzufügen`}
-                    onClick={() => add(p)}
-                  >
-                    <Plus size={20} />
-                  </button>
-                </div>
-              </div>
-            </article>
-          );
-        })}
+        {groups.map((g) => (
+          <ProductCard
+            key={`${g[0].group_name || g[0].id}-${g[0].pack_count}-${g[0].volume_ml}`}
+            products={g}
+          />
+        ))}
       </div>
-      {!shown.length && (
+      {!groups.length && (
         <div className="empty">
           <Search size={35} />
           <h3>Gerade nichts gefunden.</h3>
-          <p>Probiere einen anderen Suchbegriff oder eine andere Kategorie.</p>
           <button
             className="button secondary"
             onClick={() => {
@@ -158,9 +184,8 @@ export default function CatalogShop({
         </div>
       )}
       <p className="fineprint">
-        Sorten-Sammelpositionen aus dem Originalflyer werden bei der
-        persönlichen Bestätigung konkretisiert. Abbildungen und Symbole sind
-        illustrativ. Preise und Pfand werden vor Annahme der Anfrage bestätigt.
+        Produktabbildungen zeigen die jeweilige Sorte; die bestellte Menge steht
+        am Gebinde. Lieferpreise aus der Liste Februar 2026.
       </p>
     </>
   );

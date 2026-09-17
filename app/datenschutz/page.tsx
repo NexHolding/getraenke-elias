@@ -21,6 +21,9 @@ export default function Page() {
           bestehende gesetzliche Aufbewahrungspflichten erforderlich ist. Bitte
           übermittle keine sensiblen Daten in den Freitextfeldern.
         </p>
+        <h2>Kundenkonto, Lieferplanung und Übergabe</h2>
+        <p>Im Kundenkonto speichern wir Kontaktdaten, Bestellverlauf, gewünschte Lieferzeiten und eine freiwillige Abstellgenehmigung. Lieferabos erzeugen wiederkehrende Aufträge. Bei der Übergabe dokumentieren wir die tatsächlich gelieferten Mengen, den Zeitpunkt, den Empfängernamen und gegebenenfalls die auf dem Gerät gezeichnete Unterschrift. Zugehörige Lieferscheine und Rechnungen werden im Kundenkonto abgelegt und gemäß Versandpräferenz per E-Mail zugestellt.</p>
+        <p>Wenn der Betrieb den Adressabgleich aktiviert, wird die Lieferadresse zur Ermittlung von Kartenkoordinaten an den Nominatim-Dienst von OpenStreetMap übertragen. Navigationslinks öffnen Google Maps oder Apple Karten erst beim Anklicken. Diese Daten unterstützen die vereinbarte Lieferung; es wird kein laufender Kundenstandort erfasst.</p>
         <h2>Website und Datenbank</h2>
         <p>
           Das Hosting erfolgt über Vercel; die Anfragedaten werden in einer
@@ -36,7 +39,7 @@ export default function Page() {
         <p>
           Deine Getränkeauswahl wird für die laufende Sitzung im Browser
           gespeichert. Für den geschützten Mitarbeiterbereich werden technisch
-          erforderliche Anmeldedaten in Cookies verwendet. Es gibt auf dieser
+          erforderliche Anmeldedaten in Cookies verwendet. Das gilt ebenso für das Kundenkonto und angemeldete Kassengeräte. Es gibt auf dieser
           Website keine Werbe- oder Analyse-Cookies.
         </p>
         <h2>Google Maps und externe Links</h2>

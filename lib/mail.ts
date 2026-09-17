@@ -67,7 +67,6 @@ export async function dispatchMail() {
           !p ||
           p.status !== "queued" ||
           !s ||
-          s.is_demo ||
           !s.auto_send ||
           s.email !== m.recipient
         ) {
@@ -81,7 +80,35 @@ export async function dispatchMail() {
           continue;
         }
       }
+      const attachments = [];
+      if (m.kind === "delivery_document" || m.kind === "invoice_document") {
+        const kind = m.kind === "invoice_document" ? "invoice" : "delivery";
+        const { data: record, error } = await db
+          .from(kind === "invoice" ? "invoices" : "deliveries")
+          .select("*")
+          .eq("id", m.reference_id)
+          .single();
+        if (error) throw error;
+        const { data: order } = await db
+          .from("orders")
+          .select("*")
+          .eq("id", record.order_id)
+          .single();
+        const { data: cfg } = await db
+          .from("settings")
+          .select("value")
+          .eq("id", 1)
+          .single();
+        const { businessDocument } = await import("./documents");
+        const pdf = businessDocument(kind, record, order, cfg?.value || {});
+        attachments.push({
+          filename: pdf.filename,
+          content: pdf.bytes,
+          contentType: "application/pdf",
+        });
+      }
       await transport.sendMail({
+        attachments,
         from,
         to: m.recipient,
         subject: m.subject,

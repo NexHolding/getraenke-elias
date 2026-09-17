@@ -20,6 +20,7 @@ export async function GET() {
         reorder_enabled: false,
       })),
       instagram: settings?.value?.instagram || "",
+      guest_orders: settings?.value?.guest_orders !== false,
     },
     { headers: { "Cache-Control": "public, max-age=30" } },
   );
