@@ -34,3 +34,14 @@
 Inhaber-E-Mail: info@getraenke-elias.de. Das zufällige Erstpasswort liegt ausschließlich lokal in `.local/CRM-Zugang.txt`, außerhalb der Versionskontrolle. Es wurde keine Zugangs-E-Mail versendet. Nach Anmeldung unter `/passwort` ändern.
 
 Weitere fachliche Details und Primärquellen: [TSE und Betrieb](TSE-UND-BETRIEB.md).
+
+## Veröffentlichung
+- Website: https://getraenke-elias.vercel.app
+- CRM: https://getraenke-elias.vercel.app/login
+- GitHub: https://github.com/NexHolding/getraenke-elias
+- Supabase (Frankfurt): https://supabase.com/dashboard/project/sfggvhjtsiitqnocridz
+- Vercel: https://vercel.com/nex-holding/getraenke-elias
+
+Die beschriebenen Browser- und API-Prüfungen wurden zusätzlich erfolgreich gegen die öffentliche Vercel-Adresse ausgeführt. Der abschließende Datenbankbestand enthält 108 Artikel, einen Inhaberzugang und keine verbliebenen Testanfragen, Testverkäufe oder E-Mails. Eine lokale 6-seitige PDF-Prüfausgabe enthält alle 108 Artikel; ein 80-mm-Musterbon wurde ohne Datenbankbuchung gerendert und visuell kontrolliert.
+
+Originaldomain und www sind bei Vercel hinterlegt, zeigen jedoch noch auf den bisherigen manitu-Webserver. Konkrete DNS-Einträge: [Domainumschaltung](DOMAIN-UMSTELLUNG.md).

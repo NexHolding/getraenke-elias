@@ -1,7 +1,7 @@
 import type { SaleLine } from "./types";
 export const euro = (cents: number) =>
   new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(
-    cents / 100,
+    cents === 0 ? 0 : cents / 100,
   );
 export const pack = (p: { pack_count: number; volume_ml: number }) =>
   p.volume_ml
