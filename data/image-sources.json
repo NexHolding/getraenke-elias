@@ -22,7 +22,6 @@
   },
   {
     "articles": [
-      "elias-005-v1",
       "elias-001"
     ],
     "image": "https://www.ensinger.de/fileadmin/pics/Produktabbildungen/Ensinger-Sport-Classic-Sortiment.gif",
@@ -30,7 +29,6 @@
   },
   {
     "articles": [
-      "elias-005-v2",
       "elias-002"
     ],
     "image": "https://www.ensinger.de/fileadmin/pics/Produktabbildungen/Ensinger-Sport-Medium-Sortiment.gif",
@@ -38,7 +36,6 @@
   },
   {
     "articles": [
-      "elias-005-v3",
       "elias-003"
     ],
     "image": "https://www.ensinger.de/fileadmin/pics/Produktabbildungen/Ensinger-Sport-Still-Sortiment.gif",
@@ -123,16 +120,14 @@
   },
   {
     "articles": [
-      "elias-012-v1",
-      "elias-013-v1"
+      "elias-012-v1"
     ],
     "image": "https://www.aquaroemer.de/sites/default/files/media/product/teaser/arq_website_produkte_classic_639x800px_0.png",
     "source": "https://www.aquaroemer.de/produkte-bu"
   },
   {
     "articles": [
-      "elias-012-v2",
-      "elias-013-v2"
+      "elias-012-v2"
     ],
     "image": "https://www.aquaroemer.de/sites/default/files/media/product/teaser/arq_website_produkte_medium_639x800px_0.png",
     "source": "https://www.aquaroemer.de/produkte-bu"
@@ -140,8 +135,7 @@
   {
     "articles": [
       "elias-011",
-      "elias-012-v3",
-      "elias-013-v3"
+      "elias-012-v3"
     ],
     "image": "https://www.aquaroemer.de/sites/default/files/media/product/teaser/arq_website_produkte_naturelle_639x800px_0.png",
     "source": "https://www.aquaroemer.de/produkte-bu"
@@ -250,5 +244,967 @@
     ],
     "image": "https://www.augustiner-braeu.de/fileadmin/_processed_/0/f/csm_thumb_Lagerbier-Hell_afadfa1dbb.png",
     "source": "https://www.augustiner-braeu.de/unser-bier"
+  },
+  {
+    "articles": [
+      "elias-004"
+    ],
+    "image": "https://onlinedurst.de/media/image/0a/05/5e/Ensinger-Schiller-Quelle-Heilwasser-1l-Kiste_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/mineralwasser/ensinger/43/ensinger-schiller-quelle-heilwasser-9x1-0l-pet?c=6",
+    "label": "Ensinger Schiller Quelle Heilwasser 9x1,0l Pet",
+    "local": "/products/elias-004-photo.jpg",
+    "sha256": "502ce5e093dd9fa3e7d01e91981160681b5a58cb61a52b0f46cc868b2d2027e2"
+  },
+  {
+    "articles": [
+      "elias-006"
+    ],
+    "image": "https://onlinedurst.de/media/image/85/d2/a4/Black-Forest-still-0-7l-GlasAKfT4pwWxNK2w_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/mineralwasser/black-forest/318/peterstaler-black-forest-still-kasten-12x0-7l?c=6",
+    "label": "Peterstaler Black Forest Still Kasten 12x0,7l",
+    "local": "/products/elias-006-photo.jpg",
+    "sha256": "0791c153113a8dc4738b7ef247ef61fb554671cfb9a7f7796db8e2bb9813cb41"
+  },
+  {
+    "articles": [
+      "elias-007"
+    ],
+    "image": "https://onlinedurst.de/media/image/fb/05/78/Black-Forest-still-1-5l-PET_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/mineralwasser/black-forest/319/black-forest-still-6x1-5l-pet?c=6",
+    "label": "Black Forest Still 6x1,5l PET",
+    "local": "/products/elias-007-photo.jpg",
+    "sha256": "c8cf1e47107daf13122fead4032182c9b440d3acc06baa4573f17fbdacbd7ca9"
+  },
+  {
+    "articles": [
+      "elias-008"
+    ],
+    "image": "https://onlinedurst.de/media/image/5b/59/3c/BlackForest-still_1-0l-PET_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/mineralwasser/black-forest/505/peterstaler-black-forest-still-kasten-9x1l-pet?c=6",
+    "label": "Peterstaler Black Forest Still Kasten 9x1l Pet",
+    "local": "/products/elias-008-photo.jpg",
+    "sha256": "75d758a5281fe18b1947aba0ad34672a0231d04203d62292d83300bf8170e23b"
+  },
+  {
+    "articles": [
+      "elias-013-v1"
+    ],
+    "image": "https://onlinedurst.de/media/image/cc/21/85/1L_PET_MW_Classic_9er_KastenhpvmouobZu1fK_200x200@2x.png",
+    "source": "https://onlinedurst.de/mineralwasser/aqua-roemer/534/aqua-roemer-classic-9x1l-pet?c=6",
+    "label": "AQUA RÖMER Classic 9x1l Pet",
+    "local": "/products/elias-013-v1-photo.png",
+    "sha256": "f6a41addc410fba2ff3fcd4e567ac0131720dadb09d7c518e9e1d80221084f6a"
+  },
+  {
+    "articles": [
+      "elias-013-v2"
+    ],
+    "image": "https://onlinedurst.de/media/image/ce/b4/1c/1L_PET_MW_Medium_9er_Kasten_200x200@2x.png",
+    "source": "https://onlinedurst.de/mineralwasser/aqua-roemer/535/aqua-roemer-medium-9x1l-pet?c=6",
+    "label": "AQUA RÖMER Medium 9x1l Pet",
+    "local": "/products/elias-013-v2-photo.png",
+    "sha256": "ae71e7892b1b68aba1405f3345529b6414ee7b5a9c0fb57f27949c8e92f610df"
+  },
+  {
+    "articles": [
+      "elias-013-v3"
+    ],
+    "image": "https://onlinedurst.de/media/image/2a/2f/16/1L_PET_MW_Still_9er_Kasten_200x200@2x.png",
+    "source": "https://onlinedurst.de/mineralwasser/aqua-roemer/537/aqua-roemer-sanft-9x1l-pet?c=6",
+    "label": "AQUA RÖMER Sanft 9x1l Pet",
+    "local": "/products/elias-013-v3-photo.png",
+    "sha256": "9e2fd12bfe464c264e5c6f592ce46424c9224cc6855dccda28fa2e84b1f51a4d"
+  },
+  {
+    "articles": [
+      "elias-014"
+    ],
+    "image": "https://www.hirschquelle.de/wp-content/uploads/hirschquelle_heilwasser_und_vital_packshot.webp",
+    "source": "https://www.hirschquelle.de/",
+    "label": "Hirschquelle Heilwasser 12x0,75l",
+    "representation": "Flaschenabbildung",
+    "local": "/products/elias-014-photo.webp",
+    "sha256": "914a46da9733bac18e5d0399f6393e70338270a31f717efafd0b070d83d5fc5c"
+  },
+  {
+    "articles": [
+      "elias-015"
+    ],
+    "image": "https://onlinedurst.de/media/image/dd/fa/06/Hirschquelle_Vital_Kasten_Flasche_1l_PET_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/mineralwasser/hirschquelle/59/hirschquelle-vital-pet-9x1-0l?c=6",
+    "label": "Hirschquelle Vital Pet 9x1,0l",
+    "local": "/products/elias-015-photo.jpg",
+    "sha256": "f985ff625ee002da4e7bb1cf1228222a73f4a5ef5892ee553260577dfd275abc"
+  },
+  {
+    "articles": [
+      "elias-017-v1"
+    ],
+    "image": "https://onlinedurst.de/media/image/83/1c/32/TEI_Classic_07L_Glas_Kasten_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/mineralwasser/teinacher-mineralbr./7/teinacher-classic-12x-0-7l?c=6",
+    "label": "Teinacher Classic 12x 0,7l",
+    "local": "/products/elias-017-v1-photo.jpg",
+    "sha256": "324e6717dfb553cd461177555620849d348739f6aeb60c99510a97850cbd398e"
+  },
+  {
+    "articles": [
+      "elias-017-v2"
+    ],
+    "image": "https://onlinedurst.de/media/image/cd/9c/53/TEI_Medium_07L_Glas_Kasten_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/mineralwasser/teinacher-mineralbr./8/teinacher-medium-12x0-7?c=6",
+    "label": "Teinacher Medium 12x0,7",
+    "local": "/products/elias-017-v2-photo.jpg",
+    "sha256": "d8ce4b3c2e14a81ccf8c5d9d939b2c5590e40fe8224761790fdba0325babd398"
+  },
+  {
+    "articles": [
+      "elias-023"
+    ],
+    "image": "https://onlinedurst.de/media/image/8c/d7/3b/S_KASTEN_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/mineralwasser/staatlich-fachingen/91/staatlich-fachinger-stille-12x0-75l?c=6",
+    "label": "Staatlich Fachinger Stille 12x0,75l",
+    "local": "/products/elias-023-photo.jpg",
+    "sha256": "bdc77c421b221efe43da09a0b45feaa834c14e80612ce498c379e437af00660f"
+  },
+  {
+    "articles": [
+      "elias-024"
+    ],
+    "image": "https://onlinedurst.de/media/image/3d/2c/23/kasten_volvic_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/mineralwasser/volvic/115/volvic-6x1-5l?c=6",
+    "label": "Volvic 6x1,5l",
+    "local": "/products/elias-024-photo.jpg",
+    "sha256": "b13f33de5b7f03486ad3417a9c9fcba289fa0dc9fa81905328cf8961c9268e9c"
+  },
+  {
+    "articles": [
+      "elias-039"
+    ],
+    "image": "https://onlinedurst.de/media/image/37/cf/5b/Orangina_Original_2_0-25l_600x1500_200x200@2x.png",
+    "source": "https://onlinedurst.de/limonade-fruchtschorle/orangina/263/orangina-classic-orange-gelb-15x0-25l?c=13",
+    "label": "Orangina Classic Orange (gelb) 15x0,25l",
+    "local": "/products/elias-039-photo.png",
+    "sha256": "2ea0ba40743bc07b22b3bc28f03032490eea09559b88b135c1d93e2efc8d8292"
+  },
+  {
+    "articles": [
+      "elias-040"
+    ],
+    "image": "https://onlinedurst.de/media/image/ea/c8/88/CC_1_0L_MW_PET_b_CMYK_inkl_Pfad-4_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/cola-produkte/coca-cola-produkte/coca-cola/328/coca-cola-12x1-0l?c=14",
+    "label": "Coca Cola 12x1,0l",
+    "local": "/products/elias-040-photo.jpg",
+    "sha256": "e843bdab4adfffa3175eaf05acd39fd0bcd4e470c51a0b11c3a25c0c9c37862d"
+  },
+  {
+    "articles": [
+      "elias-041"
+    ],
+    "image": "https://onlinedurst.de/media/image/5f/86/1f/UnbenanntUHrLABz15j6Ll_200x200@2x.png",
+    "source": "https://onlinedurst.de/cola-produkte/coca-cola-produkte/coca-cola-light-taste/355/coca-cola-light-taste-12x1-0l?c=14",
+    "label": "Coca Cola light Taste 12x1,0l",
+    "local": "/products/elias-041-photo.png",
+    "sha256": "16075ee9d70a2d4b8d97acaf5dc76d67c69f00f5aa93dcea0a4008fc75f2437e"
+  },
+  {
+    "articles": [
+      "elias-042-v1"
+    ],
+    "image": "https://onlinedurst.de/media/image/07/5b/34/FA_OR_1L_MW_PET_CMYK_inkl_Pfad_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/cola-produkte/coca-cola-produkte/fanta/336/fanta-orange-12x1-0l?c=14",
+    "label": "Fanta Orange 12x1,0l",
+    "local": "/products/elias-042-v1-photo.jpg",
+    "sha256": "4564e1a5aea4c610265a455edeb530fc1c1c3e5ea94e42066f9a4c1d85ebdcec"
+  },
+  {
+    "articles": [
+      "elias-042-v2"
+    ],
+    "image": "https://onlinedurst.de/media/image/0a/f9/a8/SP_1L_MW_PET_b_CMYK_inkl_PfadxoTx1vJflcYL9_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/cola-produkte/coca-cola-produkte/sprite/349/sprite-12x1l?c=14",
+    "label": "Sprite 12x1l",
+    "local": "/products/elias-042-v2-photo.jpg",
+    "sha256": "02d50afbf7ea36340bd732bc8fb9c710d9507aff8ba382e9cc5307fe90a2b2be"
+  },
+  {
+    "articles": [
+      "elias-043"
+    ],
+    "image": "https://onlinedurst.de/media/image/43/e1/37/MMO_1L_MW_PET_b_CMYK_inkl_Pfad_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/cola-produkte/coca-cola-produkte/mezzo-mix/342/mezzo-mix-12x1l?c=14",
+    "label": "Mezzo Mix 12x1l",
+    "local": "/products/elias-043-photo.jpg",
+    "sha256": "b82287f57a334e2a30cc55ff686232715a248feafb15a0c09a48a496252a1760"
+  },
+  {
+    "articles": [
+      "elias-045-v1"
+    ],
+    "image": "https://onlinedurst.de/media/image/76/f9/9d/CCL_0_33L_MW_Glas_b_CMYK_inkl_PfadJUNCIRKqDY3uw_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/tagungsgetraenke/358/coca-cola-light-taste-24x0-33l?c=14",
+    "label": "Coca Cola light Taste 24x0,33l",
+    "local": "/products/elias-045-v1-photo.jpg",
+    "sha256": "2bfe22fdaeff8eaf89c14d3eb66b954bc2cf1501f2798b6000fdee4582371ee8"
+  },
+  {
+    "articles": [
+      "elias-045-v2"
+    ],
+    "image": "https://onlinedurst.de/media/image/66/4c/e3/CCZ_0_33L_MW_G_b_CMYK_inkl_Pfad_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/tagungsgetraenke/363/coca-cola-zero-24x0-33l?c=14",
+    "label": "Coca Cola Zero 24x0,33l",
+    "local": "/products/elias-045-v2-photo.jpg",
+    "sha256": "3f495d652df8399e6ad5ab59dae605dcc7bf05b41f0deb955a7a82bbda87a4df"
+  },
+  {
+    "articles": [
+      "elias-046"
+    ],
+    "image": "https://onlinedurst.de/media/image/1c/8f/c9/MMO_033L_MW_Glas_b_CMYK_inkl_Pfad_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/tagungsgetraenke/344/mezzo-mix-24x0-33l?c=14",
+    "label": "Mezzo Mix 24x0,33l",
+    "local": "/products/elias-046-photo.jpg",
+    "sha256": "9e111413ff5de74c8cbde2f76f15ac023f29749b1de56fb9dab6e78b9fb942e9"
+  },
+  {
+    "articles": [
+      "elias-047-v1"
+    ],
+    "image": "https://onlinedurst.de/media/image/68/eb/52/CC_0_33L_EW_SC_CMYK_inkl_Pfad_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/cola-produkte/coca-cola-produkte/coca-cola/335/coca-cola-24x0-33l-dose?c=14",
+    "label": "Coca Cola 24x0,33l Dose",
+    "local": "/products/elias-047-v1-photo.jpg",
+    "sha256": "c9bcee959175ff3169bffb825298f83925443aecfbe2991d555bf53471eeb5da"
+  },
+  {
+    "articles": [
+      "elias-047-v2"
+    ],
+    "image": "https://onlinedurst.de/media/image/e6/02/9f/FA_OR_0_33L_EW_SC_CMYK_inkl_Pfad_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/cola-produkte/coca-cola-produkte/fanta/341/fanta-orange-24x0-33l-dose?c=14",
+    "label": "Fanta Orange 24x0,33l Dose",
+    "local": "/products/elias-047-v2-photo.jpg",
+    "sha256": "7e966e17491bb42de11a032f3ffbc0ab488e5e40f9ba79dee58a8557e1be52de"
+  },
+  {
+    "articles": [
+      "elias-048-v1"
+    ],
+    "image": "https://onlinedurst.de/media/image/5d/cd/60/CC_05L_EW_PET_b_CMYK_inkl_Pfad-1_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/tagungsgetraenke/330/coca-cola-12x0-5l-pet?c=14",
+    "label": "Coca Cola 12x0,5l PET",
+    "local": "/products/elias-048-v1-photo.jpg",
+    "sha256": "7718a7f98502fdf7424e2d4666a9568d2a07cee7fe23e76bf9048bfbee1be381"
+  },
+  {
+    "articles": [
+      "elias-048-v2"
+    ],
+    "image": "https://onlinedurst.de/media/image/59/3c/70/FA_OR_0_5L_EW_PET_CMYK_inkl_Pfad8dAopxiuleVwY_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/tagungsgetraenke/345/fanta-orange-12x0-5l-pet?c=14",
+    "label": "Fanta Orange 12x0,5l PET",
+    "local": "/products/elias-048-v2-photo.jpg",
+    "sha256": "0066ba6f2d279065d2d11a89cb57e5e1e7b0f470a1a6411b2170554614909b44"
+  },
+  {
+    "articles": [
+      "elias-051"
+    ],
+    "image": "https://onlinedurst.de/media/image/64/06/75/club_mate1_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/eistee/club-mate-eistee/403/club-mate-20x0-33l?c=13",
+    "label": "Club-Mate 20x0,33l",
+    "local": "/products/elias-051-photo.jpg",
+    "sha256": "f6a9e972f69bfa8b03a63445b00d9cd9a66b17a21460df7452e020bebc4e5da2"
+  },
+  {
+    "articles": [
+      "elias-052-v1"
+    ],
+    "image": "https://onlinedurst.de/media/image/36/8e/bf/dh_pils_flasche_0_5l_4c_0218mR6fUXh7FQ9YT_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/bier-nach-hersteller/distelhaeuser/6/distelhaeuser-pils-20x0-5l?c=5",
+    "label": "Distelhäuser Pils 20x0,5l",
+    "local": "/products/elias-052-v1-photo.jpg",
+    "sha256": "f626825b1ad933d7cee9f649cd619cb81c2702214c0c9553b2e98a02efb1325a"
+  },
+  {
+    "articles": [
+      "elias-060"
+    ],
+    "image": "https://onlinedurst.de/media/image/81/32/53/041522_SHB_Pilsner_05l_Nostaniol_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/bier-nach-hersteller/stuttgarter/220/stuttgarter-hofbraeu-pilsner-20x0-5l?c=5",
+    "label": "Stuttgarter Hofbräu Pilsner 20x0,5l",
+    "local": "/products/elias-060-photo.jpg",
+    "sha256": "c9290c11b96f2b4fb1fa1bab04dcaa5b2eee53b5a2e3166fd0c30f0fc8d3d204"
+  },
+  {
+    "articles": [
+      "elias-061"
+    ],
+    "image": "https://onlinedurst.de/media/image/dc/c5/4d/041511_SHB_BuegelPremium_2010_Papier-1_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/bier-nach-hersteller/stuttgarter/219/stuttgarter-hofbraeu-buegel-premium-20x0-5l?c=5",
+    "label": "Stuttgarter Hofbräu Bügel Premium 20x0,5l",
+    "local": "/products/elias-061-photo.jpg",
+    "sha256": "389637c74c41247f2867c5b5bd89e99de8c36381dbd78f0b3664ca4b372af99e"
+  },
+  {
+    "articles": [
+      "elias-063"
+    ],
+    "image": "https://onlinedurst.de/media/image/02/91/c6/Becks-Pils-0-33-1_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/bier-nach-hersteller/becks/3/becks-pilsener-24x0-33l?c=5",
+    "label": "Becks Pilsener 24x0,33l",
+    "local": "/products/elias-063-photo.jpg",
+    "sha256": "400e6f7cc2be4e0bb4e5fececd694f922c12e1ffffb16e4bca316ef6c345e08c"
+  },
+  {
+    "articles": [
+      "elias-065"
+    ],
+    "image": "https://onlinedurst.de/media/image/2f/33/d7/chiemseer_bier_hell_2_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/bier-nach-hersteller/chiemgauer-brauhaus/137/chiemseer-hell-20x0-5?c=5",
+    "label": "Chiemseer Hell 20x0,5",
+    "local": "/products/elias-065-photo.jpg",
+    "sha256": "b0008b587132743df9bf9976dc46a60796655a45f9756db7e3189b78d6a64960"
+  },
+  {
+    "articles": [
+      "elias-067"
+    ],
+    "image": "https://onlinedurst.de/media/image/00/09/30/277_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/bier-nach-hersteller/cluss/140/cluss-export-20x0-5l?c=5",
+    "label": "Cluss Export 20x0,5l",
+    "local": "/products/elias-067-photo.jpg",
+    "sha256": "5cbac87e2be386dfffb55c34d710acbf1b583c4feda771b60a2a6ff61d5626ef"
+  },
+  {
+    "articles": [
+      "elias-068-v2"
+    ],
+    "image": "https://onlinedurst.de/media/image/73/0a/ce/desp-original-web_200x200@2x.png",
+    "source": "https://onlinedurst.de/bier-nach-hersteller/desperados/141/desperados-24x0-33l?c=5",
+    "label": "Desperados 24x0,33l",
+    "local": "/products/elias-068-v2-photo.png",
+    "sha256": "ae96d1accf66813fcaa3b82758a548d4e5faae77974d943ed537433f8841556c"
+  },
+  {
+    "articles": [
+      "elias-069-v2"
+    ],
+    "image": "https://onlinedurst.de/media/image/3e/61/c1/DA_2017_FLASCHE_050_PRIVAT_300dpi_CMYK_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/biere/export-helles/142/dinkelacker-privat-20x0-5-l?c=5",
+    "label": "Dinkelacker Privat 20x0,5 l",
+    "local": "/products/elias-069-v2-photo.jpg",
+    "sha256": "8ede615b3d16628bb6dec6f143106dca93ce629c64360467dc54861eec0465a2"
+  },
+  {
+    "articles": [
+      "elias-071"
+    ],
+    "image": "https://onlinedurst.de/media/image/73/52/bb/Heineken-0-33_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/bier-nach-hersteller/heineken/163/heineken-pilsener-24x0-33l?c=5",
+    "label": "Heineken Pilsener 24x0,33l",
+    "local": "/products/elias-071-photo.jpg",
+    "sha256": "7dbcf1358a60592231b54875b0bca1964715343744e88757be607afff33911e3"
+  },
+  {
+    "articles": [
+      "elias-077"
+    ],
+    "image": "https://onlinedurst.de/media/image/3f/e6/60/201_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/bier-nach-hersteller/schwabenbraeu/216/schwaben-braeu-das-echte-maerzen-20x0-5l?c=5",
+    "label": "Schwaben Bräu Das Echte Märzen 20x0,5l",
+    "local": "/products/elias-077-photo.jpg",
+    "sha256": "cff595005fe0f7c2f25c6851016125354efe4a1bd87e0e934562eccb9947c04b"
+  },
+  {
+    "articles": [
+      "elias-078"
+    ],
+    "image": "https://onlinedurst.de/media/image/83/5b/7f/41jj01rjj6l_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/biere/export-helles/196/tegernseer-hofbraeu-hell-20x0-5l?c=5",
+    "label": "Tegernseer Hofbräu Hell 20x0,5l",
+    "local": "/products/elias-078-photo.jpg",
+    "sha256": "38f365649b9843f6c8b990b5d75021ccb50c4b38594a189d38bd8aead3218e49"
+  },
+  {
+    "articles": [
+      "elias-080"
+    ],
+    "image": "https://onlinedurst.de/media/image/ff/fd/14/Wulle-Vollbier_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/biere/pils/566/wulle-kasten-20x0-33l?c=5",
+    "label": "Wulle Kasten 20x0,33l",
+    "local": "/products/elias-080-photo.jpg",
+    "sha256": "2c9d7d38d8e893cfb8ce7f083e636d4382f19aec6ebc9dfbade74341a196594c"
+  },
+  {
+    "articles": [
+      "elias-081-v1"
+    ],
+    "image": "https://onlinedurst.de/media/image/02/91/c6/Becks-Pils-0-33-1_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/bier-nach-hersteller/becks/3/becks-pilsener-24x0-33l?c=5",
+    "label": "Becks Pilsener 24x0,33l",
+    "local": "/products/elias-081-v1-photo.jpg",
+    "sha256": "400e6f7cc2be4e0bb4e5fececd694f922c12e1ffffb16e4bca316ef6c345e08c"
+  },
+  {
+    "articles": [
+      "elias-081-v3"
+    ],
+    "image": "https://onlinedurst.de/media/image/70/12/1f/WPP_Fl_033l_voben-tif-150-JPG_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/bier-nach-hersteller/warsteiner/223/warsteiner-premium-pils-24x0-33l?c=5",
+    "label": "Warsteiner Premium Pils 24x0,33l",
+    "local": "/products/elias-081-v3-photo.jpg",
+    "sha256": "2dacbc1b138826d057b6fd4150ee4d5abc3cba776ec82ba1fcb7f740ed022c9b"
+  },
+  {
+    "articles": [
+      "elias-082"
+    ],
+    "image": "https://onlinedurst.de/media/image/45/6a/08/2018-02-19-RZ-VS-1l-BeiletikettenSkpa7YymuqzKh_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/tagungsgetraenke/407/beil-apfelsaft-klar-100-direktsaft-12x0-2l",
+    "label": "Beil Apfelsaft Klar 100 % Direktsaft 12x0,2l",
+    "representation": "Herstelleretikett",
+    "local": "/products/elias-082-photo.jpg",
+    "sha256": "33337de26ad8234398daa19214ce6d521f9d2729e1e158d1aa267f66d0e51aab"
+  },
+  {
+    "articles": [
+      "elias-083"
+    ],
+    "image": "https://onlinedurst.de/media/image/30/3a/3d/2018-02-19-RZ-VS-1l-BeiletikettenBNomzvpchSd9Z_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/tagungsgetraenke/408/beil-orangensaft-12x0-2l",
+    "label": "Beil Orangensaft 12x0,2l",
+    "representation": "Herstelleretikett",
+    "local": "/products/elias-083-photo.jpg",
+    "sha256": "5320fe9c6e77f187528999acba3ed885c0b3a8aeef5cf87b29287444bf4822df"
+  },
+  {
+    "articles": [
+      "elias-084"
+    ],
+    "image": "https://onlinedurst.de/media/image/20/04/a4/2018-02-19-RZ-VS-1l-BeiletikettenheGQ61Fucesyg_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/tagungsgetraenke/435/beil-traubensaft-rot-12x0-2l",
+    "label": "Beil Traubensaft Rot 12x0,2l",
+    "representation": "Herstelleretikett",
+    "local": "/products/elias-084-photo.jpg",
+    "sha256": "b2b32e7a7bde244fe92a08295325a20bdd0148bd6b0daddab11a45afa2c98dad"
+  },
+  {
+    "articles": [
+      "elias-085"
+    ],
+    "image": "https://onlinedurst.de/media/image/9f/1a/1d/2018-02-19-RZ-VS-1l-BeiletikettenFFmPGkQoxPwus_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/tagungsgetraenke/433/beil-schwarzer-johannisbeer-nektar-12x0-2l",
+    "label": "Beil Schwarzer Johannisbeer-Nektar 12x0,2l",
+    "representation": "Herstelleretikett",
+    "local": "/products/elias-085-photo.jpg",
+    "sha256": "ffb48c881d506dd7d70d059c558a5b4521547d8859bd3df11d059ed024b1a395"
+  },
+  {
+    "articles": [
+      "elias-087"
+    ],
+    "image": "https://onlinedurst.de/media/image/45/6a/08/2018-02-19-RZ-VS-1l-BeiletikettenSkpa7YymuqzKh_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/saefte/beil-natursaft-produkte/beil-natursaft-1liter/405/beil-apfelsaft-klar-100-direktsaft-6x1l",
+    "label": "Beil Apfelsaft Klar 100 % Direktsaft 6x1l",
+    "representation": "Herstelleretikett",
+    "local": "/products/elias-087-photo.jpg",
+    "sha256": "33337de26ad8234398daa19214ce6d521f9d2729e1e158d1aa267f66d0e51aab"
+  },
+  {
+    "articles": [
+      "elias-088"
+    ],
+    "image": "https://onlinedurst.de/media/image/c9/a9/d5/2018-02-19-RZ-VS-1l-Beiletiketten_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/saefte/beil-natursaft-produkte/beil-natursaft-1liter/406/beil-apfelsaft-naturtrueb-100-direktsaft.6x1l",
+    "label": "Beil Apfelsaft Naturtrüb 100% Direktsaft.6x1l",
+    "representation": "Herstelleretikett",
+    "local": "/products/elias-088-photo.jpg",
+    "sha256": "97aaea8d0d42ca6ee96355d5f1fc7ae8385e786f0f2d1df99a0b2ab5a0c16372"
+  },
+  {
+    "articles": [
+      "elias-090"
+    ],
+    "image": "https://onlinedurst.de/media/image/d9/8b/be/2018-02-19-RZ-VS-1l-BeiletikettenXwnGT4Hhw7wdE_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/saefte/beil-natursaft-produkte/beil-natursaft-1liter/409/beil-orangensaft-6x1l",
+    "label": "Beil Orangensaft 6x1l",
+    "representation": "Herstelleretikett",
+    "local": "/products/elias-090-photo.jpg",
+    "sha256": "5320fe9c6e77f187528999acba3ed885c0b3a8aeef5cf87b29287444bf4822df"
+  },
+  {
+    "articles": [
+      "elias-091"
+    ],
+    "image": "https://onlinedurst.de/media/image/20/2c/6f/2018-02-19-RZ-VS-1l-Beiletiketten8tMbwQFy8HLPO_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/saefte/beil-natursaft-produkte/beil-natursaft-1liter/440/beil-apfel-kirsch-fruchtsaftgetraenk-6x1l",
+    "label": "Beil Apfel-Kirsch-Fruchtsaftgetränk 6x1l",
+    "representation": "Herstelleretikett",
+    "local": "/products/elias-091-photo.jpg",
+    "sha256": "d224a6d0e7677d64e25002160d74f1256517e990ee208df389a40d7d3b2a8beb"
+  },
+  {
+    "articles": [
+      "elias-093"
+    ],
+    "image": "https://onlinedurst.de/media/image/1c/21/00/2018-02-19-RZ-VS-1l-BeiletikettenNv73o6GjdrkyA_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/saefte/beil-natursaft-produkte/beil-natursaft-1liter/436/beil-multi-vitamin-10-frucht-6x1l",
+    "label": "Beil Multi-Vitamin 10 Frucht 6x1l",
+    "representation": "Herstelleretikett",
+    "local": "/products/elias-093-photo.jpg",
+    "sha256": "4c43da3cb57a16760f747662ec6f87a89a27bc1afe6dbe60fd78e35a9abab7ea"
+  },
+  {
+    "articles": [
+      "elias-095-v1"
+    ],
+    "image": "https://onlinedurst.de/media/image/20/04/a4/2018-02-19-RZ-VS-1l-BeiletikettenheGQ61Fucesyg_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/saefte/beil-natursaft-produkte/beil-natursaft-1liter/434/beil-traubensaft-rot-6x1-0l",
+    "label": "Beil Traubensaft Rot 6x1,0l",
+    "representation": "Herstelleretikett",
+    "local": "/products/elias-095-v1-photo.jpg",
+    "sha256": "b2b32e7a7bde244fe92a08295325a20bdd0148bd6b0daddab11a45afa2c98dad"
+  },
+  {
+    "articles": [
+      "elias-095-v2"
+    ],
+    "image": "https://onlinedurst.de/media/image/9f/1a/1d/2018-02-19-RZ-VS-1l-BeiletikettenFFmPGkQoxPwus_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/saefte/beil-natursaft-produkte/beil-natursaft-1liter/432/beil-schwarzer-johannisbeer-nektar-6x1l",
+    "label": "Beil Schwarzer Johannisbeer-Nektar 6x1l",
+    "representation": "Herstelleretikett",
+    "local": "/products/elias-095-v2-photo.jpg",
+    "sha256": "ffb48c881d506dd7d70d059c558a5b4521547d8859bd3df11d059ed024b1a395"
+  },
+  {
+    "articles": [
+      "elias-009-v1"
+    ],
+    "image": "https://www.winkels.de/images/marken/produktbilder/Aqua_Vitale_Classic_07l_Glas_Mw.jpg",
+    "source": "https://www.winkels.de/marken/aqua-vitale.html",
+    "local": "/products/elias-009-v1-photo.jpg",
+    "sha256": "fa57dd845f17e0fe84583372a759aed8682833f77c2f6a354fc7003c80a0f0f8"
+  },
+  {
+    "articles": [
+      "elias-009-v2"
+    ],
+    "image": "https://www.winkels.de/images/marken/produktbilder/Aqua_Vitale_Medium_07l_Glas_Mw.jpg",
+    "source": "https://www.winkels.de/marken/aqua-vitale.html",
+    "local": "/products/elias-009-v2-photo.jpg",
+    "sha256": "935774d98e587783a2e2399f193a3d4562c3cff14a24dab952466ef4cf1da43b"
+  },
+  {
+    "articles": [
+      "elias-009-v3"
+    ],
+    "image": "https://www.winkels.de/images/marken/produktbilder/Aqua_Vitale_Naturelle_07l_Glas_Mw.jpg",
+    "source": "https://www.winkels.de/marken/aqua-vitale.html",
+    "local": "/products/elias-009-v3-photo.jpg",
+    "sha256": "c317cdf0c59aae61ec8aa558d6b1a14fba30dddef228a16e0f98ee239f64b812"
+  },
+  {
+    "articles": [
+      "elias-010-v1"
+    ],
+    "image": "https://www.winkels.de/images/marken/produktbilder/Aqua_Vitale_Classic_10l_PET_Mw.jpg",
+    "source": "https://www.winkels.de/marken/aqua-vitale.html",
+    "local": "/products/elias-010-v1-photo.jpg",
+    "sha256": "4ace5cac9853577864e32e1da79c0dd862329d77c6a4130804f413bbd54832a3"
+  },
+  {
+    "articles": [
+      "elias-010-v2"
+    ],
+    "image": "https://www.winkels.de/images/marken/produktbilder/Aqua_Vitale_Medium_10l_PET_Mw.jpg",
+    "source": "https://www.winkels.de/marken/aqua-vitale.html",
+    "local": "/products/elias-010-v2-photo.jpg",
+    "sha256": "5119bc95b4face4d844ad93c6f4c249cd52d1f805eebf7dd68ce02d11250033d"
+  },
+  {
+    "articles": [
+      "elias-010-v3"
+    ],
+    "image": "https://www.winkels.de/images/marken/produktbilder/Aqua_Vitale_Naturelle_10l_PET_Mw.jpg",
+    "source": "https://www.winkels.de/marken/aqua-vitale.html",
+    "local": "/products/elias-010-v3-photo.jpg",
+    "sha256": "18665d3786fada664d0af331c487cd8886ab3e18d032ed05e5e6131e01c204f7"
+  },
+  {
+    "articles": [
+      "elias-021-v1"
+    ],
+    "image": "https://www.winkels.de/images/marken/produktbilder/Prinzenperle/Prinzenperle_Classic_07l_Glas_Mw.jpg",
+    "source": "https://www.winkels.de/marken/prinzenperle.html",
+    "local": "/products/elias-021-v1-photo.jpg",
+    "sha256": "c0e3c9a7176cc423d894e654b1f79153bb7784a527907d79fdf1dbc4a1b60fd1"
+  },
+  {
+    "articles": [
+      "elias-021-v2"
+    ],
+    "image": "https://www.winkels.de/images/marken/produktbilder/Prinzenperle/Prinzenperle_Medium_07l_Glas_Mw.jpg",
+    "source": "https://www.winkels.de/marken/prinzenperle.html",
+    "local": "/products/elias-021-v2-photo.jpg",
+    "sha256": "63f9bb3f5b848d5971519d2ba429319e3461c8e30da21f3179e777e814bf5495"
+  },
+  {
+    "articles": [
+      "elias-021-v3"
+    ],
+    "image": "https://www.winkels.de/images/marken/produktbilder/Prinzenperle/Prinzenperle_Naturell_07l_Glas_Mw.jpg",
+    "source": "https://www.winkels.de/marken/prinzenperle.html",
+    "local": "/products/elias-021-v3-photo.jpg",
+    "sha256": "f20b88bd60fc56dd38f1c73dafb0c09ef3b1ff933e7122497a97f6399ce1889b"
+  },
+  {
+    "articles": [
+      "elias-052-v2"
+    ],
+    "image": "https://www.distelhaeuser.de/fileadmin/user_upload/distelhaeuser/images/produktdatenbank/flaschen/DH_Export_Flasche_0_5L_NEU.png",
+    "source": "https://www.distelhaeuser.de/unser-bier/spezialitaeten/",
+    "local": "/products/elias-052-v2-photo.png",
+    "sha256": "00f5bbbc1ebcbb3e603e79d344221ea824c263c5498818b013f6be32093bb43c"
+  },
+  {
+    "articles": [
+      "elias-054"
+    ],
+    "image": "https://www.distelhaeuser.de/fileadmin/user_upload/distelhaeuser/images/produktdatenbank/flaschen/DH_Natur_Radler_Flasche_033L_Vichy.png",
+    "source": "https://www.distelhaeuser.de/unser-bier/radler-sortiment/",
+    "local": "/products/elias-054-photo.png",
+    "sha256": "906468761082921fe94c86ab893f045c9e2d2ecef724d204363b706c7751cc42"
+  },
+  {
+    "articles": [
+      "elias-055-v1"
+    ],
+    "image": "https://www.distelhaeuser.de/fileadmin/user_upload/distelhaeuser/images/produktdatenbank/flaschen/DH_Weizen_Hell_Flasche_0_5L.png",
+    "source": "https://www.distelhaeuser.de/unser-bier/weizenbiere/",
+    "local": "/products/elias-055-v1-photo.png",
+    "sha256": "a0a16596b12c026e0886bc1fd501dd62ef7875d2060282da8f3d53397b5b90f0"
+  },
+  {
+    "articles": [
+      "elias-055-v2"
+    ],
+    "image": "https://www.distelhaeuser.de/fileadmin/user_upload/distelhaeuser/images/produktdatenbank/flaschen/DH_Kristall_Flasche_Weizen_0_5L.png",
+    "source": "https://www.distelhaeuser.de/unser-bier/weizenbiere/",
+    "local": "/products/elias-055-v2-photo.png",
+    "sha256": "734d134c2f0a88de4618839600904172ba69a0b70f855eece53189abd2cfe62f"
+  },
+  {
+    "articles": [
+      "elias-018-v1"
+    ],
+    "image": "https://www.alwa-mineralwasser.de/downloads/produktfotos/alwa-live/alwa_live_classic_025l_Glas_Mw.jpg",
+    "source": "https://www.alwa-mineralwasser.de/downloads/?2=&auswahl=alwa+live",
+    "local": "/products/elias-018-v1-photo.jpg",
+    "sha256": "5e2a5303be14919f8ec65dee99e8988a1037170f3125187c4c34b1788330330d"
+  },
+  {
+    "articles": [
+      "elias-018-v2"
+    ],
+    "image": "https://www.alwa-mineralwasser.de/downloads/produktfotos/alwa-live/alwa_live_medium_025l_Glas_Mw.jpg",
+    "source": "https://www.alwa-mineralwasser.de/downloads/?2=&auswahl=alwa+live",
+    "local": "/products/elias-018-v2-photo.jpg",
+    "sha256": "12c8754fd5c0a9eafc553dd5ea96d1fc39b013f048950f3e7a33890bca379083"
+  },
+  {
+    "articles": [
+      "elias-018-v3"
+    ],
+    "image": "https://www.alwa-mineralwasser.de/downloads/produktfotos/alwa-live/alwa_live_naturelle_025l_Glas_Mw.jpg",
+    "source": "https://www.alwa-mineralwasser.de/downloads/?2=&auswahl=alwa+live",
+    "local": "/products/elias-018-v3-photo.jpg",
+    "sha256": "68eaeb8bd4ee53a4ca68611899198be9a6de5aa5654c7a173c0bedae7eb94645"
+  },
+  {
+    "articles": [
+      "elias-037-v2"
+    ],
+    "image": "https://www.alwa-mineralwasser.de/downloads/produktfotos/ApfelGlueck/alwa_Apfelschorle_6x100PET_Einzelflasche_EAN_4001428076550.jpg",
+    "source": "https://www.alwa-mineralwasser.de/downloads/?2=&auswahl=ApfelGl%C3%BCck",
+    "local": "/products/elias-037-v2-photo.jpg",
+    "sha256": "618adf10de63ca2012ef3addf30a1094129d288330cedee7bf500420f2e790fc"
+  },
+  {
+    "articles": [
+      "elias-037-v1"
+    ],
+    "image": "https://www.alwa-mineralwasser.de/downloads/produktfotos/BeerenGlueck/alwa_Beeren_Glueck_Johannisbeere_6x100PET_Einzelflasche_EAN_4001428000739.jpg",
+    "source": "https://www.alwa-mineralwasser.de/downloads/?2=&auswahl=BeerenGl%C3%BCck",
+    "local": "/products/elias-037-v1-photo.jpg",
+    "sha256": "736f66cf6ed62a3021548543e019a7f1f0b2a02f88b1e230d09998f9b70b9fc3"
+  },
+  {
+    "articles": [
+      "elias-072-v2"
+    ],
+    "image": "https://www.jever.de/medien-fuer-inhalte/jever/biere/produkte/jever-light/media-list/jever-light-flasche-05l.webp",
+    "source": "https://www.jever.de/biere/jever-light/",
+    "local": "/products/elias-072-v2-photo.webp",
+    "sha256": "b7fc8dbc5e1f3ded31926308c014611e84d9451f238a95f70005668f5902d0c6"
+  },
+  {
+    "articles": [
+      "elias-072-v1"
+    ],
+    "image": "https://www.jever.de/medien-fuer-inhalte/jever/biere/produkte/jever-pilsener/media-list/jever-pilsener-flasche-05l.webp",
+    "source": "https://www.jever.de/biere/jever-pilsener/",
+    "local": "/products/elias-072-v1-photo.webp",
+    "sha256": "cbe7501d6c79dc0640c86ed81817a2debe31c8f29a3d1e80d9184b984dfe457e"
+  },
+  {
+    "articles": [
+      "elias-072-v3"
+    ],
+    "image": "https://www.jever.de/medien-fuer-inhalte/jever/biere/produkte/jever-fun/media-list/jever-fun-alkoholfrei-flasche-05l.webp",
+    "source": "https://www.jever.de/biere/jever-fun/",
+    "local": "/products/elias-072-v3-photo.webp",
+    "sha256": "b9c3b12413ab6da999ce796eaf76089f44af43d9a7755172a6078d7faf2f37f0"
+  },
+  {
+    "articles": [
+      "elias-073-v1"
+    ],
+    "image": "https://www.winkels.de/images/marken/produktbilder/Markgrafen/mg_pilsener_05l_glase.jpg",
+    "source": "https://www.winkels.de/marken/markgrafen.html",
+    "local": "/products/elias-073-v1-photo.jpg",
+    "sha256": "55b04750c785fae42ad0b83292a0e6956cc690b7d8028e344940ed5ddf3715cc"
+  },
+  {
+    "articles": [
+      "elias-073-v2"
+    ],
+    "image": "https://www.winkels.de/images/marken/produktbilder/Markgrafen/mg_export_05l_glas.jpg",
+    "source": "https://www.winkels.de/marken/markgrafen.html",
+    "local": "/products/elias-073-v2-photo.jpg",
+    "sha256": "3ba2c6a556916ce874ff237c85a11f8941a8cbb512c00373117606f903a40870"
+  },
+  {
+    "articles": [
+      "elias-086"
+    ],
+    "image": "https://www.beil-fruchtsaft.de/media/tomate.jpg",
+    "source": "https://www.beil-fruchtsaft.de/de/markt/",
+    "representation": "Herstelleretikett",
+    "local": "/products/elias-086-photo.jpg",
+    "sha256": "8e03e6558a7d777e29b1a4071837e6ebbd91fb5ed8397580261676607e364f01"
+  },
+  {
+    "articles": [
+      "elias-092"
+    ],
+    "image": "https://www.beil-fruchtsaft.de/media/ace.jpg",
+    "source": "https://www.beil-fruchtsaft.de/de/markt/",
+    "representation": "Herstelleretikett",
+    "local": "/products/elias-092-photo.jpg",
+    "sha256": "a3c03a4054a95028d03fd2e6a1c72d1bf95f3f0921768db9391fbd4482ff9640"
+  },
+  {
+    "articles": [
+      "elias-094"
+    ],
+    "image": "https://www.beil-fruchtsaft.de/media/grapefruit.jpg",
+    "source": "https://www.beil-fruchtsaft.de/de/markt/",
+    "representation": "Herstelleretikett",
+    "local": "/products/elias-094-photo.jpg",
+    "sha256": "247965baabcc2d19fba25f21e250260e822ab685998169d4ec732173de919a7f"
+  },
+  {
+    "articles": [
+      "elias-069-v1"
+    ],
+    "image": "https://www.funfass.de/media/c8/ca/0d/1757347975/da_2015_flasche_050_cdpils_100dpi_rgb.jpg?ts=1757347975",
+    "source": "https://www.funfass.de/Dinkelacker-CD-Pils-0-5l/002105004",
+    "local": "/products/elias-069-v1-photo.jpg",
+    "sha256": "6dcfa7a32557e9c9919acf26e38149eb8e76e61b960c678d842c0e026e765744"
+  },
+  {
+    "articles": [
+      "elias-070"
+    ],
+    "image": "https://mediafile.deloma.de/image/upload/c_fit,f_auto,h_512,q_auto,w_512/v1/images/product/706785f2-dff5-4934-bfd4-e692d5e292b0.png",
+    "source": "https://www.getraenke-hax.de/p/Frueh-Koelsch-0-5-l-Glas-MW/10157",
+    "local": "/products/elias-070-photo.png",
+    "sha256": "7cdd083fbdc717a7cb9d9304ee816778fd9f034bf683b18259c29202c61a3e57"
+  },
+  {
+    "articles": [
+      "elias-096"
+    ],
+    "image": "https://www.wg-heilbronn-shop.de/wp-content/uploads/2024/05/100RieslingFeinfruchtig1577-1.png",
+    "source": "https://www.wg-heilbronn-shop.de/?s=Riesling&post_type=product",
+    "local": "/products/elias-096-photo.png",
+    "sha256": "1517d44f50b376d480b391a27f61c78c5427c77da163f18bd5aa140799403fa9"
+  },
+  {
+    "articles": [
+      "elias-079-v1"
+    ],
+    "image": "https://www.getraenkedienst.com/media/image/c2/7f/77/Tyskie_Bier_20_x_0_5l_600x600.jpg",
+    "source": "https://www.getraenkedienst.com/tyskie-bier-20-x-0-5l",
+    "local": "/products/elias-079-v1-photo.jpg",
+    "sha256": "fa2f74ed7e2596f8aefcff4e09538bcd99fc4e548c24af6d196745a339820217"
+  },
+  {
+    "articles": [
+      "elias-079-v3"
+    ],
+    "image": "https://mediafile.deloma.de/image/upload/c_fit,f_auto,h_512,q_auto,w_512/v1/images/product/94567c6b-c752-464a-b542-bd8ccd6611a2.jpg",
+    "source": "https://www.getraenke-hax.de/p/Efes-Pilsener-0-5-l-Glas-MW/18235",
+    "local": "/products/elias-079-v3-photo.jpg",
+    "sha256": "b810bd7e16f0bf5b59404675cfdfc7a24036aae4aa1dd531bc25821da493cfa0"
+  },
+  {
+    "articles": [
+      "elias-050"
+    ],
+    "image": "https://cdn.paulaner.de/media/pages/de/produkte/spezi/spezi/modules/product-intro/5c81c8ba5c-1761744407/gebinde-nat-033-flasche-spezi-520x480-q90.png",
+    "source": "https://www.paulaner.de/produkte/spezi/spezi",
+    "local": "/products/elias-050-photo.png",
+    "sha256": "c34f774cfe8fd868cbb75dae80cf23250ed2758579dcc849f84e4a1429e22e8b"
+  },
+  {
+    "articles": [
+      "elias-098"
+    ],
+    "image": "https://www.wg-heilbronn-shop.de/wp-content/uploads/2024/04/100SpaetburgunderWeissherbst1577.png",
+    "source": "https://www.wg-heilbronn-shop.de/?s=Sp%C3%A4tburgunder+Wei%C3%9Fherbst&post_type=product",
+    "local": "/products/elias-098-photo.png",
+    "sha256": "e09ece28ba87ed0cdba844c9d39dde2159230333b0240fe0151750a437c46d4e"
+  },
+  {
+    "articles": [
+      "elias-079-v2"
+    ],
+    "image": "https://mediafile.deloma.de/image/upload/c_fit,f_auto,h_512,q_auto,w_512/v1/images/product/34d9fae1-8622-4100-b705-95f007ce330a.png",
+    "source": "https://www.getraenke-hax.de/p/Lech-Premium-0-5-l-Glas-MW/10059",
+    "local": "/products/elias-079-v2-photo.png",
+    "sha256": "5e5a7196a000bbb7b7a6068123b0801eff263ad095085767b3fb325bff814dcd"
+  },
+  {
+    "articles": [
+      "elias-066"
+    ],
+    "image": "https://www.grihed.de/media/image/d7/5b/31/017611_CL_Flasche_Classic_05.jpg",
+    "source": "https://www.grihed.de/unser-sortiment/getraenke/bier/alkoholfreies-bier/184/clausthaler-classic-alkoholfrei-0-50l",
+    "local": "/products/elias-066-photo.jpg",
+    "sha256": "02757cae9ae112f3ec973e6136bc8a29604defa1ed52c927d4cd81e99ac6d135"
+  },
+  {
+    "articles": [
+      "elias-099"
+    ],
+    "image": "https://www.wg-heilbronn-shop.de/wp-content/uploads/2019/03/100TrollingerLembergerFeinfruchtig1577-1.png",
+    "source": "https://www.wg-heilbronn-shop.de/shop/trollinger-mit-lemberger-qualitaetswein-feinfruchtig/",
+    "local": "/products/elias-099-photo.png",
+    "sha256": "a1e66f94ab36bc5c9a638880369dbe2f9e36fa964ee0d2fa341fd03e842c3db5"
+  },
+  {
+    "articles": [
+      "elias-097"
+    ],
+    "image": "https://www.wg-heilbronn-shop.de/wp-content/uploads/2019/02/100RieslingTrocken1577.png",
+    "source": "https://www.wg-heilbronn-shop.de/page/2/?s=Riesling&post_type=product",
+    "local": "/products/elias-097-photo.png",
+    "sha256": "079153675efa1b418e05956fecb3c809c49792493aa2fac2eeb409a241a45c96"
+  },
+  {
+    "articles": [
+      "elias-016"
+    ],
+    "image": "https://onlinedurst.de/media/image/62/5e/34/TEI_Classic_1L_PET_Kasten-1_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/mineralwasser/teinacher-mineralbr./13/teinacher-classic-9x1-0l-pet?c=6",
+    "representation": "Sortenbeispiel",
+    "label": "Teinacher Classic 9x1,0l Pet",
+    "local": "/products/elias-016-photo.jpg",
+    "sha256": "b6e564d7438296d82f1c39489412ecbf0dc9cddf80437f43c408d3212cce8ef8"
+  },
+  {
+    "articles": [
+      "elias-019"
+    ],
+    "image": "https://onlinedurst.de/media/image/fb/a3/8e/Gerolsteiner-Sprudel-pet-12x1-0_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/mineralwasser/gerolsteiner/56/gerolsteiner-sprudel-12x1l?c=6",
+    "representation": "Sortenbeispiel",
+    "label": "Gerolsteiner Sprudel 12x1l",
+    "local": "/products/elias-019-photo.jpg",
+    "sha256": "83778b375d9772cbdb2a0c3acd32594dc82391fe94a578660b6e9ef9fb07e828"
+  },
+  {
+    "articles": [
+      "elias-030"
+    ],
+    "image": "https://onlinedurst.de/media/image/05/f9/be/TEI_GenussLimo_OrangeMandarine_075L_Glas_Kasten-1_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/limonade-fruchtschorle/teinacher-mineralbr./genuss-limo-0-75l/167/teinacher-genuss-limonade-orange-mandarine-12x0-75l?c=13",
+    "representation": "Sortenbeispiel",
+    "label": "Teinacher Genuss-Limonade Orange-Mandarine 12x0,75l",
+    "local": "/products/elias-030-photo.jpg",
+    "sha256": "fbaf540397dd96139ec3af44269633b1ac20bfad0fec87f8dee0332c8bcf5648"
+  },
+  {
+    "articles": [
+      "elias-038"
+    ],
+    "image": "https://onlinedurst.de/media/image/89/81/50/Indian_Tonic_Water_1l_MW_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/limonade-fruchtschorle/schweppes/268/schweppes-indian-tonic-water-6x1l?c=13",
+    "representation": "Sortenbeispiel",
+    "label": "Schweppes Indian Tonic Water 6x1l",
+    "local": "/products/elias-038-photo.jpg",
+    "sha256": "716a0e162f1748ffcfcb7c36d0dbb5ee42a9cbe6d4b94fea5ac70d0589e4e09d"
+  },
+  {
+    "articles": [
+      "elias-049"
+    ],
+    "image": "https://onlinedurst.de/media/image/d4/c5/e9/WEB_Packshot_fritz-kola_033_200x200@2x.png",
+    "source": "https://onlinedurst.de/limonade-fruchtschorle/fritz-limo/240/fritz-kola-24x0-33l?c=14",
+    "representation": "Sortenbeispiel",
+    "label": "fritz-kola 24x0,33l",
+    "local": "/products/elias-049-photo.png",
+    "sha256": "02d0955570e0fa24544633fe057540d997daebe175f1ac6094c079b6f3856db0"
+  },
+  {
+    "articles": [
+      "elias-005-v1"
+    ],
+    "image": "https://onlinedurst.de/media/image/ef/36/0d/Ensinger-Sport-Classic-1l-Kiste_01_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/mineralwasser/ensinger/40/ensinger-sport-classic-9x1l-pet?c=6",
+    "label": "Ensinger SPORT CLASSIC 9x1l PET",
+    "local": "/products/elias-005-v1-photo.jpg",
+    "sha256": "5456e0f795095401f0057588b9da891e0cefc9b1b100b27473f65d8c70768011"
+  },
+  {
+    "articles": [
+      "elias-005-v2"
+    ],
+    "image": "https://onlinedurst.de/media/image/1d/aa/46/Ensinger-Sport-Medium-1l-Kiste_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/mineralwasser/ensinger/41/ensinger-sport-medium-9x1l-pet?c=6",
+    "label": "Ensinger SPORT MEDIUM 9x1l PET",
+    "local": "/products/elias-005-v2-photo.jpg",
+    "sha256": "83e279a37a19b26ecf20a4f4afdc37cb8ad1785c2834bca2398ea587ac7c31c8"
+  },
+  {
+    "articles": [
+      "elias-005-v3"
+    ],
+    "image": "https://onlinedurst.de/media/image/32/41/a4/Ensinger-Sport-Still-1l-Kiste_200x200@2x.jpg",
+    "source": "https://onlinedurst.de/mineralwasser/ensinger/42/ensinger-sport-still-9x1l-pet?c=6",
+    "label": "Ensinger SPORT STILL 9x1l PET",
+    "local": "/products/elias-005-v3-photo.jpg",
+    "sha256": "50ac0a157fd1b61eadc82450ff50e5fb8d5c96abecb38222cbe3def17113317d"
+  },
+  {
+    "articles": [
+      "elias-068-v1"
+    ],
+    "image": "https://alster-getraenkemarkt.de/cdn/shop/products/CoronaExtra0_33lGlasMehrweg.jpg?v=1653207977&width=550",
+    "source": "https://alster-getraenkemarkt.de/products/corona-extra-0-33l-glas-mehrweg",
+    "local": "/products/elias-068-v1-photo.jpg",
+    "sha256": "65d5d9df3dba78b87df3cb76e5bd817a89a7c1c527b55cc3f5867ab085c6236e"
   }
 ]

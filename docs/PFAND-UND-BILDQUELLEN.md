@@ -16,4 +16,29 @@ Recherchequellen:
 
 Die Original-Lieferliste unterscheidet bei manchen Cola-Positionen die Verpackung nicht ausdrücklich. Die importierten Profile dokumentieren diese Annahme in `data_note`, damit die konkrete Verpackung am Wareneingang abgeglichen werden kann. Wein/Sekt sind entsprechend der Auftraggebervorgabe pfandfrei vorbelegt; besondere Mehrweg-Weinartikel benötigen ein individuelles Pfandprofil.
 
-42 Artikel haben recherchierte Herstellerabbildungen. Pro Datei sind Ursprungsseite und Bildadresse in `data/image-sources.json` dokumentiert. Weitere Bilder lassen sich im CRM als JPG, PNG oder WebP (max. 5 MB) hochladen. Keine generierten Markenprodukte. Hersteller-Sortenabbildungen sind nicht automatisch Fotos jedes verkauften Kastens; das tatsächliche Gebinde steht separat am Artikel.
+## Produktbilder – Überarbeitung vom 17.09.2026
+
+134 der 143 aktiven Getränkeartikel haben jetzt recherchierte Originalabbildungen (zuvor 42). 92 Artikel wurden ergänzt, sechs vorhandene Zuordnungen verbessert. Die sechs weiteren aktiven Positionen sind Vermietung bzw. Kommissionsgebühr.
+
+Alle 98 ergänzten/ersetzten Dateien wurden heruntergeladen, auf gültiges Bildformat geprüft und visuell kontrolliert. Die Quellen mit Artikelzuordnung, Originaladresse und SHA-256-Prüfsumme stehen in `data/image-sources.json`. Herstellerdownloads werden bevorzugt; ergänzend wurden öffentliche Fachhändlerkataloge verwendet. Lokal gespeicherte Bilder werden durch Next.js in passenden Auflösungen ausgeliefert. Eigene CRM-Uploads bleiben erhalten.
+
+Besondere Darstellungen sind unmittelbar am Bild gekennzeichnet:
+- 14 Beil-Artikel: echte Herstelleretiketten, keine erfundenen Flaschenmontagen. Ein Etikett ist keine verbindliche Gebindeabbildung.
+- Fünf Sammel-/unspezifische Positionen (Teinacher 1 l, Gerolsteiner, Teinacher Genuss-Limonade, Schweppes, Fritz): „Sortenbeispiel“. Keine neue Sorte oder Gebindegröße wird durch das Foto angelegt.
+- Hirschquelle 0,75 l: Herstellerabbildung der beiden Glasflaschenformen, gekennzeichnet als „Flaschenabbildung“; kein abweichender 12er-Kasten für den hinterlegten 9er-Kasten.
+
+### Verbleibende neun Getränke ohne eindeutig passende Abbildung
+
+| Artikel | Grund |
+| --- | --- |
+| St. Leonhard Still / Medium | Hinterlegt sind 0,75 l; gefundene aktuelle Originalabbildungen zeigen 1 l. |
+| Ensinger Sport Grape | Hinterlegt sind 0,7 l; aktuelle Herstellerabbildung zeigt 0,75 l. |
+| Distelhäuser Alkoholfrei 0,5 l | Aktuelle passende Pils-Abbildung nur in 0,33 l gefunden; die neue 0,0%-Helles-Variante ist ein anderer Artikel. |
+| Beck’s Pils verschiedene Sorten 0,5 l | Keine eindeutige Sorte; verfügbare geprüfte Abbildungen der Sammelauswahl zeigen 0,33 l. |
+| Beil Schwäbischer Most | Keine eindeutig zuordenbare aktuelle Originalabbildung gefunden. |
+| Sekt Brillant trocken | Marke fehlt; sowohl Söhnlein als auch Schloss Affaltrach führen „Brillant“. |
+| Sekt Rosé / Piccolo | Hersteller/Marke fehlen in der Lieferliste. |
+
+Die fehlenden Bilder können nach genauer Produktidentifikation oder mit eigenen Fotos ergänzt werden. Es werden keine Markenverpackungen generiert und keine Produkt-, Preis-, Pfand- oder Bestandsdaten aufgrund von Bildrecherche verändert.
+
+Migration 014 aktualisiert ausschließlich `image_url` und `image_source`. Sie gleicht Artikelname, Flaschenzahl, Volumen und bisherigen Bildpfad ab; zwischenzeitlich bearbeitete Artikel oder eigene Bilder werden nicht überschrieben. Vor Veröffentlichung stehen die Bilddateien bereit, anschließend werden die Datenbankzuordnungen angewendet.
