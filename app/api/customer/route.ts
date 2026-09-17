@@ -1,3 +1,4 @@
+import { deliveryAddressFields } from "@/lib/delivery-address";
 import { serviceDb, sameOrigin, safeError } from "@/lib/server";
 import { readAllRows } from "@/lib/database-read";
 import { signedCustomer } from "@/lib/customer-server";
@@ -19,7 +20,7 @@ export async function GET() {
     );
     return Response.json(
       {
-        customer: { ...c, notes: "" },
+        customer: { ...c, ...deliveryAddressFields(c), notes: "" },
         orders,
         deliveries,
         invoices,
@@ -47,6 +48,10 @@ export async function POST(req: Request) {
         longitude: c.longitude,
       });
       const { id, ...record } = v;
+      if (record.address !== c.address) {
+        record.latitude = null;
+        record.longitude = null;
+      }
       const { error } = await db
         .from("customers")
         .update({

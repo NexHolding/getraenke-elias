@@ -157,11 +157,41 @@ assert.equal(closing.cash, 2007);
 assert.equal(closing.card, 0);
 assert.equal(closing.difference, 0);
 await query(
+  "update customers set street='Äußere Straße',house_number='12 a',postal_code='01234',city='Testort',address='Äußere Straße 12 a, 01234 Testort' where id=$1",
+  [customer],
+);
+await query("update customers set latitude=49,longitude=9 where id=$1", [
+  customer,
+]);
+await query(
+  "update customers set street='Neue Straße',address='Neue Straße 12 a, 01234 Testort' where id=$1",
+  [customer],
+);
+assert.equal(
+  (await query("select latitude from customers where id=$1", [customer]))[0]
+    .latitude,
+  null,
+);
+await query(
   "insert into subscriptions(customer_id,items,interval,next_date) values($1,$2,'weekly',current_date)",
   [customer, JSON.stringify([{ id: "elias-036-v1", quantity: 4 }])],
 );
 assert.equal((await query("select generate_subscription_orders() n"))[0].n, 1);
 assert.equal((await query("select generate_subscription_orders() n"))[0].n, 0);
+const recurring = (
+  await query(
+    "select street,house_number,postal_code,city from orders where subscription_id is not null",
+  )
+)[0];
+assert.deepEqual(recurring, {
+  street: "Neue Straße",
+  house_number: "12 a",
+  postal_code: "01234",
+  city: "Testort",
+});
+console.log(
+  "PASS structured address snapshots in recurring orders and invalidated geocodes on address change",
+);
 for (const fn of [
   "save_sale(uuid,jsonb,text,uuid,jsonb,integer)",
   "save_delivery(uuid,uuid,jsonb,integer,uuid,boolean,text,text)",

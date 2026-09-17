@@ -1,3 +1,4 @@
+import { deliveryAddressFields } from "@/lib/delivery-address";
 import {
   SYSTEM_ACCOUNT_EMAIL,
   isSystemAccountEmail,
@@ -44,7 +45,9 @@ export async function GET() {
       ]);
     return Response.json(
       {
-        customers: customers.filter(visible),
+        customers: customers
+          .filter(visible)
+          .map((c) => ({ ...c, ...deliveryAddressFields(c) })),
         employees: employees.filter(visible).map((row) => {
           const { pin_hash, ...rest } = row as unknown as Record<
             string,

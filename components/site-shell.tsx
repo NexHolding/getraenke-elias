@@ -1,4 +1,6 @@
 "use client";
+import { DeliveryAddressFields } from "./delivery-address-fields";
+import type { DeliveryAddress } from "@/lib/delivery-address";
 import Link from "next/link";
 import { useDialog } from "./use-dialog";
 import Image from "next/image";
@@ -58,12 +60,15 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
     [busy, setBusy] = useState(false),
     [social, setSocial] = useState(""),
     [guestAllowed, setGuestAllowed] = useState(true),
-    [customer, setCustomer] = useState<{
-      name: string;
-      email: string;
-      phone: string;
-      address: string;
-    } | null>(null),
+    [customer, setCustomer] = useState<
+      | (Partial<DeliveryAddress> & {
+          name: string;
+          email: string;
+          phone: string;
+          address: string;
+        })
+      | null
+    >(null),
     [requestId, setRequestId] = useState(() => crypto.randomUUID());
   useDialog(open, () => setOpen(false));
   const cartJson = useSyncExternalStore(
@@ -450,18 +455,7 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
                       autoComplete="tel"
                     />
                   </label>
-                  <label>
-                    Lieferadresse
-                    <input
-                      name="address"
-                      defaultValue={customer?.address || ""}
-                      required
-                      minLength={8}
-                      maxLength={300}
-                      autoComplete="street-address"
-                      placeholder="Straße, Hausnummer, PLZ und Ort"
-                    />
-                  </label>
+                  <DeliveryAddressFields value={customer} />
                   <label>
                     Wunschtermin & Hinweise
                     <textarea

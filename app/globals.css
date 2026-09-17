@@ -3603,3 +3603,10 @@ textarea {
 }
 
 }
+
+.delivery-address-fields { border: 0; padding: 0; margin: 0; min-width: 0; grid-column: 1 / -1; }
+.delivery-address-fields legend { font-weight: 700; margin-bottom: 14px; }
+.delivery-address-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 16px; }
+.delivery-address-grid label { min-width: 0; }
+.delivery-address-grid input { width: 100%; }
+@media (max-width: 480px) { .delivery-address-grid { grid-template-columns: minmax(0, 1fr); } }

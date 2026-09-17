@@ -12,7 +12,7 @@ export async function POST(req: Request) {
       return Response.json(
         {
           error:
-            "Bitte vervollständige deine Kontaktdaten und die Altersbestätigung.",
+            "Bitte vervollständige Kontaktdaten, Straße, Hausnummer, fünfstellige Postleitzahl, Ort und Altersbestätigung.",
         },
         { status: 400 },
       );
@@ -130,6 +130,10 @@ export async function POST(req: Request) {
             email: v.email.toLowerCase(),
             phone: v.phone,
             address: v.address,
+            street: v.street,
+            house_number: v.house_number,
+            postal_code: v.postal_code,
+            city: v.city,
           })
           .select("*")
           .single();
@@ -164,6 +168,10 @@ export async function POST(req: Request) {
         email: v.email,
         phone: v.phone,
         address: v.address,
+        street: v.street,
+        house_number: v.house_number,
+        postal_code: v.postal_code,
+        city: v.city,
         notes: v.notes,
         items,
       })

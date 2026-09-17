@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  deliveryAddressShape,
+  formatDeliveryAddress,
+} from "./delivery-address";
 export const productSchema = z
   .object({
     group_name: z.string().max(200).default(""),
@@ -85,25 +89,27 @@ export const supplierSchema = z
     (s) => !s.auto_send || s.email !== "",
     "Automatik benötigt eine Bestell-E-Mail-Adresse.",
   );
-export const orderSchema = z.object({
-  request_id: z.uuid(),
-  customer_name: z.string().min(2).max(120),
-  email: z.email().max(200),
-  phone: z.string().min(5).max(60),
-  address: z.string().min(8).max(300),
-  notes: z.string().max(1000).default(""),
-  website: z.literal("").optional(),
-  adult: z.literal("on"),
-  items: z
-    .array(
-      z.object({
-        id: z.string().max(80),
-        quantity: z.number().int().min(1).max(100),
-      }),
-    )
-    .min(1)
-    .max(200),
-});
+export const orderSchema = z
+  .object({
+    request_id: z.uuid(),
+    customer_name: z.string().min(2).max(120),
+    email: z.email().max(200),
+    phone: z.string().min(5).max(60),
+    ...deliveryAddressShape,
+    notes: z.string().max(1000).default(""),
+    website: z.literal("").optional(),
+    adult: z.literal("on"),
+    items: z
+      .array(
+        z.object({
+          id: z.string().max(80),
+          quantity: z.number().int().min(1).max(100),
+        }),
+      )
+      .min(1)
+      .max(200),
+  })
+  .transform((value) => ({ ...value, address: formatDeliveryAddress(value) }));
 export const settingsSchema = z.object({
   live_mode: z.boolean().default(false),
   guest_orders: z.boolean().default(true),

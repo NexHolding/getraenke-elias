@@ -9,6 +9,8 @@ import type {
   Invoice,
   Subscription,
 } from "@/lib/types";
+import { DeliveryAddressFields } from "./delivery-address-fields";
+import { formatDeliveryAddress } from "@/lib/delivery-address";
 import { euro } from "@/lib/money";
 export type OperationsData = {
   customers: Customer[];
@@ -117,7 +119,18 @@ export function CustomerFields({
       {text("name", "Name / Firma")}
       {text("email", "E-Mail", "email")}
       {text("phone", "Telefon", "tel")}
-      {text("address", "Lieferadresse")}
+      <DeliveryAddressFields
+        value={value}
+        onChange={(address) =>
+          onChange({
+            ...value,
+            ...address,
+            address: formatDeliveryAddress(address),
+            latitude: null,
+            longitude: null,
+          })
+        }
+      />
       {internal && text("notes", "Interne Notizen")}
       {internal &&
         (["latitude", "longitude"] as const).map((key, i) => (

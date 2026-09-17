@@ -1,3 +1,4 @@
+import type { DeliveryAddress } from "./delivery-address";
 export type Product = {
   loose_stock?: number;
   cost_net_cents?: number | null;
@@ -45,7 +46,7 @@ export type Supplier = {
   auto_send: boolean;
 };
 export type CartLine = { product: Product; quantity: number };
-export type Order = {
+export type Order = Partial<DeliveryAddress> & {
   customer_id?: string | null;
   delivery_date?: string | null;
   eta_start?: string | null;
@@ -135,7 +136,7 @@ export type Settings = {
   smtp_from: string;
   smtp_password_set?: boolean;
 };
-export type Customer = {
+export type Customer = Partial<DeliveryAddress> & {
   id: string;
   number: number;
   user_id: string | null;

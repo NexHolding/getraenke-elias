@@ -131,7 +131,10 @@ test("order rejects noninteger or negative quantities and missing adult acknowle
     customer_name: "Test Person",
     email: "qa@example.invalid",
     phone: "0123456",
-    address: "Teststraße 1, Heilbronn",
+    street: "Teststraße",
+    house_number: "1",
+    postal_code: "74076",
+    city: "Heilbronn",
     adult: "on",
     items: [{ id: "elias-001", quantity: 4 }],
   };
