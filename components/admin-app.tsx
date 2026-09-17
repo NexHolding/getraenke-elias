@@ -45,7 +45,7 @@ import {
   discountReasons,
   discountTotal,
 } from "@/lib/discounts";
-import { catalogPdf, financePdf, csvDownload } from "@/lib/exports";
+import { catalogPdf } from "@/lib/exports";
 import { categories } from "@/lib/catalog";
 import type {
   Product,
@@ -72,6 +72,7 @@ type Closing = {
   created_at: string;
 };
 type Data = {
+  finance_readonly?: boolean;
   operatorId: string;
   pendingReceipt?: string | null;
   products: Product[];
@@ -283,28 +284,26 @@ export default function AdminApp({ section }: { section: string }) {
     );
   const total = totals(lines);
   const heading = nav.find((n) => n[0] === section)?.[1] || "Übersicht";
-  function exportFinance() {
-    csvDownload(`Elias-Finanzen-${period}.csv`, [
-      ["Einrichtungsdaten · vor Echtbetrieb zurücksetzen"],
-      [
-        "Bon",
-        "Zeitpunkt UTC",
-        "Zahlart",
-        "Netto EUR",
-        "USt EUR",
-        "Brutto EUR",
-        "Pfand EUR",
-      ],
-      ...periodSales.map((s) => [
-        s.number,
-        s.created_at,
-        s.payment,
-        (s.net_cents / 100).toFixed(2),
-        (s.tax_cents / 100).toFixed(2),
-        (s.total_cents / 100).toFixed(2),
-        (s.deposit_cents / 100).toFixed(2),
-      ]),
-    ]);
+  async function exportFinance(format: "pdf" | "csv") {
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch(
+        `/api/finance?period=${encodeURIComponent(period)}&format=${format}`,
+        { cache: "no-store" },
+      );
+      if (!response.ok) throw new Error((await response.json()).error);
+      const url = URL.createObjectURL(await response.blob()),
+        a = document.createElement("a");
+      a.href = url;
+      a.download = `Elias-${mode === "month" ? "Monatsbericht" : "Tagesbericht"}-${period}.${format}`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Export fehlgeschlagen.");
+    } finally {
+      setBusy(false);
+    }
   }
   return (
     <div className="admin-shell">
@@ -314,19 +313,21 @@ export default function AdminApp({ section }: { section: string }) {
         </Link>
         <div className="workspace-label">DEIN ARBEITSPLATZ</div>
         <nav aria-label="Verwaltung">
-          {nav.map(([id, label, Icon]) => (
-            <Link
-              href={id === "uebersicht" ? "/crm" : `/crm/${id}`}
-              className={section === id ? "active" : ""}
-              key={id}
-            >
-              <Icon size={19} />
-              {label}
-              {id === "bestellungen" && pending.length > 0 && (
-                <span className="nav-count">{pending.length}</span>
-              )}
-            </Link>
-          ))}
+          {nav
+            .filter(([id]) => data && can(data, id))
+            .map(([id, label, Icon]) => (
+              <Link
+                href={id === "uebersicht" ? "/crm" : `/crm/${id}`}
+                className={section === id ? "active" : ""}
+                key={id}
+              >
+                <Icon size={19} />
+                {label}
+                {id === "bestellungen" && pending.length > 0 && (
+                  <span className="nav-count">{pending.length}</span>
+                )}
+              </Link>
+            ))}
         </nav>
         <div className="sidebar-bottom">
           <div>
@@ -1549,7 +1550,7 @@ export default function AdminApp({ section }: { section: string }) {
               )}
               {section === "finanzen" && (
                 <>
-                  <InvoiceLedger />
+                  <InvoiceLedger readOnly={!!data.finance_readonly} />
                   {can(data, "inventur") && (
                     <p>
                       <Link className="text-link" href="/crm/inventur">
@@ -1588,39 +1589,43 @@ export default function AdminApp({ section }: { section: string }) {
                     />
                     <button
                       className="button secondary small"
-                      onClick={exportFinance}
+                      disabled={busy || !period}
+                      onClick={() => exportFinance("csv")}
                     >
                       <Download size={16} /> CSV
                     </button>
                     <button
                       className="button secondary small"
-                      onClick={() =>
-                        financePdf(
-                          periodSales,
-                          period,
-                          data.closings.find(
-                            (c) => c.kind === mode && c.period === period,
-                          )?.totals,
-                        )
-                      }
+                      disabled={busy || !period}
+                      onClick={() => exportFinance("pdf")}
                     >
                       <Printer size={16} /> PDF
                     </button>
-                    <button
-                      className="button small"
-                      onClick={() => setConfirmClose(true)}
-                      disabled={!period}
-                    >
-                      {data.closings.some(
-                        (c) => c.kind === mode && c.period === period,
-                      )
-                        ? "Abschluss aktualisieren"
-                        : `${mode === "day" ? "Tages" : "Monats"}abschluss`}
-                    </button>
+                    {!data.finance_readonly && (
+                      <button
+                        className="button small"
+                        onClick={() => setConfirmClose(true)}
+                        disabled={!period}
+                      >
+                        {data.closings.some(
+                          (c) => c.kind === mode && c.period === period,
+                        )
+                          ? "Abschluss aktualisieren"
+                          : `${mode === "day" ? "Tages" : "Monats"}abschluss`}
+                      </button>
+                    )}
                   </div>
+                  <p className="fineprint">
+                    PDF und CSV enthalten Kassenbons und Lieferrechnungen mit
+                    getrennten Summen. Die folgenden Kennzahlen beziehen sich
+                    auf die Kasse.
+                    {data.finance_readonly
+                      ? " Ihr Zugang erlaubt ausschließlich Lesen und Exportieren."
+                      : ""}
+                  </p>
                   <div className="stats-grid">
                     <Stat
-                      title="Umsatz brutto"
+                      title="Kassenumsatz brutto"
                       value={euro(sum("total_cents"))}
                       detail={`${periodSales.length} Belege`}
                       icon={Wallet}

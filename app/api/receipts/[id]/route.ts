@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { requireStaff, serviceDb, safeError, sameOrigin } from "@/lib/server";
-import { can } from "@/lib/permissions";
+import { can, financeReadOnly } from "@/lib/permissions";
 import { receiptArchive, archivedPdf } from "@/lib/receipt-archive";
 async function access(id: string) {
   z.uuid().parse(id);
@@ -63,6 +63,7 @@ export async function POST(
     sameOrigin(req);
     const { id } = await params;
     const { sale, staff } = await access(id);
+    if (financeReadOnly(staff)) throw new Error("FORBIDDEN");
     const body = z
       .object({
         action: z.enum([

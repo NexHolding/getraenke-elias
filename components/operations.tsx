@@ -849,7 +849,7 @@ export function DeliveryManager({
     </>
   );
 }
-export function InvoiceLedger() {
+export function InvoiceLedger({ readOnly = false }: { readOnly?: boolean }) {
   const op = useOperations();
   return (
     <section className="panel">
@@ -867,13 +867,15 @@ export function InvoiceLedger() {
               RE-{i.number} · Netto {euro(i.net_cents)} · USt.{" "}
               {euro(i.tax_cents)}
             </span>
-            <button
-              className="button secondary"
-              disabled={op.busy}
-              onClick={() => op.act("invoice-paid", { id: i.id })}
-            >
-              Zahlungseingang buchen
-            </button>
+            {!readOnly && (
+              <button
+                className="button secondary"
+                disabled={op.busy}
+                onClick={() => op.act("invoice-paid", { id: i.id })}
+              >
+                Zahlungseingang buchen
+              </button>
+            )}
           </div>
         ))}
       {!op.data.invoices.length && (

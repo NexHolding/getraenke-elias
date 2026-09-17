@@ -1,5 +1,5 @@
 import type { Product, Sale } from "./types";
-import { euro, pack, totals } from "./money";
+import { euro, pack } from "./money";
 export { createReceiptPdf } from "./receipt";
 import { createReceiptPdf } from "./receipt";
 export function csvDownload(name: string, rows: (string | number)[][]) {
@@ -90,82 +90,6 @@ export async function catalogPdf(products: Product[]) {
     },
   });
   await finish(doc, "Elias-Artikelliste.pdf");
-}
-export async function financePdf(
-  sales: Sale[],
-  period: string,
-  closing?: { opening?: number; counted?: number; difference?: number },
-) {
-  const doc = await documentBase(
-    period.length === 10 ? "Tagesbericht" : "Monatsbericht",
-    `${period} · Einrichtungsmodus · Netto / Umsatzsteuer / Brutto`,
-  );
-  const { default: autoTable } = await import("jspdf-autotable");
-  autoTable(doc, {
-    startY: 50,
-    margin: { left: 16, right: 16, bottom: 25 },
-    head: [
-      ["Bon", "Datum / Zahlart", "Netto", "USt.", "Brutto", "davon Pfand"],
-    ],
-    body: sales.map((s) => [
-      `E-${s.number}`,
-      new Date(s.created_at).toLocaleDateString("de-DE", {
-        timeZone: "Europe/Berlin",
-      }) + ` / ${s.payment === "cash" ? "Bar" : "Karte"}`,
-      euro(s.net_cents),
-      euro(s.tax_cents),
-      euro(s.total_cents),
-      euro(s.deposit_cents),
-    ]),
-    foot: [
-      [
-        "Summe",
-        "",
-        euro(sales.reduce((a, s) => a + s.net_cents, 0)),
-        euro(sales.reduce((a, s) => a + s.tax_cents, 0)),
-        euro(sales.reduce((a, s) => a + s.total_cents, 0)),
-        euro(sales.reduce((a, s) => a + s.deposit_cents, 0)),
-      ],
-    ],
-    styles: { fontSize: 8, cellPadding: 3 },
-    headStyles: { fillColor: [45, 63, 38] },
-    footStyles: { fillColor: [153, 183, 43], textColor: [30, 40, 25] },
-  });
-  let y =
-    (doc as typeof doc & { lastAutoTable: { finalY: number } }).lastAutoTable
-      .finalY + 12;
-  if (y > 245) {
-    doc.addPage();
-    y = 25;
-  }
-  doc.setFontSize(11);
-  doc.text(
-    `Bar: ${euro(sales.filter((s) => s.payment === "cash").reduce((a, s) => a + s.total_cents, 0))}    Karte: ${euro(sales.filter((s) => s.payment === "card").reduce((a, s) => a + s.total_cents, 0))}`,
-    16,
-    y,
-  );
-  const all = totals(sales.flatMap((s) => s.items));
-  for (const [rate, v] of Object.entries(all.taxes)) {
-    y += 7;
-    doc.text(
-      `${rate}% USt. · Netto ${euro(v.net)} · Steuer ${euro(v.tax)} · Brutto ${euro(v.gross)}`,
-      16,
-      y,
-    );
-  }
-  if (closing) {
-    y += 10;
-    if (y > 260) {
-      doc.addPage();
-      y = 25;
-    }
-    doc.text(
-      `Anfangsbestand ${euro(closing.opening || 0)} · Gezählt ${euro(closing.counted || 0)} · Differenz ${euro(closing.difference || 0)}`,
-      16,
-      y,
-    );
-  }
-  await finish(doc, `Elias-Finanzen-${period}.pdf`);
 }
 export async function receiptPdf(sale: Sale) {
   const doc = await createReceiptPdf(sale);

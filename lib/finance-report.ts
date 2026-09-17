@@ -1,0 +1,245 @@
+import type { Sale, Invoice, SaleLine, Settings } from "./types";
+import { totals } from "./money";
+export type FinanceClosing = {
+  id?: string;
+  kind: string;
+  period: string;
+  created_at: string;
+  totals: {
+    gross: number;
+    count: number;
+    cash?: number;
+    card?: number;
+    opening?: number;
+    counted?: number;
+    difference?: number;
+  };
+};
+export type FinanceDocument = {
+  id: string;
+  number: string;
+  kind: "Kassenbon" | "Lieferrechnung";
+  created_at: string;
+  day: string;
+  payment: string;
+  status: string;
+  setup: boolean;
+  items: SaleLine[];
+  net: number;
+  tax: number;
+  gross: number;
+  deposit: number;
+  taxes: ReturnType<typeof totals>["taxes"];
+};
+export const berlinDate = (date: string) =>
+  new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(
+    new Date(date),
+  );
+export function validFinancePeriod(period: string) {
+  if (!/^\d{4}-(0[1-9]|1[0-2])(?:-(0[1-9]|[12]\d|3[01]))?$/.test(period))
+    return false;
+  return (
+    period.length === 7 ||
+    new Date(period + "T12:00:00Z").toISOString().slice(0, 10) === period
+  );
+}
+export function buildFinanceReport(
+  sales: Sale[],
+  invoices: Invoice[],
+  period: string,
+  settings: Partial<Settings>,
+  closings: FinanceClosing[] = [],
+  now = new Date().toISOString(),
+) {
+  if (!validFinancePeriod(period))
+    throw new Error("Bitte einen gültigen Tag oder Monat auswählen.");
+  const documents: FinanceDocument[] = [];
+  function add(row: Sale | Invoice, kind: FinanceDocument["kind"]) {
+    const day = berlinDate(row.created_at);
+    if (!day.startsWith(period)) return;
+    const sum = totals(row.items);
+    if (
+      sum.gross !== row.total_cents ||
+      sum.net !== row.net_cents ||
+      sum.tax !== row.tax_cents ||
+      sum.deposit !== row.deposit_cents
+    )
+      throw new Error(
+        `Beleg ${row.number}: Summen stimmen nicht mit den gespeicherten Positionen überein.`,
+      );
+    const sale = kind === "Kassenbon" ? (row as Sale) : null,
+      invoice = sale ? null : (row as Invoice);
+    documents.push({
+      id: row.id,
+      number: `${sale ? "E" : "RE"}-${row.number}`,
+      kind,
+      created_at: row.created_at,
+      day,
+      payment: sale ? (sale.payment === "cash" ? "Bar" : "Karte") : "Rechnung",
+      status: invoice
+        ? invoice.status === "paid"
+          ? "Bezahlt"
+          : "Offen"
+        : "Erfasst",
+      setup: sale ? !!sale.test_mode : invoice!.mode === "setup",
+      items: row.items,
+      net: sum.net,
+      tax: sum.tax,
+      gross: sum.gross,
+      deposit: sum.deposit,
+      taxes: sum.taxes,
+    });
+  }
+  sales.forEach((s) => add(s, "Kassenbon"));
+  invoices
+    .filter((i) => i.status === "open" || i.status === "paid")
+    .forEach((i) => add(i, "Lieferrechnung"));
+  documents.sort(
+    (a, b) =>
+      a.created_at.localeCompare(b.created_at) ||
+      a.number.localeCompare(b.number),
+  );
+  const all = {
+    gross: 0,
+    net: 0,
+    tax: 0,
+    deposit: 0,
+    cash: 0,
+    card: 0,
+    invoices: 0,
+    openInvoices: 0,
+    pos: 0,
+  };
+  const taxes: Record<string, { gross: number; net: number; tax: number }> = {},
+    days: Record<
+      string,
+      {
+        gross: number;
+        net: number;
+        tax: number;
+        deposit: number;
+        count: number;
+      }
+    > = {};
+  for (const d of documents) {
+    for (const k of ["gross", "net", "tax", "deposit"] as const) all[k] += d[k];
+    if (d.kind === "Kassenbon") {
+      all.pos += d.gross;
+      all[d.payment === "Bar" ? "cash" : "card"] += d.gross;
+    } else {
+      all.invoices += d.gross;
+      if (d.status === "Offen") all.openInvoices += d.gross;
+    }
+    for (const [rate, t] of Object.entries(d.taxes)) {
+      const x = taxes[rate] || { gross: 0, net: 0, tax: 0 };
+      x.gross += t.gross;
+      x.net += t.net;
+      x.tax += t.tax;
+      taxes[rate] = x;
+    }
+    const day = days[d.day] || {
+      gross: 0,
+      net: 0,
+      tax: 0,
+      deposit: 0,
+      count: 0,
+    };
+    for (const k of ["gross", "net", "tax", "deposit"] as const) day[k] += d[k];
+    day.count++;
+    days[d.day] = day;
+  }
+  const setupCount = documents.filter((d) => d.setup).length;
+  const mode = documents.length
+    ? setupCount === documents.length
+      ? "Einrichtungsdaten"
+      : setupCount
+        ? "Gemischte Daten: Einrichtung + Echtbetrieb"
+        : "Echtbetrieb"
+    : settings.live_mode
+      ? "Echtbetrieb"
+      : "Einrichtungsdaten";
+  if (setupCount > 0 && setupCount < documents.length)
+    throw new Error(
+      "Einrichtungs- und Echtbelege dürfen nicht in einem gemeinsamen Umsatzbericht summiert werden.",
+    );
+  return {
+    period,
+    title: period.length === 7 ? "Monatsbericht" : "Tagesbericht",
+    created_at: now,
+    business_name: settings.business_name || "Getränkeshop Elias · Frank Elias",
+    business_address:
+      settings.business_address || "Wartbergstraße 3 · 74076 Heilbronn",
+    tax_number: settings.tax_number || "",
+    vat_id: settings.vat_id || "",
+    mode,
+    documents,
+    all,
+    taxes,
+    days,
+    closings: closings.filter(
+      (c) =>
+        c.period === period ||
+        (period.length === 7 &&
+          c.kind === "day" &&
+          c.period.startsWith(period)),
+    ),
+  };
+}
+export type FinanceReport = ReturnType<typeof buildFinanceReport>;
+const money = (n: number) => (n / 100).toFixed(2).replace(".", ",");
+// Fixed rectangular schema: numeric amounts stay numeric, untrusted text cannot run formulas.
+export function financeCsv(report: FinanceReport) {
+  const header = [
+    "Bericht",
+    "Zeitraum",
+    "Datenstatus",
+    "Erstellt UTC",
+    "Belegart",
+    "Belegnummer",
+    "Beleg-ID",
+    "Zeitpunkt UTC",
+    "Datum Berlin",
+    "Zahlart",
+    "Zahlstatus",
+    "Netto EUR",
+    "USt EUR",
+    "Brutto EUR",
+    "Pfandsaldo brutto EUR",
+    ...["0", "7", "19"].flatMap((r) => [
+      `Netto ${r}% EUR`,
+      `USt ${r}% EUR`,
+      `Brutto ${r}% EUR`,
+    ]),
+  ];
+  const rows = report.documents.map((d) => [
+    report.title,
+    report.period,
+    report.mode,
+    report.created_at,
+    d.kind,
+    d.number,
+    d.id,
+    d.created_at,
+    d.day,
+    d.payment,
+    d.status,
+    money(d.net),
+    money(d.tax),
+    money(d.gross),
+    money(d.deposit),
+    ...["0", "7", "19"].flatMap((r) => [
+      money(d.taxes[r]?.net || 0),
+      money(d.taxes[r]?.tax || 0),
+      money(d.taxes[r]?.gross || 0),
+    ]),
+  ]);
+  const quote = (v: string, col: number) =>
+    '"' +
+    (col < 11 && /^[\s]*[=+@-]/.test(v) ? "'" + v : v).replace(/"/g, '""') +
+    '"';
+  return (
+    "\ufeff" +
+    [header, ...rows].map((row) => row.map(quote).join(";")).join("\r\n") +
+    "\r\n"
+  );
+}

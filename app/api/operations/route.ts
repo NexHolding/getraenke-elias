@@ -6,7 +6,7 @@ import {
 } from "@/lib/account-visibility";
 import { z } from "zod";
 import { requireStaff, serviceDb, sameOrigin, safeError } from "@/lib/server";
-import { can } from "@/lib/permissions";
+import { can, financeReadOnly } from "@/lib/permissions";
 import { employeeSchema, customerSchema } from "@/lib/operations-validation";
 import { hashPin } from "@/lib/terminal";
 import { readAllRows } from "@/lib/database-read";
@@ -69,6 +69,7 @@ export async function POST(req: Request) {
   try {
     sameOrigin(req);
     const a = await requireStaff();
+    if (financeReadOnly(a)) throw new Error("FORBIDDEN");
     const db = serviceDb();
     const b = await req.json();
     const action = z.string().parse(b.action);

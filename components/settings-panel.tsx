@@ -411,8 +411,9 @@ export default function SettingsPanel({
             ) : (
               <>
                 <p>
-                  Alle Bereiche bleiben sichtbar. Freigaben bestimmen, welche
-                  Inhalte gelesen und bearbeitet werden dürfen.
+                  Freigaben bestimmen die sichtbaren Bereiche. Ein
+                  Finanz-Lesezugang darf Berichte und Belege herunterladen, aber
+                  keine Buchungen verändern.
                 </p>
                 <button
                   className="button"
@@ -524,12 +525,32 @@ export default function SettingsPanel({
                       />
                       Zugang aktiv
                     </label>
+                    <label className="checkline span-two">
+                      <input
+                        type="checkbox"
+                        disabled={employee.role === "owner"}
+                        checked={!!employee.finance_readonly}
+                        onChange={(e) =>
+                          setEmployee({
+                            ...employee,
+                            finance_readonly: e.target.checked,
+                            ...(e.target.checked
+                              ? { permissions: ["finanzen"] }
+                              : {}),
+                          })
+                        }
+                      />
+                      Finanzen nur lesen und exportieren (z. B. Steuerberater)
+                    </label>
                     <div className="permission-grid span-two">
                       {Object.entries(modules).map(([id, label]) => (
                         <label key={id} className="checkline">
                           <input
                             type="checkbox"
-                            disabled={employee.role === "owner"}
+                            disabled={
+                              employee.role === "owner" ||
+                              !!employee.finance_readonly
+                            }
                             checked={
                               employee.role === "owner" ||
                               employee.permissions?.includes(id) ||

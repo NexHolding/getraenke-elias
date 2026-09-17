@@ -28,6 +28,7 @@ export const customerSchema = z
   })
   .transform((value) => ({ ...value, address: formatDeliveryAddress(value) }));
 export const employeeSchema = z.object({
+  finance_readonly: z.boolean().default(false),
   user_id: z.uuid().optional(),
   name: z.string().min(2).max(150),
   email: z.union([z.email(), z.literal("")]),

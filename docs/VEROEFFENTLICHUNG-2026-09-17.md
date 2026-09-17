@@ -51,3 +51,11 @@ Migration `202609170017_receipt_output.sql` erfolgreich auf `sfggvhjtsiitqnocrid
 - Echte API-Prüfung anhand des bereits vorhandenen Einrichtungsbelegs: archiviert, wiederholter Abruf bytegleich, SHA-256 stimmt; anonymer Zugriff 401, fremder Origin 403, unbekannter Digitalbon-Link 404. Dabei keine neuen Verkäufe, Zahlungen, Lagerbewegungen oder öffentlichen Freigabelinks angelegt.
 
 Hardware noch nicht vor Ort geprüft. Epson-Modell/Netzwerkadresse und Zertifikatsfreigabe auf dem iPad sind im Assistenten einzurichten. Einrichtungsmodus, fehlende TSE-Anbindung und native Folgephase bleiben bestehen. [Bedienung, technische Details und Quellen](EPSON-UND-BEZAHLEN.md).
+
+## Ergänzung 018: Finanzberichte und Steuerberater
+
+Migration `202609170018_finance_reader.sql` ergänzt einen optionalen reinen Finanz-Lesezugriff. Bestehende Mitarbeiterrechte bleiben erhalten. Der ausdrücklich angeforderte Mitarbeiter `steuerberater` ist mit `permissions=["finanzen"]` und `finance_readonly=true` angelegt; das zufällige Passwort wird separat und nicht über Git übergeben.
+
+Tages-/Monats-PDFs wurden in A4-Querformat mit Logo, heller Gestaltung, kleinerer Schrift, Steuerübersicht, Tagesverlauf, Belegjournal und Kassenabschlussabgleich neu aufgebaut. CSV und PDF nutzen dieselbe serverseitige Berechnungsgrundlage; Kassenbons und Lieferrechnungen werden getrennt ausgewiesen. Berliner Zeitraumgrenzen, negative Pfandrücknahmen und getrennte Steuersätze sind geprüft.
+
+31 Fachtests, vier Datenbank-Prüfskripte, TypeScript, ESLint und Produktionsbuild bestanden. Alle Seiten der Layoutmuster mit Poppler gerendert und durchgesehen. Anmeldung mit `steuerberater`, ausschließlich Finanznavigation, erlaubte PDF-/CSV-Downloads, gesperrte Schreibaktionen/andere Bereiche und anonyme Zugriffe im Browser geprüft. Keine neuen Verkäufe, Rechnungen oder Lagerbewegungen durch die Abnahme erzeugt. [Bedienung und Datenumfang](FINANZBERICHTE.md).

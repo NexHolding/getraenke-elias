@@ -54,7 +54,9 @@ export async function requireStaff(module?: string) {
   if (!id) throw new Error("UNAUTHORIZED");
   const { data } = await serviceDb()
     .from("staff")
-    .select("user_id,role,name,email,permissions,active,number")
+    .select(
+      "user_id,role,name,email,permissions,active,number,finance_readonly",
+    )
     .eq("user_id", id)
     .maybeSingle();
   if (!data || !data.active) throw new Error("FORBIDDEN");

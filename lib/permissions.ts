@@ -19,10 +19,16 @@ export type StaffAccess = {
   role: string;
   permissions?: string[];
   active?: boolean;
+  finance_readonly?: boolean;
 };
 export function can(access: StaffAccess, module: string) {
+  if (financeReadOnly(access) && module !== "finanzen") return false;
   return (
     access.active !== false &&
     (access.role === "owner" || (access.permissions || []).includes(module))
   );
+}
+
+export function financeReadOnly(access: StaffAccess) {
+  return access.role !== "owner" && access.finance_readonly === true;
 }

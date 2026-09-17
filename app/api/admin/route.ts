@@ -2,7 +2,7 @@ import { printerEndpoint } from "@/lib/epson";
 import { receiptArchive } from "@/lib/receipt-archive";
 import { z } from "zod";
 import { saleItemSchema } from "@/lib/sale-validation";
-import { can } from "@/lib/permissions";
+import { can, financeReadOnly } from "@/lib/permissions";
 import { depositFor } from "@/lib/deposits";
 import type { Sale, Order } from "@/lib/types";
 import { readAllRows } from "@/lib/database-read";
@@ -59,6 +59,7 @@ export async function GET() {
     return Response.json(
       {
         operatorId: access.user.id,
+        finance_readonly: financeReadOnly(access),
         pendingReceipt: pending.data?.[0]?.sale_id ?? null,
         products: ["artikel", "kasse"].some((m) => can(access, m))
           ? results[0].data
@@ -118,6 +119,7 @@ export async function POST(req: Request) {
     sameOrigin(req);
     const access = await requireStaff();
     const { user } = access;
+    if (financeReadOnly(access)) throw new Error("FORBIDDEN");
     const db = serviceDb();
     const body = await req.json();
     const action = z.string().parse(body.action);

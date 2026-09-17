@@ -185,6 +185,7 @@ export type Customer = Partial<DeliveryAddress> & {
   created_at: string;
 };
 export type Employee = {
+  finance_readonly?: boolean;
   user_id: string;
   number: number;
   name: string;

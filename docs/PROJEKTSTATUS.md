@@ -54,3 +54,7 @@ Originaldomain und www sind bei Vercel hinterlegt, zeigen jedoch noch auf den bi
 ## Ergänzung: Bezahlablauf und Epson-Ausgabe (17.09.2026)
 
 Die frühere Angabe „Direktdruck nicht implementiert“ ist überholt: Netzwerk-Direktdruck über Epson ePOS-Print XML, Einrichtungsassistent, archivierte Bons, Wiederaufnahme offener Ausgabe, kontrollierter Kopiedruck und Digitalbon sind implementiert. Physischer Gerätetest und native USB-/Bluetooth-Anbindung bleiben offen. Einzelheiten und Prüfnachweise: [Epson und Bezahlen](EPSON-UND-BEZAHLEN.md). Live-TSE-Modus weiterhin gesperrt.
+
+## Ergänzung: Finanzberichte und Kanzleizugang (17.09.2026)
+
+Helle Tages-/Monatsberichte im Querformat mit Original-Logo, Steuer-/Zahlartenübersicht und Belegjournal; einheitlicher CSV-/PDF-Datenumfang. `steuerberater` ist als Mitarbeiter mit ausschließlich lesendem Finanz-/Exportzugriff eingerichtet. Details: [Finanzberichte](FINANZBERICHTE.md).
