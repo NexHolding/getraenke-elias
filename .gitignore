@@ -47,3 +47,6 @@ playwright-report/
 output/
 
 !.env.example
+
+# Supabase CLI local cache
+supabase/.temp/
