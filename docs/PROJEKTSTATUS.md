@@ -1,0 +1,36 @@
+# Projektstatus und Übergabe
+
+## Implementiert und geprüft
+- Eigenständige moderne Website im Original-Elias-Farbsystem, lokal gespeichertes Logo und illustrative Getränkefotografie.
+- Übernommene Unternehmensdaten, Öffnungszeiten, Kontakt, datensparsam aktivierbare Google-Karte, konfigurierbarer Instagram-Link.
+- 108 vollständig importierte Flyerpositionen inklusive Gebinden, Volumen, Originalpreisen und Veranstaltungsausstattung; keine erfundenen Pfandbeträge oder Bestände.
+- Sortimentssuche, Kategorien, Sortierung, sitzungsgebundener Warenkorb und unverbindliche Lieferanfrage ab vier Kisten. Preise werden ausschließlich serverseitig aus dem Katalog verwendet; wiederholte Anfrage ist idempotent.
+- Geschütztes CRM mit Inhaberrolle, eigener Finanznavigation, Artikel-/Bestandsverwaltung, Anlage, Einzel- und Mehrfachänderung, Lieferantenzuordnung und PDF-Artikellisten.
+- Lieferantenverwaltung mit explizitem Demo-Lieferanten, Mindest- und Zielbeständen, automatischen Nachbestellentwürfen, Anrechnung offener Mengen und einmaliger Wareneingangsbuchung.
+- Verschlüsselte SMTP-Konfiguration, Verbindungsprüfung, Versandwarteschlange/Protokoll, Kunden-Eingangsbestätigung, Inhaberbenachrichtigung und freigabepflichtiger automatischer Lieferantenversand. Kein Versand an Demo-Lieferanten; ohne Zugang deaktiviert.
+- Browser-Testkasse: Gebindeauswahl, centgenaue Brutto-/Netto-/Steuerberechnung, separate Pfandausgabe/Rücknahme, simulierte Zahlarten, 80-mm-Testbon-PDF.
+- Finanzansicht mit Tages-/Monatswahl, Testbelegjournal, unveränderbaren Testabschlüssen, PDF/CSV. Geschlossene Testperioden erlauben keine weiteren Testbelege.
+- Supabase-Tabellen mit RLS, serverseitige Validierung/Autorisierung, AES-GCM für SMTP-Geheimnisse, Schutz gegen konkurrierende Artikeländerungen, CSRF-Prüfung, Test-/Echtbestands-Trennung.
+- Installierbare Weboberfläche über Web-App-Manifest; responsive Oberfläche für iPad und Mobilgeräte.
+
+## Nachweise
+- 7 automatisierte Rechen-/Import-/Validierungstests bestanden.
+- Datenbanktests in zurückgerollter Transaktion: RLS/RPC-Rechte, Nachbestelldeduplizierung, idempotenter Wareneingang, Summen/Steuer, unveränderbare Belege, Testbestandsisolation und Abschlusssperre.
+- Browserprüfung: Desktop, 390-Pixel-Smartphone, 820-Pixel-iPad; alle CRM-Routen; kein JavaScript-Fehler; Artikeländerung, Warenkorbminimum und PDF-Download.
+- API-Prüfung: anonyme Zugriffe blockiert, CSRF blockiert, manipulierte Clientpreise ignoriert, Mindestbestellung geprüft, Kundenanfrage gespeichert und Doppelsendung verhindert, veraltete Artikelversion blockiert, Demo-E-Mail-Freigabe abgelehnt, kein Geheimnis in API-Antwort.
+- TypeScript, ESLint und Produktionsbuild erfolgreich.
+
+## Offen vor echtem Geschäftsbetrieb
+1. Pfand, Istbestände, steuerliche Artikelzuordnung, Laden-/Lieferpreise und eindeutige Sorten/EAN durch Inhaber prüfen. Aktuell ist kein importierter Artikel ungeprüft für die Kasse freigegeben.
+2. Echten Lieferanten und SMTP-Konto einsetzen. Automatisierung ist initial ausgeschaltet.
+3. Domainübernahme: bisherige getraenke-elias.de bleibt bis zur DNS-Umstellung beim bisherigen Hoster. Im CRM ist der Domainwunsch gespeichert; das ändert DNS nicht automatisch. Der neue Webauftritt läuft auf der Vercel-Domain.
+4. Instagram-Profil fehlt; kein fremdes oder erfundenes Konto verlinkt.
+5. TSE-Vertrag, Zugang und komplette Fiskalisierung mit DSFinV-K, Archivierung, Ausfall-/Stornoverfahren, Kassensturz sowie Einlagen/Entnahmen umsetzen und abnehmen. Die aktuelle Testkasse ist keine produktiv zugelassene Registrierkasse. Finanzexporte sind keine Steuerberaterabgabe/DATEV/DSFinV-K.
+6. Bondruckermodell bestimmen, native/Netzwerk-SDK anbinden und am Gerät testen. PDF/Systemdruck ist implementiert; Direktdruck nicht.
+7. Die ausdrücklich nach finaler Web-Fertigstellung vorgesehenen nativen Kunden- und iPad-Kassen-Apps sind noch nicht erstellt oder im App Store veröffentlicht. Die vorhandene Web-App ist keine native App.
+8. USt-ID aus dem alten Impressum prüfen, Datenschutz-/Auftragsverarbeitungsverträge und Aufbewahrungs-/Löschkonzept finalisieren.
+
+## Zugang
+Inhaber-E-Mail: info@getraenke-elias.de. Das zufällige Erstpasswort liegt ausschließlich lokal in `.local/CRM-Zugang.txt`, außerhalb der Versionskontrolle. Es wurde keine Zugangs-E-Mail versendet. Nach Anmeldung unter `/passwort` ändern.
+
+Weitere fachliche Details und Primärquellen: [TSE und Betrieb](TSE-UND-BETRIEB.md).

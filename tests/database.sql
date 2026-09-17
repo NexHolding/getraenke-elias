@@ -1,0 +1,24 @@
+begin;
+do $$ declare n int;v jsonb;test_sale_id uuid:=gen_random_uuid();pid uuid;s integer;begin
+ if (select count(*) from public.products)<>108 then raise exception 'Catalog count';end if;
+ if exists(select 1 from pg_tables where schemaname='public' and tablename in('products','sales','staff','orders','settings','purchases') and not rowsecurity) then raise exception 'RLS disabled';end if;
+ if has_function_privilege('anon','public.save_test_sale(uuid,jsonb,text,uuid,jsonb)','execute') then raise exception 'Anonymous RPC allowed';end if;
+ insert into public.products(id,sku,name,category,pack_count,volume_ml,price_cents,deposit_cents,stock,min_stock,target_stock,supplier_id,reorder_enabled,verified) values('qa-transaction','QA-TEST','QA only','Mineralwasser',12,700,990,330,2,5,20,'demo-supplier',true,true);
+ update public.settings set value=jsonb_set(value,'{auto_reorder}','true') where id=1;
+ select public.generate_reorders() into n;if n<>1 then raise exception 'Missing reorder';end if;
+ select public.generate_reorders() into n;if n<>0 then raise exception 'Duplicate reorder';end if;
+ select p.id into pid from public.purchases p where p.items @> '[{"id":"qa-transaction"}]';
+ perform public.receive_purchase(pid,null);perform public.receive_purchase(pid,null);
+ select stock into s from public.products where products.id='qa-transaction';if s<>20 then raise exception 'Receipt duplicated %',s;end if;
+ select public.save_test_sale(test_sale_id,'[{"id":"qa-transaction","quantity":2}]','cash',null,'[{"deposit_cents":25,"quantity":4}]') into v;
+ if (v->>'total_cents')::int<>2540 then raise exception 'Wrong total %',v;end if;
+ if (v->>'net_cents')::int+(v->>'tax_cents')::int<>2540 then raise exception 'Tax invariant';end if;
+ perform public.save_test_sale(test_sale_id,'[{"id":"qa-transaction","quantity":2}]','cash',null,'[]');
+ if (select count(*) from public.sales where sales.id=test_sale_id)<>1 then raise exception 'Duplicate sale';end if;
+ if (select stock from public.products where products.id='qa-transaction')<>20 then raise exception 'Test sale changed inventory';end if;
+ begin update public.sales set payment='card' where sales.id=test_sale_id;raise exception 'IMMUTABILITY FAILURE';exception when others then if SQLERRM='IMMUTABILITY FAILURE' then raise;end if;end;
+ perform public.close_test_period('day',to_char(now() at time zone 'Europe/Berlin','YYYY-MM-DD'),null);
+ begin perform public.save_test_sale(gen_random_uuid(),'[{"id":"qa-transaction","quantity":1}]','cash',null,'[]');raise exception 'CLOSING FAILURE';exception when others then if SQLERRM='CLOSING FAILURE' then raise;end if;end;
+ raise notice 'PASS: catalog, RLS, RPC grants, reorder dedup, receipt idempotence, tax arithmetic, test isolation, sale idempotence, immutable journals, closing lock';
+end $$;
+rollback;

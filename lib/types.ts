@@ -1,0 +1,92 @@
+export type Product = {
+  revision?: number;
+  id: string;
+  sku: string;
+  name: string;
+  category: string;
+  pack_count: number;
+  volume_ml: number;
+  price_cents: number;
+  source_unit_price_cents: number | null;
+  deposit_cents: number | null;
+  tax_rate: number;
+  deposit_tax_rate: number;
+  stock: number | null;
+  min_stock: number;
+  target_stock: number;
+  supplier_id: string | null;
+  reorder_enabled: boolean;
+  active: boolean;
+  verified: boolean;
+  barcode: string;
+  source: string;
+  kind: string;
+};
+export type Supplier = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  is_demo: boolean;
+  auto_send: boolean;
+};
+export type CartLine = { product: Product; quantity: number };
+export type Order = {
+  id: string;
+  number: number;
+  customer_name: string;
+  email: string;
+  phone: string;
+  address: string;
+  notes: string;
+  items: {
+    name: string;
+    quantity: number;
+    price_cents: number;
+    deposit_cents: number | null;
+  }[];
+  status: string;
+  created_at: string;
+};
+export type Sale = {
+  id: string;
+  number: number;
+  created_at: string;
+  items: SaleLine[];
+  total_cents: number;
+  net_cents: number;
+  tax_cents: number;
+  deposit_cents: number;
+  payment: string;
+  test_mode: boolean;
+};
+export type SaleLine = {
+  id: string;
+  name: string;
+  quantity: number;
+  price_cents: number;
+  deposit_cents: number;
+  tax_rate: number;
+  deposit_tax_rate: number;
+};
+export type Purchase = {
+  id: string;
+  supplier_id: string;
+  status: string;
+  items: { id: string; name: string; quantity: number }[];
+  created_at: string;
+};
+export type Settings = {
+  auto_reorder: boolean;
+  instagram: string;
+  domain: string;
+  printer_mode: string;
+  printer_address: string;
+  tse_provider: string;
+  smtp_enabled: boolean;
+  smtp_host: string;
+  smtp_port: number;
+  smtp_user: string;
+  smtp_from: string;
+  smtp_password_set?: boolean;
+};

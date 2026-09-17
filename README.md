@@ -1,36 +1,36 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Getränke Elias
 
-## Getting Started
+Next.js 16 / React 19 / TypeScript application with Supabase Postgres/Auth and Vercel hosting. Public website, searchable 108-position delivery catalog, non-binding customer inquiries and authenticated operations workspace.
 
-First, run the development server:
+## Local development
+1. `npm ci`
+2. Populate `.env.local` from `.env.example` with this project's credentials. Never commit credentials. `SETTINGS_ENCRYPTION_KEY` is 32 random bytes as hexadecimal; keep it safely backed up before storing SMTP credentials.
+3. `npm run dev`
+4. `npm test`, `npm run lint`, `npm run build`
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Data and security
+- SQL migration order: files in `supabase/migrations/` by filename.
+- `data/catalog.json` preserves all 108 rows of the original February 2026 delivery list; regenerate with `scripts/import_catalog.py` after extracting `data/source-catalog.txt`.
+- Unknown deposits and stock remain `null`. Prices are not automatically verified for checkout.
+- Supabase RLS is enabled on every business table. Public keys have no business write access. Server routes validate input, authenticate staff and check roles before using the service client.
+- Owner membership exists only in `staff`, never derived from editable auth metadata. Signup does not grant a role.
+- SMTP credentials use AES-256-GCM with a deployment secret. Public API masks supplier/inventory fields and never exposes settings secrets.
+- The outbox never sends to a demo supplier. Supplier auto-send and SMTP must both be explicitly enabled. Ambiguous delivery outcomes require human review instead of blind retries.
+- Immutable test receipts and closing records; amount fields are integer cents. Repeat calls are idempotent. Test receipts do not reduce real stock.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Routes
+Public: `/`, `/sortiment`, `/lieferservice`, `/kontakt`, `/impressum`, `/datenschutz`.
+Staff: `/login`, `/crm`, `/crm/finanzen`, `/crm/kasse`, `/crm/artikel`, `/crm/bestellungen`, `/crm/einkauf`, `/crm/lieferanten`, `/crm/einstellungen`, `/passwort`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scheduled jobs
+Vercel cron: reorder every hour and mail every five minutes. Endpoints require `CRON_SECRET`. Default configuration disables both automatic reorder and mail. Reorder drafts can also be generated manually after enabling the policy.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Verification
+- `npm test`: money, VAT, deposit returns, catalog import, validation and reorder boundaries.
+- `tests/database.sql`: transactional database integration test ending in ROLLBACK. No persistent business data is created.
+- `scripts/browser-check.mjs`: desktop/mobile/tablet, auth, catalog/cart, article write and PDF download. Uses locally provisioned owner credentials, without printing them.
 
-## Learn More
+## Important boundaries
+The POS is a TEST system, not a production fiscal cash register. No TSE provider has been connected. Card selection does not charge a card. CSV/PDF financial exports are not DSFinV-K/DATEV. Native apps and direct printer SDK integration are later project phases after web acceptance. See [TSE and operation](docs/TSE-UND-BETRIEB.md) and [implementation plan](docs/UMSETZUNGSPLAN.md).
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The original logo is stored in `public/images/elias-logo.png`. Hero photography was generated with the built-in image generation tool, then stored in `public/images/drinks-hero.jpg`. It is illustrative, not a representation of the actual shop. Prompt: editorial beverage still life with reusable mineral-water, beer, lemonade and wine bottles, lime, warm stone counter, olive background and natural sunlight; no product-brand claims.
