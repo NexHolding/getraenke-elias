@@ -15,12 +15,23 @@ export async function dailyAutomation() {
     .single();
   const day = new Date(date + "T12:00:00Z").getUTCDay() || 7;
   if (!cfg?.value.delivery_days.includes(day)) return;
-  const {error:stale}=await db.from('orders').update({delivery_date:null,eta_start:null,eta_end:null,route_position:null}).in('status',['confirmed','partial','delivering']).lt('delivery_date',date);if(stale)throw stale;
+  const { error: stale } = await db
+    .from("orders")
+    .update({
+      delivery_date: null,
+      eta_start: null,
+      eta_end: null,
+      route_position: null,
+    })
+    .in("status", ["confirmed", "partial", "delivering"])
+    .lt("delivery_date", date);
+  if (stale) throw stale;
   const { data: orders, error: oe } = await db
     .from("orders")
     .select("*")
     .in("status", ["confirmed", "partial"])
-    .is("delivery_date", null);
+    .is("delivery_date", null)
+    .or(`requested_delivery_date.is.null,requested_delivery_date.lte.${date}`);
   if (oe) throw oe;
   if (!orders?.length) return;
   const { error: lock } = await db

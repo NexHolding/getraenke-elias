@@ -68,3 +68,7 @@ Migration `202609170019_customer_communications.sql` ergänzt ausschließlich Ko
 Neuer Vercel-Serverwert: `AUTH_EMAIL_HOOK_SECRET`. Supabase-Ziel: `/api/hooks/auth-email` auf der bestehenden Produktionsdomain, E-Mail-Bestätigung bleibt eingeschaltet. Signaturwerte sind nicht im Repository enthalten.
 
 Abnahme: 34 Fachtests, vollständige bisherige Datenbankprüfungen, neue Archiv-/Warteschlangenprüfungen, isolierte Versandarbeiterprüfung, ESLint/TypeScript/Build und Browserablauf mit temporären Supabase-Konten. Es wurden keine externen E-Mails und keine Geschäftsbuchungen erzeugt. SMTP-Verbindung ist noch durch den Inhaber zu hinterlegen.
+
+### Bestellungen / Lieferautomatik
+
+Vor Veröffentlichung der CRM-Erfassung Migration `202609170020_staff_orders.sql` anwenden. Der vorhandene Vercel-Cron `/api/cron/reorder` übernimmt fällige Folgeaufträge; keine zusätzliche Scheduler-Konfiguration nötig. Die neuen RPCs sind für öffentliche/authentifizierte Direktzugriffe gesperrt und prüfen intern den aktiven Mitarbeiter mit Bestellrecht. Prüfung: `node scripts/validate-staff-orders.mjs`; temporäre Browser-Fixtures ausschließlich privat speichern und anschließend entfernen.

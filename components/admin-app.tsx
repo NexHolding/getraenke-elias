@@ -1,4 +1,5 @@
 "use client";
+import StaffOrders from "./staff-orders";
 import CheckoutFlow, { receiptDownload } from "./checkout-flow";
 import InventoryPanel from "./inventory-panel";
 import SettingsPanel from "./settings-panel";
@@ -587,6 +588,17 @@ export default function AdminApp({ section }: { section: string }) {
                           <div>
                             <strong>{o.customer_name}</strong>
                             <p>{o.address}</p>
+                            {o.requested_delivery_date && (
+                              <p>
+                                <strong>
+                                  Gewünschte Lieferung:{" "}
+                                  {new Date(
+                                    o.requested_delivery_date + "T12:00:00Z",
+                                  ).toLocaleDateString("de-DE")}
+                                </strong>
+                                {o.subscription_id ? " · Lieferautomatik" : ""}
+                              </p>
+                            )}
                             {!["new", "cancelled", "completed"].includes(
                               o.status,
                             ) && (
@@ -990,87 +1002,96 @@ export default function AdminApp({ section }: { section: string }) {
                 </>
               )}
               {section === "bestellungen" && (
-                <div className="panel">
-                  {data.orders.length ? (
-                    data.orders.map((o) => (
-                      <article className="order-card" key={o.id}>
-                        <div className="panel-head">
-                          <div>
-                            <span className="eyebrow">
-                              EL-{String(o.number).padStart(5, "0")}
-                            </span>
-                            <h2>{o.customer_name}</h2>
-                          </div>
-                          <select
-                            value={o.status}
-                            aria-label={`Status Anfrage ${o.number}`}
-                            disabled={[
-                              "partial",
-                              "completed",
-                              "cancelled",
-                            ].includes(o.status)}
-                            onChange={(e) =>
-                              act(
-                                "order-status",
-                                { id: o.id, status: e.target.value },
-                                "Anfragestatus aktualisiert.",
-                              )
-                            }
-                          >
-                            <option value="new">Neu</option>
-                            <option value="confirmed">Bestätigt</option>
-                            <option value="delivering">In Lieferung</option>
+                <>
+                  <StaffOrders products={data.products} reload={load} />
+                  <div className="panel">
+                    {data.orders.length ? (
+                      data.orders.map((o) => (
+                        <article className="order-card" key={o.id}>
+                          <div className="panel-head">
+                            <div>
+                              <span className="eyebrow">
+                                EL-{String(o.number).padStart(5, "0")}
+                              </span>
+                              <h2>{o.customer_name}</h2>
+                            </div>
+                            <select
+                              value={o.status}
+                              aria-label={`Status Anfrage ${o.number}`}
+                              disabled={[
+                                "partial",
+                                "completed",
+                                "cancelled",
+                              ].includes(o.status)}
+                              onChange={(e) =>
+                                act(
+                                  "order-status",
+                                  { id: o.id, status: e.target.value },
+                                  "Anfragestatus aktualisiert.",
+                                )
+                              }
+                            >
+                              <option value="new">Neu</option>
+                              <option value="confirmed">Bestätigt</option>
+                              <option value="delivering">In Lieferung</option>
 
-                            <option value="partial" disabled>
-                              Restlieferung offen
-                            </option>
-                            <option value="completed" disabled>
-                              Vollständig geliefert
-                            </option>
-                            <option value="cancelled">Storniert</option>
-                          </select>
-                        </div>
-                        <p>{o.address}</p>
-                        {!["new", "cancelled", "completed"].includes(
-                          o.status,
-                        ) && (
-                          <Link className="text-link" href="/crm/lieferung">
-                            Lieferschein & Übergabe öffnen{" "}
-                            <ArrowRight size={16} />
-                          </Link>
-                        )}
-                        <p>
-                          <a href={`mailto:${o.email}`}>{o.email}</a> ·{" "}
-                          <a href={`tel:${o.phone}`}>{o.phone}</a>
-                        </p>
-                        {o.notes && <p className="notice">{o.notes}</p>}
-                        {o.items.map((i, k) => (
-                          <div className="line-row" key={k}>
-                            <span>
-                              {i.quantity} × {i.name}
-                            </span>
-                            <strong>
-                              {euro(i.quantity * i.price_cents)}{" "}
-                              {i.deposit_cents === null
-                                ? "+ Pfand offen"
-                                : `+ ${euro(i.quantity * i.deposit_cents)} Pfand`}
-                            </strong>
+                              <option value="partial" disabled>
+                                Restlieferung offen
+                              </option>
+                              <option value="completed" disabled>
+                                Vollständig geliefert
+                              </option>
+                              <option value="cancelled">Storniert</option>
+                            </select>
                           </div>
-                        ))}
-                        <small>
-                          Eingegangen{" "}
-                          {new Date(o.created_at).toLocaleString("de-DE")} ·
-                          Kundenbestätigung erfolgt derzeit persönlich.
-                        </small>
-                      </article>
-                    ))
-                  ) : (
-                    <Empty
-                      text="Hier kommen deine Lieferanfragen an."
-                      sub="Sobald Kunden eine Auswahl senden, kannst du sie hier bearbeiten."
-                    />
-                  )}
-                </div>
+                          <p>{o.address}</p>
+                          {!["new", "cancelled", "completed"].includes(
+                            o.status,
+                          ) && (
+                            <Link className="text-link" href="/crm/lieferung">
+                              Lieferschein & Übergabe öffnen{" "}
+                              <ArrowRight size={16} />
+                            </Link>
+                          )}
+                          <p>
+                            <a href={`mailto:${o.email}`}>{o.email}</a> ·{" "}
+                            <a href={`tel:${o.phone}`}>{o.phone}</a>
+                          </p>
+                          {o.notes && <p className="notice">{o.notes}</p>}
+                          {o.items.map((i, k) => (
+                            <div className="line-row" key={k}>
+                              <span>
+                                {i.quantity} × {i.name}
+                              </span>
+                              <strong>
+                                {euro(i.quantity * i.price_cents)}{" "}
+                                {i.deposit_cents === null
+                                  ? "+ Pfand offen"
+                                  : `+ ${euro(i.quantity * i.deposit_cents)} Pfand`}
+                              </strong>
+                            </div>
+                          ))}
+                          <small>
+                            Eingegangen{" "}
+                            {new Date(o.created_at).toLocaleString("de-DE")} ·
+                            {o.status === "new"
+                              ? "Anfrage – Bestätigung noch offen."
+                              : o.created_by
+                                ? "Im CRM erfasst."
+                                : o.subscription_id
+                                  ? "Automatisch aus Lieferabo erstellt."
+                                  : "Lieferauftrag."}
+                          </small>
+                        </article>
+                      ))
+                    ) : (
+                      <Empty
+                        text="Hier kommen deine Lieferanfragen an."
+                        sub="Sobald Kunden eine Auswahl senden, kannst du sie hier bearbeiten."
+                      />
+                    )}
+                  </div>
+                </>
               )}
               {section === "kasse" && (
                 <>

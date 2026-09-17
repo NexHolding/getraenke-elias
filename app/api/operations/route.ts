@@ -1,3 +1,4 @@
+import { staffOrderSchema, staffSubscriptionSchema } from "@/lib/staff-orders";
 import { deliveryAddressFields } from "@/lib/delivery-address";
 import {
   SYSTEM_ACCOUNT_EMAIL,
@@ -41,7 +42,7 @@ export async function GET() {
           "invoices",
           ["finanzen", "kunden"].some((m) => can(a, m)),
         ),
-        read("subscriptions", can(a, "kunden")),
+        read("subscriptions", can(a, "kunden") || can(a, "bestellungen")),
       ]);
     return Response.json(
       {
@@ -57,7 +58,9 @@ export async function GET() {
         }),
         deliveries,
         invoices,
-        subscriptions,
+        subscriptions: subscriptions.filter((s) =>
+          customers.some((c) => c.id === s.customer_id && visible(c)),
+        ),
       },
       { headers: { "Cache-Control": "no-store" } },
     );
@@ -79,7 +82,26 @@ export async function POST(req: Request) {
     const owner = () => {
       if (a.role !== "owner") throw new Error("FORBIDDEN");
     };
-    if (action === "employee") {
+    if (action === "staff-order" || action === "staff-subscription") {
+      check("bestellungen");
+      const value =
+        action === "staff-order"
+          ? staffOrderSchema.parse(b.value)
+          : staffSubscriptionSchema.parse(b.value);
+      const { data, error } = await db.rpc(
+        action === "staff-order"
+          ? "create_staff_order"
+          : "save_staff_subscription",
+        { p_value: value, p_actor: a.user.id },
+      );
+      if (error)
+        throw new Error(
+          error.message.startsWith("HINWEIS:") || error.message === "FORBIDDEN"
+            ? error.message
+            : "HINWEIS:Die Bestellung konnte nicht gespeichert werden. Bitte Eingaben prüfen.",
+        );
+      return Response.json(data);
+    } else if (action === "employee") {
       owner();
       const v = employeeSchema.parse(b.value);
       if (isSystemAccountEmail(v.email)) throw new Error("FORBIDDEN");

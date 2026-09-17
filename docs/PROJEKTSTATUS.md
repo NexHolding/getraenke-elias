@@ -69,3 +69,10 @@ Helle Tages-/Monatsberichte im Querformat mit Original-Logo, Steuer-/Zahlartenü
 - Echte Supabase-Bestätigung und Passwortwechsel, Zugriffsgrenzen, Originaldateien sowie Versandarbeiter mit isoliertem SMTP-Adapter geprüft.
 - Betriebsabhängigkeit: SMTP ist noch nicht eingerichtet. Tatsächliche Zustellung in externe Postfächer wurde nicht behauptet oder geprüft. Einrichtung unter Einstellungen → Schnittstellen erforderlich.
 - Einzelheiten: `docs/KUNDENKOMMUNIKATION.md`.
+
+## CRM-Bestellerfassung und Lieferautomatik (Migration 020)
+
+- Manuelle, bestätigte Kundenbestellungen mit Kundensuche, Artikeln, Mengen, Lieferdatum, Hinweisen und transparenter Preis-/Pfandübersicht.
+- Einmalig oder regelmäßig: wöchentlich, zweiwöchentlich, monatlich, vierteljährlich, halbjährlich, jährlich. Abos im CRM bearbeiten, pausieren und fortsetzen; Mitarbeiter benötigen das Bestellmodul.
+- Atomare Anlage mit Schutz vor Doppelbestellungen; revisionsgesicherte Aboänderung, Kalenderanker, sichtbare Automatikfehler und Schutz gegen vorzeitige Tourenplanung.
+- Umsetzung und Bedienung: [Manuelle Bestellungen](MANUELLE-BESTELLUNGEN.md). Echtes SMTP bleibt separat einzurichten.

@@ -61,7 +61,9 @@ export async function GET() {
         operatorId: access.user.id,
         finance_readonly: financeReadOnly(access),
         pendingReceipt: pending.data?.[0]?.sale_id ?? null,
-        products: ["artikel", "kasse"].some((m) => can(access, m))
+        products: ["artikel", "kasse", "bestellungen"].some((m) =>
+          can(access, m),
+        )
           ? results[0].data
           : [],
         suppliers: ["lieferanten", "artikel", "einkauf"].some((m) =>

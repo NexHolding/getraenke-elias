@@ -43,7 +43,9 @@ export function planDay(orders: Order[], date: string, cfg: Settings) {
   let clock = minutes(cfg.delivery_from || "10:00");
   const end = minutes(cfg.delivery_to || "18:00");
   let point: [number, number] = [49.1507, 9.2199];
-  const remaining = [...orders];
+  const remaining = orders.filter(
+    (o) => !o.requested_delivery_date || o.requested_delivery_date <= date,
+  );
   const stops: {
     id: string;
     eta_start: string;
@@ -51,7 +53,11 @@ export function planDay(orders: Order[], date: string, cfg: Settings) {
     position: number;
     estimated: boolean;
   }[] = [];
-  const unplanned: { id: string; reason: string }[] = [];
+  const unplanned: { id: string; reason: string }[] = orders
+    .filter(
+      (o) => o.requested_delivery_date && o.requested_delivery_date > date,
+    )
+    .map((o) => ({ id: o.id, reason: "Liefertermin liegt in der Zukunft" }));
   while (remaining.length) {
     const candidates = remaining
       .map((o) => {

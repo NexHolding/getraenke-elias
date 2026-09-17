@@ -3863,3 +3863,51 @@ textarea {
   .pos-products { max-height: clamp(300px, 52dvh, 560px); }
   .pos-cart { position: static; }
 }
+
+/* Staff order capture: touch-friendly customer, article and recurrence entry. */
+.staff-orders { display: grid; gap: 16px; margin-bottom: 24px; min-width: 0; }
+.staff-order-intro { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.staff-order-intro h2 { margin: 6px 0; }
+.staff-order-intro p, .staff-subscriptions p { color: var(--muted); font-size: 13px; }
+.staff-order-intro > button { flex-shrink: 0; }
+.staff-order-form fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.staff-order-fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 24px; }
+.staff-order-form label { display: grid; gap: 7px; margin-bottom: 15px; font-size: 12px; font-weight: 600; }
+.staff-order-form input, .staff-order-form select, .staff-order-form textarea { width: 100%; min-height: 44px; min-width: 0; }
+.staff-order-form .check-label { display: flex; align-items: center; }
+.staff-order-form .check-label input { width: 20px; min-height: 20px; }
+.staff-order-address { padding: 14px; background: #f5f7ed; border-radius: 10px; font-size: 13px; }
+.staff-order-address p { margin: 7px 0; line-height: 1.6; }
+.staff-order-catalog { margin-top: 22px; padding: 18px; background: #f7f8f4; border-radius: 10px; }
+.staff-order-catalog small, .staff-order-line small, .staff-order-footer small { display: block; font-size: 11px; font-weight: 400; color: var(--muted); line-height: 1.6; }
+.staff-order-lines { margin: 18px 0; }
+.staff-order-line { display: grid; grid-template-columns: 48px minmax(0,1fr) 76px 100px 44px; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid #e4e7dc; font-size: 13px; }
+.staff-order-line .product-photo { width: 44px; height: 60px; }
+.staff-order-line label { margin: 0; }
+.staff-order-line .icon-button, .staff-order-form .panel-head button { min-width: 44px; min-height: 44px; }
+.staff-order-footer { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.staff-order-footer > div > strong { font-size: 26px; display: block; }
+.staff-order-hint { font-size: 12px; line-height: 1.6; color: var(--muted); margin-top: 18px; }
+.staff-subscriptions summary { display: flex; align-items: center; gap: 10px; font-weight: 700; cursor: pointer; min-height: 44px; }
+.staff-subscriptions summary span { padding: 3px 9px; border-radius: 20px; background: #eef2df; }
+.staff-subscription { display: flex; justify-content: space-between; gap: 20px; padding: 18px 0; border-top: 1px solid #e4e7dc; }
+.staff-subscription > div { min-width: 0; overflow-wrap: anywhere; }
+.staff-subscription small { color: var(--muted); }
+.staff-subscription-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; flex-shrink: 0; }
+@media (max-width: 700px) {
+ .staff-order-fields { grid-template-columns: 1fr; gap: 16px; }
+ .staff-order-intro, .staff-order-footer, .staff-subscription { flex-direction: column; align-items: stretch; }
+ .staff-order-line { grid-template-columns: 36px minmax(0,1fr) 60px 40px; gap: 8px; }
+ .staff-order-line .product-photo { width: 32px; }
+ .staff-order-line > strong { grid-column: 2; }
+ .staff-order-line > button { grid-column: 4; grid-row: auto; }
+ .staff-order-intro > button, .staff-order-footer > button { width: 100%; }
+}
+.staff-order-intro h2 { font-size: clamp(22px, 2.4vw, 28px); line-height: 1.2; }
+.staff-order-form input, .staff-order-form select, .staff-order-form textarea { border: 1px solid #dce1d3; border-radius: 8px; padding: 11px 12px; background: #fff; font-size: 14px; font-weight: 400; color: #263421; }
+.staff-order-form textarea { min-height: 86px; resize: vertical; }
+.staff-order-form input:focus-visible, .staff-order-form select:focus-visible, .staff-order-form textarea:focus-visible { outline: 2px solid #88a425; outline-offset: 2px; }
+.staff-order-form .check-label input { padding: 0; }
+.staff-order-line .product-placeholder { width: 36px; min-height: 50px; }
+.staff-order-line .product-placeholder svg { width: 28px; height: 32px; }
+.staff-order-line .product-placeholder small { display: none; }

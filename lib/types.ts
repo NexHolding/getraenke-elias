@@ -47,6 +47,10 @@ export type Supplier = {
 };
 export type CartLine = { product: Product; quantity: number };
 export type Order = Partial<DeliveryAddress> & {
+  requested_delivery_date?: string | null;
+  subscription_id?: string | null;
+  recurrence_date?: string | null;
+  created_by?: string | null;
   customer_id?: string | null;
   delivery_date?: string | null;
   eta_start?: string | null;
@@ -229,6 +233,9 @@ export type Invoice = {
   created_at: string;
 };
 export type Subscription = {
+  revision: number;
+  notes: string;
+  last_error: string | null;
   id: string;
   customer_id: string;
   items: { id: string; quantity: number }[];
