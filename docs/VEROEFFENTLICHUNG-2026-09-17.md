@@ -33,3 +33,8 @@ Die bislang auf localhost stehende `site_url` zeigt jetzt auf die veröffentlich
 - SMTP und automatische Nachbestellungen bleiben deaktiviert. Lieferantenkontakt, E-Mail-Anbieter, TSE und direkt angebundener Bondrucker sind noch zu konfigurieren/abzunehmen.
 - Fehlende Packshots sowie unklare Verpackungs-/Sortenangaben bleiben in der Artikelpflege zu ergänzen; Quellen und Annahmen sind dokumentiert.
 - Native App-Store-Pakete sind weiterhin die vorgesehene Folgephase.
+
+## Sichtbarkeit des internen Administrators
+Der interne Systemzugang bleibt in Supabase Auth und als Inhaber erhalten. Kunden- und Mitarbeiterverzeichnisse filtern ihn serverseitig anhand der reservierten Identität und der verknüpften Benutzer-ID. Er wird nicht in der Mitarbeiter-PIN-Auswahl angeboten; die eigene Sitzungsanzeige lautet neutral „Administration“. Der Aufruf des Kundenportals legt für dieses Konto keine Kundenakte mehr an. Eine bereits angelegte Kundenakte bleibt unsichtbar erhalten. Passwort, Administratorrechte und interne Buchungsnachweise werden nicht verändert.
+
+Prüfung: 12 Fachtests, Lint, Produktionsbuild und isolierter kompletter Browserablauf einschließlich erhaltener Inhaberrechte, ausgeblendeter Verzeichnisse und gesperrter Kundenanlage bestanden. Keine Datenbankmigration erforderlich.

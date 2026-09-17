@@ -1,3 +1,4 @@
+import { SYSTEM_ACCOUNT_EMAIL } from "@/lib/account-visibility";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import {
@@ -22,6 +23,7 @@ export async function GET() {
       .from("staff")
       .select("user_id,name,number")
       .eq("active", true)
+      .neq("email", SYSTEM_ACCOUNT_EMAIL)
       .not("pin_hash", "is", null);
     if (error) throw error;
     return Response.json(
@@ -42,13 +44,11 @@ export async function POST(req: Request) {
       const staff = await requireStaff();
       if (staff.role !== "owner") throw new Error("FORBIDDEN");
       const token = newToken();
-      const { error } = await db
-        .from("terminal_devices")
-        .insert({
-          name: z.string().min(2).max(80).parse(body.name),
-          token_hash: tokenHash(token),
-          expires_at: new Date(Date.now() + 30 * 86400000).toISOString(),
-        });
+      const { error } = await db.from("terminal_devices").insert({
+        name: z.string().min(2).max(80).parse(body.name),
+        token_hash: tokenHash(token),
+        expires_at: new Date(Date.now() + 30 * 86400000).toISOString(),
+      });
       if (error) throw error;
       jar.set("elias-device", token, { ...cookieOptions, maxAge: 30 * 86400 });
       jar.delete("elias-operator");
@@ -70,18 +70,17 @@ export async function POST(req: Request) {
         .select("user_id,pin_hash")
         .eq("user_id", v.user_id)
         .eq("active", true)
+        .neq("email", SYSTEM_ACCOUNT_EMAIL)
         .maybeSingle();
       if (!s?.pin_hash || !verifyPin(v.pin, s.pin_hash))
         throw new Error("HINWEIS:PIN nicht korrekt.");
       const token = newToken();
-      const { error } = await db
-        .from("terminal_sessions")
-        .insert({
-          device_id: device.id,
-          user_id: s.user_id,
-          token_hash: tokenHash(token),
-          expires_at: new Date(Date.now() + 8 * 3600000).toISOString(),
-        });
+      const { error } = await db.from("terminal_sessions").insert({
+        device_id: device.id,
+        user_id: s.user_id,
+        token_hash: tokenHash(token),
+        expires_at: new Date(Date.now() + 8 * 3600000).toISOString(),
+      });
       if (error) throw error;
       jar.set("elias-operator", token, { ...cookieOptions, maxAge: 8 * 3600 });
     } else if (body.action === "lock") {

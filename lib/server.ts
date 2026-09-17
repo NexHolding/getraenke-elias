@@ -1,3 +1,4 @@
+import { isSystemAccountEmail } from "./account-visibility";
 import { can } from "./permissions";
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
@@ -53,12 +54,17 @@ export async function requireStaff(module?: string) {
   if (!id) throw new Error("UNAUTHORIZED");
   const { data } = await serviceDb()
     .from("staff")
-    .select("user_id,role,name,permissions,active,number")
+    .select("user_id,role,name,email,permissions,active,number")
     .eq("user_id", id)
     .maybeSingle();
   if (!data || !data.active) throw new Error("FORBIDDEN");
   if (module && !can(data, module)) throw new Error("FORBIDDEN");
-  return { db, user: { id }, ...data };
+  return {
+    db,
+    user: { id },
+    ...data,
+    name: isSystemAccountEmail(data.email) ? "Administration" : data.name,
+  };
 }
 export function safeError(e: unknown) {
   const m = e instanceof Error ? e.message : "Fehler";

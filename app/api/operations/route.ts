@@ -1,3 +1,8 @@
+import {
+  SYSTEM_ACCOUNT_EMAIL,
+  isSystemAccountEmail,
+  isVisibleBusinessAccount,
+} from "@/lib/account-visibility";
 import { z } from "zod";
 import { requireStaff, serviceDb, sameOrigin, safeError } from "@/lib/server";
 import { can } from "@/lib/permissions";
@@ -8,6 +13,14 @@ import { planDay } from "@/lib/delivery-plan";
 export async function GET() {
   try {
     const a = await requireStaff();
+    const { data: systemAccounts, error: systemError } = await serviceDb()
+      .from("staff")
+      .select("user_id")
+      .eq("email", SYSTEM_ACCOUNT_EMAIL);
+    if (systemError) throw systemError;
+    const systemIds = new Set((systemAccounts || []).map((row) => row.user_id));
+    const visible = (row: { email?: unknown; user_id?: unknown }) =>
+      isVisibleBusinessAccount(row, systemIds);
     const read = (table: string, allowed: boolean) =>
       allowed
         ? readAllRows(table, { order: table === "staff" ? "user_id" : "id" })
@@ -31,8 +44,8 @@ export async function GET() {
       ]);
     return Response.json(
       {
-        customers,
-        employees: employees.map((row) => {
+        customers: customers.filter(visible),
+        employees: employees.filter(visible).map((row) => {
           const { pin_hash, ...rest } = row as unknown as Record<
             string,
             unknown
@@ -65,6 +78,7 @@ export async function POST(req: Request) {
     if (action === "employee") {
       owner();
       const v = employeeSchema.parse(b.value);
+      if (isSystemAccountEmail(v.email)) throw new Error("FORBIDDEN");
       const { pin, password, user_id, ...record } = v;
       let id = user_id;
       if (id === a.user.id && !v.active)
@@ -77,6 +91,7 @@ export async function POST(req: Request) {
           .select("role,email")
           .eq("user_id", id)
           .single();
+        if (isSystemAccountEmail(old?.email)) throw new Error("FORBIDDEN");
         if (old?.role === "owner" && id !== a.user.id)
           throw new Error("HINWEIS:Andere Inhaberkonten bleiben geschützt.");
         if (!old) throw new Error("HINWEIS:Mitarbeiter wurde nicht gefunden.");
@@ -136,6 +151,26 @@ export async function POST(req: Request) {
     } else if (action === "customer") {
       check("kunden");
       const v = customerSchema.parse(b.value);
+      if (isSystemAccountEmail(v.email)) throw new Error("FORBIDDEN");
+      if (v.id) {
+        const { data: existing, error } = await db
+          .from("customers")
+          .select("email,user_id")
+          .eq("id", v.id)
+          .single();
+        if (error) throw error;
+        if (isSystemAccountEmail(existing.email)) throw new Error("FORBIDDEN");
+        if (existing.user_id) {
+          const { data: account, error: accountError } = await db
+            .from("staff")
+            .select("email")
+            .eq("user_id", existing.user_id)
+            .maybeSingle();
+          if (accountError) throw accountError;
+          if (isSystemAccountEmail(account?.email))
+            throw new Error("FORBIDDEN");
+        }
+      }
       const { id, ...record } = v;
       const { error } = id
         ? await db.from("customers").update(record).eq("id", id)
@@ -149,6 +184,7 @@ export async function POST(req: Request) {
         .eq("id", z.uuid().parse(b.id))
         .single();
       if (error) throw error;
+      if (isSystemAccountEmail(c.email)) throw new Error("FORBIDDEN");
       const result = await db.auth.admin.inviteUserByEmail(c.email, {
         redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || "https://getraenke-elias.vercel.app"}/konto`,
       });

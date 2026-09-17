@@ -1,3 +1,4 @@
+import { isSystemAccountEmail } from "@/lib/account-visibility";
 import { createHash } from "node:crypto";
 import { serviceDb, sameOrigin, userDb } from "@/lib/server";
 import { orderSchema } from "@/lib/validation";
@@ -16,6 +17,11 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     const v = parsed.data;
+    if (isSystemAccountEmail(v.email))
+      return Response.json(
+        { error: "Bitte eine Kunden-E-Mail-Adresse verwenden." },
+        { status: 400 },
+      );
     const db = serviceDb();
     const auth = await userDb();
     const {

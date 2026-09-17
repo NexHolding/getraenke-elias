@@ -1,4 +1,5 @@
 import "server-only";
+import { isSystemAccountEmail } from "./account-visibility";
 import { userDb, serviceDb } from "./server";
 export async function signedCustomer() {
   const auth = await userDb();
@@ -6,6 +7,7 @@ export async function signedCustomer() {
     data: { user },
   } = await auth.auth.getUser();
   if (!user?.email || !user.email_confirmed_at) throw new Error("UNAUTHORIZED");
+  if (isSystemAccountEmail(user.email)) throw new Error("FORBIDDEN");
   const db = serviceDb();
   const email = user.email.toLowerCase();
   const { data: existing, error } = await db
