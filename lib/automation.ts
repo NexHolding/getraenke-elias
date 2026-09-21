@@ -1,5 +1,5 @@
 import "server-only";
-import {processOrderAutomation} from "./order-automation";
+import { processOrderAutomation } from "./order-automation";
 import { serviceDb } from "./server";
 import { planDay } from "./delivery-plan";
 export async function dailyAutomation() {
@@ -36,12 +36,13 @@ export async function dailyAutomation() {
     .or(`requested_delivery_date.is.null,requested_delivery_date.lte.${date}`);
   if (oe) throw oe;
   if (!orders?.length) return;
+  const result = planDay(orders, date, cfg.value);
+  if (!result.stops.length) return result;
   const { error: lock } = await db
     .from("automation_runs")
     .insert({ kind: "daily-plan", slot: date });
   if (lock?.code === "23505") return;
   if (lock) throw lock;
-  const result = planDay(orders, date, cfg.value);
   for (const s of result.stops) {
     const { error } = await db
       .from("orders")
@@ -52,7 +53,8 @@ export async function dailyAutomation() {
         route_position: s.position,
       })
       .eq("id", s.id)
-      .is("delivery_date", null);
+      .is("delivery_date", null)
+      .in("status", ["confirmed", "partial"]);
     if (error) throw error;
   }
   return result;

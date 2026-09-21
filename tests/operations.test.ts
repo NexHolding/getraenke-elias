@@ -28,6 +28,7 @@ const config = {
 const order = (id: string, day: number, from: string, to: string) =>
   ({
     id,
+    created_at: "2026-09-16T08:00:00Z",
     preference_snapshot: {
       windows: [{ day, from, to }],
       dropoff_allowed: false,
@@ -43,6 +44,7 @@ test("delivery planner respects availability over distance and reports infeasibl
     ],
     "2026-09-17",
     config,
+    new Date("2026-09-17T06:00:00Z"),
   );
   assert.deepEqual(
     plan.stops.map((s) => s.id),

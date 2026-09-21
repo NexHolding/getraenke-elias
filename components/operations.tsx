@@ -1,4 +1,5 @@
 "use client";
+import { earliestOrderDelivery } from "@/lib/delivery-date";
 import DeliveryDepositDialog from "./delivery-deposit-dialog";
 import {
   deliveryAmount,
@@ -910,12 +911,15 @@ export function DeliveryManager({
         </label>
         <button
           className="button"
-          disabled={op.busy}
+          disabled={
+            op.busy || !date || date < berlinDate(new Date().toISOString())
+          }
           onClick={async () => {
+            setPlanMessage("");
             const p = await op.act("plan", { date });
             if (p) {
               setPlanMessage(
-                `${p.stops.length} Stopps geplant. ${p.unplanned.length} Aufträge ohne passendes Zeitfenster bleiben offen.`,
+                `${p.stops.length} Stopps geplant. ${p.unplanned.length} Aufträge bleiben für einen späteren passenden Liefertermin offen.`,
               );
               await reload();
             }
@@ -961,6 +965,11 @@ export function DeliveryManager({
           Lieferliste drucken
         </button>
       </div>
+      <p className="notice">
+        Neue Bestellungen liefern wir frühestens am Folgetag. Liefertage und
+        Kundenzeitfenster werden berücksichtigt; heutige Touren beginnen
+        frühestens ab der aktuellen Uhrzeit.
+      </p>
       {(op.message || planMessage) && (
         <p className="notice" role="status">
           {planMessage || op.message}
@@ -1126,7 +1135,7 @@ export function DeliveryManager({
                 <span>
                   {order.status === "partial"
                     ? "Restlieferung offen"
-                    : "Bereit zur Planung"}
+                    : `Frühestens ${earliestOrderDelivery(order)?.split("-").reverse().join(".") || "nach Prüfung des Bestelleingangs"}`}
                 </span>
                 <button className="text-link" onClick={() => open(order)}>
                   Lieferschein vorbereiten

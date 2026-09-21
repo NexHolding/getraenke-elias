@@ -46,13 +46,18 @@ test("delivery planning never brings a future requested delivery forward", () =>
     { id: "future", requested_delivery_date: "2026-09-18" },
     { id: "today", requested_delivery_date: "2026-09-17" },
     { id: "undated" },
-  ] as Order[];
-  const plan = planDay(orders, "2026-09-17", {
-    delivery_days: [4],
-    delivery_from: "10:00",
-    delivery_to: "18:00",
-    delivery_stop_minutes: 10,
-  } as Settings);
+  ].map((o) => ({ ...o, created_at: "2026-09-16T08:00:00Z" })) as Order[];
+  const plan = planDay(
+    orders,
+    "2026-09-17",
+    {
+      delivery_days: [4],
+      delivery_from: "10:00",
+      delivery_to: "18:00",
+      delivery_stop_minutes: 10,
+    } as Settings,
+    new Date("2026-09-17T06:00:00Z"),
+  );
   assert.deepEqual(
     plan.stops.map((s) => s.id),
     ["today", "undated"],

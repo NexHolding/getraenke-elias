@@ -244,7 +244,9 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
       setNativeSubmitted(false);
       setRequestId(crypto.randomUUID());
       setMessage(
-        d.status === "confirmed" ? `Deine Bestellung ${d.number} ist automatisch bestätigt. Die Ware ist verfügbar. ${d.payment_pending ? "Dein Zahlungswunsch wird noch abgestimmt. " : ""}Elias bestätigt den Liefertermin separat.` : `Danke! Deine Anfrage ${d.number} ist eingegangen. Wir prüfen den verfügbaren Bestand. Elias bestätigt den Liefertermin.`,
+        d.status === "confirmed"
+          ? `Deine Bestellung ${d.number} ist automatisch bestätigt. Die Ware ist verfügbar. ${d.payment_pending ? "Dein Zahlungswunsch wird noch abgestimmt. " : ""}Lieferung frühestens am Folgetag. Elias bestätigt den Liefertermin separat.`
+          : `Danke! Deine Anfrage ${d.number} ist eingegangen. Wir prüfen den verfügbaren Bestand. Lieferung frühestens am Folgetag. Elias bestätigt den Liefertermin.`,
       );
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "Bitte versuche es erneut.");
@@ -432,7 +434,7 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
             ) : (
               <>
                 <p className="muted">
-                  Unverbindliche Lieferanfrage · Mindestmenge 4 Kisten
+                  Unverbindliche Lieferanfrage · Mindestmenge 4 Kisten · Lieferung frühestens am Folgetag
                 </p>
                 {nativeSubmitted && (
                   <p className="notice">

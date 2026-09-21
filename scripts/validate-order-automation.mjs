@@ -170,7 +170,7 @@ try {
     await q("select to_char(now() at time zone 'Europe/Berlin','YYYY-MM-DD')v")
   )[0].v;
   await q(
-    "update orders set delivery_date=$1,eta_start='10:00',eta_end='10:30' where id=any($2::uuid[])",
+    "update orders set created_at=now()-interval '2 days',requested_delivery_date=$1,delivery_date=$1 where id=any($2::uuid[])",
     [today, [third.id, invoice.id, knownInvoice.id]],
   );
   const start = async (actor, date = today) =>

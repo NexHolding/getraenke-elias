@@ -1,10 +1,11 @@
 "use client";
+import { earliestNewDelivery } from "@/lib/delivery-date";
 import { useRef, useState } from "react";
 import { Plus, Repeat2, Search, Trash2, X } from "lucide-react";
 import { useOperations } from "./operations";
 import { ProductPhoto } from "./product-photo";
 import { euro, pack, totals } from "@/lib/money";
-import { berlinToday, deliveryIntervals } from "@/lib/staff-orders";
+import { deliveryIntervals } from "@/lib/staff-orders";
 import type { Product, Subscription } from "@/lib/types";
 
 type Line = { id: string; quantity: number };
@@ -19,7 +20,7 @@ type Draft = {
 const blank = (): Draft => ({
   customer_id: "",
   items: [],
-  date: berlinToday(),
+  date: earliestNewDelivery(),
   interval: "",
   notes: "",
   active: true,
@@ -288,7 +289,7 @@ export default function StaffOrders({
                   <input
                     required
                     type="date"
-                    min={draft.active ? berlinToday() : undefined}
+                    min={draft.active ? earliestNewDelivery() : undefined}
                     value={draft.date}
                     onChange={(e) =>
                       setDraft({ ...draft, date: e.target.value })

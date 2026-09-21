@@ -1,3 +1,4 @@
+import { berlinDate } from "@/lib/delivery-date";
 import { invoiceDetails } from "@/lib/invoice-details";
 import { requestCustomerAccess } from "@/lib/customer-access";
 import { invoicePaymentSchema } from "@/lib/billing";
@@ -61,15 +62,13 @@ export async function GET() {
     if (access.error) throw access.error;
     return Response.json(
       {
-        customers: customers
-          .filter(visible)
-          .map((c) => ({
-            ...c,
-            ...deliveryAddressFields(c),
-            online_account: access.data?.find(
-              (x: { customer_id: string }) => x.customer_id === c.id,
-            ),
-          })),
+        customers: customers.filter(visible).map((c) => ({
+          ...c,
+          ...deliveryAddressFields(c),
+          online_account: access.data?.find(
+            (x: { customer_id: string }) => x.customer_id === c.id,
+          ),
+        })),
         employees: employees.filter(visible).map((row) => {
           const { pin_hash, ...rest } = row as unknown as Record<
             string,
@@ -330,6 +329,10 @@ export async function POST(req: Request) {
     } else if (action === "plan") {
       check("lieferung");
       const date = z.iso.date().parse(b.date);
+      if (date < berlinDate())
+        throw new Error(
+          "HINWEIS:Lieferplanung für vergangene Tage ist nicht möglich.",
+        );
       const { data: cfg } = await db
         .from("settings")
         .select("value")
@@ -339,12 +342,27 @@ export async function POST(req: Request) {
         .from("orders")
         .select("*")
         .in("status", ["confirmed", "partial"])
-        .or(`delivery_date.is.null,delivery_date.eq.${date}`)
-        .or(
-          `requested_delivery_date.is.null,requested_delivery_date.lte.${date}`,
-        );
+        .or(`delivery_date.is.null,delivery_date.eq.${date}`);
       if (error) throw error;
       const plan = planDay(orders || [], date, cfg?.value || {});
+      // Remove obsolete slots when a replan can no longer accommodate an order.
+      if (plan.unplanned.length) {
+        const { error } = await db
+          .from("orders")
+          .update({
+            delivery_date: null,
+            eta_start: null,
+            eta_end: null,
+            route_position: null,
+          })
+          .in(
+            "id",
+            plan.unplanned.map((o) => o.id),
+          )
+          .eq("delivery_date", date)
+          .in("status", ["confirmed", "partial"]);
+        if (error) throw error;
+      }
       for (const stop of plan.stops) {
         const { error } = await db
           .from("orders")
@@ -354,7 +372,9 @@ export async function POST(req: Request) {
             eta_end: stop.eta_end,
             route_position: stop.position,
           })
-          .eq("id", stop.id);
+          .eq("id", stop.id)
+          .in("status", ["confirmed", "partial"])
+          .or(`delivery_date.is.null,delivery_date.eq.${date}`);
         if (error) throw error;
       }
       return Response.json(plan);

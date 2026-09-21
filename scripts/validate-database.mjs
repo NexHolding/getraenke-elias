@@ -174,7 +174,7 @@ assert.equal(
   null,
 );
 await query(
-  "insert into subscriptions(customer_id,items,interval,next_date) values($1,$2,'weekly',current_date)",
+  "insert into subscriptions(customer_id,items,interval,next_date) values($1,$2,'weekly',(now() at time zone 'Europe/Berlin')::date+1)",
   [customer, JSON.stringify([{ id: "elias-036-v1", quantity: 4 }])],
 );
 assert.equal((await query("select generate_subscription_orders() n"))[0].n, 1);

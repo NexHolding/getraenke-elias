@@ -1,3 +1,8 @@
+import {
+  berlinDate,
+  berlinMinute,
+  earliestOrderDelivery,
+} from "./delivery-date";
 import type { Order, Settings } from "./types";
 export const minutes = (s: string) =>
   Number(s.slice(0, 2)) * 60 + Number(s.slice(3, 5));
@@ -33,19 +38,49 @@ export function km(a: [number, number], b: [number, number]) {
       Math.sin(((b[1] - a[1]) * r) / 2) ** 2;
   return 6371 * 2 * Math.atan2(Math.sqrt(v), Math.sqrt(1 - v));
 }
-export function planDay(orders: Order[], date: string, cfg: Settings) {
+export function planDay(
+  orders: Order[],
+  date: string,
+  cfg: Settings,
+  now = new Date(),
+) {
+  const today = berlinDate(now);
+  if (date < today)
+    return {
+      stops: [],
+      unplanned: orders.map((o) => ({
+        id: o.id,
+        reason: "Liefertag liegt in der Vergangenheit",
+      })),
+    };
   const day = new Date(date + "T12:00:00Z").getUTCDay() || 7;
   if (!(cfg.delivery_days || [1, 2, 3, 4, 5]).includes(day))
     return {
       stops: [],
       unplanned: orders.map((o) => ({ id: o.id, reason: "Kein Liefertag" })),
     };
-  let clock = minutes(cfg.delivery_from || "10:00");
+  let clock = Math.max(
+    minutes(cfg.delivery_from || "10:00"),
+    date === today ? berlinMinute(now) + 1 : 0,
+  );
   const end = minutes(cfg.delivery_to || "18:00");
   let point: [number, number] = [49.1507, 9.2199];
-  const remaining = orders.filter(
-    (o) => !o.requested_delivery_date || o.requested_delivery_date <= date,
-  );
+  const remaining: Order[] = [];
+  const unplanned: { id: string; reason: string }[] = [];
+  for (const order of orders) {
+    const earliest = earliestOrderDelivery(order);
+    if (!earliest)
+      unplanned.push({
+        id: order.id,
+        reason: "Bestelleingang fehlt – bitte prüfen",
+      });
+    else if (date < earliest)
+      unplanned.push({
+        id: order.id,
+        reason: `Früheste Lieferung: ${earliest.split("-").reverse().join(".")}`,
+      });
+    else remaining.push(order);
+  }
   const stops: {
     id: string;
     eta_start: string;
@@ -53,11 +88,6 @@ export function planDay(orders: Order[], date: string, cfg: Settings) {
     position: number;
     estimated: boolean;
   }[] = [];
-  const unplanned: { id: string; reason: string }[] = orders
-    .filter(
-      (o) => o.requested_delivery_date && o.requested_delivery_date > date,
-    )
-    .map((o) => ({ id: o.id, reason: "Liefertermin liegt in der Zukunft" }));
   while (remaining.length) {
     const candidates = remaining
       .map((o) => {

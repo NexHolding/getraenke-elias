@@ -111,7 +111,7 @@ assert.match(ack, /2 × Testwasser/);
 assert.match(ack, /30,40 EUR/);
 assert.match(ack, /Liefertermin/);
 await q(
-  "update orders set delivery_date=(now() at time zone 'Europe/Berlin')::date,eta_start='10:20',eta_end='10:40' where id=$1",
+  "update orders set delivery_date=(now() at time zone 'Europe/Berlin')::date+1,eta_start='10:20',eta_end='10:40' where id=$1",
   [o.id],
 );
 assert.match(

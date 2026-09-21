@@ -49,6 +49,9 @@ const product = (
 const today = (
   await q("select to_char(now() at time zone 'Europe/Berlin','YYYY-MM-DD')d")
 )[0].d;
+const tomorrow = (
+  await q("select ((now() at time zone 'Europe/Berlin')::date+1)::text d")
+)[0].d;
 const command = {
   id: crypto.randomUUID(),
   request_id: crypto.randomUUID(),
@@ -56,7 +59,7 @@ const command = {
   customer_id: c.id,
   items: [{ id: product.id, quantity: 4 }],
   interval: "biweekly",
-  next_date: today,
+  next_date: tomorrow,
   active: true,
   notes: "Bitte klingeln.",
 };
@@ -141,12 +144,12 @@ order = (
 )[0].o;
 const cfg = (await q("select value from settings where id=1"))[0].value;
 cfg.delivery_days = [1, 2, 3, 4, 5, 6, 7];
-const plan = planDay([order], today, cfg);
+const plan = planDay([order], tomorrow, cfg);
 assert.equal(plan.stops.length, 1);
 const stop = plan.stops[0];
 await q(
   "update orders set delivery_date=$1,eta_start=$2,eta_end=$3,route_position=$4 where id=$5",
-  [today, stop.eta_start, stop.eta_end, stop.position, order.id],
+  [tomorrow, stop.eta_start, stop.eta_end, stop.position, order.id],
 );
 const deliver = async (
   id,
@@ -170,7 +173,10 @@ const deliver = async (
   )[0].d;
 const id = crypto.randomUUID();
 const items = [{ id: product.id, quantity: 2 }];
-await assert.rejects(() => deliver(id, items, true, null), /Kundenunterschrift/);
+await assert.rejects(
+  () => deliver(id, items, true, null),
+  /Kundenunterschrift/,
+);
 await assert.rejects(
   () => deliver(id, items, true, receiptLogo, other),
   /FORBIDDEN/,

@@ -1,4 +1,5 @@
 "use client";
+import { earliestNewDelivery } from "@/lib/delivery-date";
 import { useRef, useState } from "react";
 import { Plus, Repeat2, Search, Trash2, CalendarDays } from "lucide-react";
 import {
@@ -6,7 +7,7 @@ import {
   formatDeliveryAddress,
 } from "@/lib/delivery-address";
 import type { Customer, Product, Subscription } from "@/lib/types";
-import { berlinToday, deliveryIntervals } from "@/lib/staff-orders";
+import { deliveryIntervals } from "@/lib/staff-orders";
 import type { SubscriptionCommand } from "@/lib/subscriptions";
 import { euro, pack } from "@/lib/money";
 import { ProductPhoto } from "./product-photo";
@@ -58,7 +59,7 @@ export default function SubscriptionManager({
       customer_id: customer.id,
       items: s?.items.map((i) => ({ ...i })) || [],
       interval: (s?.interval || "weekly") as SubscriptionCommand["interval"],
-      next_date: s?.next_date || berlinToday(),
+      next_date: s?.next_date || earliestNewDelivery(),
       notes: s?.notes || "",
       active: s?.active ?? true,
     });
@@ -84,7 +85,7 @@ export default function SubscriptionManager({
       setDraft(null);
       setMessage(
         value.active
-          ? "Lieferabo gespeichert. Der nächste Auftrag wird zum gewählten Termin automatisch angelegt."
+          ? "Lieferabo gespeichert. Der nächste Auftrag wird am Vortag des gewählten Termins automatisch vorbereitet."
           : "Lieferabo pausiert. Bereits angelegte Bestellungen bleiben bestehen.",
       );
       try {
@@ -251,13 +252,18 @@ export default function SubscriptionManager({
                 <input
                   type="date"
                   required
-                  min={draft.active ? berlinToday() : undefined}
+                  min={draft.active ? earliestNewDelivery() : undefined}
                   value={draft.next_date}
                   onChange={(e) =>
                     setDraft({ ...draft, next_date: e.target.value })
                   }
                 />
               </label>
+              <p className="muted">
+                Neue Liefertermine sind frühestens ab morgen möglich. Die
+                konkrete Tour richtet sich nach unseren Liefertagen und deinen
+                Zeitfenstern.
+              </p>
               <label className="checkline">
                 <input
                   type="checkbox"
