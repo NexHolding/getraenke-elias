@@ -302,21 +302,26 @@ export async function POST(req: Request) {
       if (error) throw new Error(error.message);
       result = data;
     } else if (action === "order-status") {
-      const { data: changed, error } = await db
-        .from("orders")
-        .update({
-          status: z
-            .enum(["new", "confirmed", "delivering", "cancelled"])
-            .parse(body.status),
+      const value = z
+        .object({
+          id: z.uuid(),
+          status: z.enum([
+            "new",
+            "confirmed",
+            "delivering",
+            "partial",
+            "cancelled",
+          ]),
+          payment_method: z.enum(["cash", "card", "invoice"]),
+          expected_revision: z.number().int().min(0),
         })
-        .eq("id", z.uuid().parse(body.id))
-        .in("status", ["new", "confirmed", "delivering"])
-        .select("id");
-      if (error) throw error;
-      if (!changed?.length)
-        throw new Error(
-          "HINWEIS:Gelieferte, teilweise gelieferte oder stornierte Aufträge können hier nicht umgestellt werden. Bitte die offenen Mengen in der Auslieferung bearbeiten.",
-        );
+        .parse(body);
+      const { data: changed, error } = await db.rpc("approve_order_payment", {
+        p_value: value,
+        p_actor: user.id,
+      });
+      if (error) throw new Error(error.message);
+      result = changed;
     } else if (action === "sale") {
       const v = z
         .object({

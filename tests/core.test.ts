@@ -129,6 +129,7 @@ test("order rejects noninteger or negative quantities and missing adult acknowle
   const value = {
     request_id: "12345678-1234-4234-9234-123456789012",
     customer_name: "Test Person",
+    requested_payment_method: "cash",
     email: "qa@example.invalid",
     phone: "0123456",
     street: "Teststraße",
@@ -148,6 +149,32 @@ test("order rejects noninteger or negative quantities and missing adult acknowle
       ...value,
       items: [{ id: "elias-001", quantity: -1 }],
     }).success,
+    false,
+  );
+});
+
+test("checkout requires an explicit payment wish and does not accept unknown methods", () => {
+  const value = {
+    request_id: crypto.randomUUID(),
+    customer_name: "Test Kunde",
+    email: "kunde@example.test",
+    phone: "07131000",
+    street: "Testweg",
+    house_number: "1",
+    postal_code: "74076",
+    city: "Heilbronn",
+    adult: "on",
+    items: [{ id: "water", quantity: 4 }],
+  };
+  assert.equal(orderSchema.safeParse(value).success, false);
+  for (const requested_payment_method of ["cash", "card", "invoice"])
+    assert.equal(
+      orderSchema.safeParse({ ...value, requested_payment_method }).success,
+      true,
+    );
+  assert.equal(
+    orderSchema.safeParse({ ...value, requested_payment_method: "crypto" })
+      .success,
     false,
   );
 });

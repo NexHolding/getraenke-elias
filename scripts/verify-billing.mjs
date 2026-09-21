@@ -12,6 +12,7 @@ const data = {
   orders: [
     {
       ...f.order,
+      approved_payment_method: "cash",
       delivery_date: new Date().toISOString().slice(0, 10),
       eta_start: "10:20",
       eta_end: "10:30",

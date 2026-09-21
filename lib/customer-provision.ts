@@ -25,6 +25,7 @@ export async function provisionCustomer(
   const { data: created, error: insertError } = await db
     .from("customers")
     .insert({
+      payment_method: "cash",
       user_id: user.id,
       email: user.email.trim().toLowerCase(),
       name: String(user.user_metadata?.name || user.email).slice(0, 150),

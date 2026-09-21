@@ -1,4 +1,5 @@
 "use client";
+import { paymentLabels } from "@/lib/billing";
 import { Package, CalendarDays, ArrowUpRight } from "lucide-react";
 import type { Order } from "@/lib/types";
 import { euro } from "@/lib/money";
@@ -44,6 +45,13 @@ export default function OrderHistory({ orders }: { orders: Order[] }) {
               {o.eta_start && ` · ca. ${o.eta_start}–${o.eta_end} Uhr`}
             </p>
           )}
+          <p className="order-eta">
+            {o.approved_payment_method
+              ? `Zahlungsart bestätigt: ${paymentLabels[o.approved_payment_method]}`
+              : o.requested_payment_method
+                ? `Zahlungswunsch: ${paymentLabels[o.requested_payment_method]} · noch nicht freigegeben`
+                : "Zahlungsart wird abgestimmt."}
+          </p>
           <details>
             <summary>
               Artikel und Lieferstatus <ArrowUpRight size={16} />

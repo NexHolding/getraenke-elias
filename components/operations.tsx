@@ -97,7 +97,7 @@ export const customerDefaults: Partial<Customer> = {
   address: "",
   notes: "",
   invoice_email: true,
-  payment_method: "invoice",
+  payment_method: "cash",
   dropoff_allowed: false,
   dropoff_note: "",
   windows: [],
@@ -719,6 +719,7 @@ export function DeliveryManager({
   const [selected, setSelected] = useState<string | null>(null);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [signature, setSignature] = useState<string | null>(null);
+  const [signatureVersion, setSignatureVersion] = useState(0);
   const [recipient, setRecipient] = useState("");
   const [expectedPayment, setExpectedPayment] = useState<
     "cash" | "card" | "invoice"
@@ -740,7 +741,7 @@ export function DeliveryManager({
     .filter(
       (o) =>
         o.delivery_date === date &&
-        !["cancelled", "completed"].includes(o.status),
+        ["confirmed", "partial", "delivering"].includes(o.status),
     )
     .sort((a, b) => (a.route_position || 999) - (b.route_position || 999));
   const open = (order: Order) => {
@@ -749,9 +750,7 @@ export function DeliveryManager({
     pendingDelivery.current = null;
     setDeliveryPending(false);
     setSelected(order.id);
-    const method =
-      op.data.customers.find((c) => c.id === order.customer_id)
-        ?.payment_method || "invoice";
+    const method = order.approved_payment_method || "cash";
     setExpectedPayment(method);
     setDeliveryPayment(method);
     setPaymentConfirmed(false);
@@ -773,6 +772,21 @@ export function DeliveryManager({
     setSignature(null);
     setRecipient("");
   };
+  const changeQuantity = (id: string, value: number, maximum: number) => {
+    setPaymentConfirmed(false);
+    setSignature(null);
+    setSignatureVersion((v) => v + 1);
+    setQuantities((q) => ({
+      ...q,
+      [id]: Math.min(
+        maximum,
+        Math.max(0, Math.floor(Number.isFinite(value) ? value : 0)),
+      ),
+    }));
+  };
+  const hasDeliveryItems = Object.values(quantities).some(
+    (quantity) => quantity > 0,
+  );
   const save = async (finalize: boolean) => {
     if (!o || deliveryLock.current) return;
     deliveryLock.current = true;
@@ -867,7 +881,17 @@ export function DeliveryManager({
           <Truck size={18} />
           Tagestour planen
         </button>
-        <button className="button secondary" onClick={() => window.print()}>
+        <button
+          className="button secondary"
+          disabled={!date}
+          onClick={() =>
+            window.dispatchEvent(
+              new CustomEvent("elias:pdf-preview", {
+                detail: `/api/delivery-list?date=${date}`,
+              }),
+            )
+          }
+        >
           Lieferliste drucken
         </button>
       </div>
@@ -909,18 +933,14 @@ export function DeliveryManager({
                 <h3>{order.customer_name}</h3>
                 <p>{order.address}</p>
                 <p className="delivery-payment-hint">
-                  {
-                    paymentLabels[
-                      op.data.customers.find((c) => c.id === order.customer_id)
-                        ?.payment_method || "invoice"
-                    ]
-                  }
-                  {op.data.customers.find((c) => c.id === order.customer_id)
-                    ?.payment_method &&
-                  op.data.customers.find((c) => c.id === order.customer_id)
-                    ?.payment_method !== "invoice"
-                    ? " · Vor Ort kassieren"
-                    : " · Nicht vor Ort kassieren"}
+                  {order.approved_payment_method
+                    ? paymentLabels[order.approved_payment_method]
+                    : "Zahlungsart noch nicht freigegeben"}
+                  {order.approved_payment_method
+                    ? order.approved_payment_method === "invoice"
+                      ? " · Nicht vor Ort kassieren"
+                      : " · Vor Ort kassieren"
+                    : ""}
                 </p>
                 <p>
                   {order.preference_snapshot?.dropoff_allowed
@@ -1041,25 +1061,52 @@ export function DeliveryManager({
                       )}
                     </small>
                   </div>
-                  <NumberInput
-                    aria-label={`Liefermenge ${i.name}`}
-
-                    min="0"
-                    max={i.quantity - (o.delivered?.[i.id] || 0)}
-                    value={quantities[i.id] || 0}
-                    onChange={(e) => {
-                      setPaymentConfirmed(false);
-                      setQuantities({
-                        ...quantities,
-                        [i.id]: Math.max(0, Math.floor(Number(e.target.value))),
-                      });
-                    }}
-                  />
+                  <div className="delivery-quantity-actions">
+                    <label>
+                      Diese Lieferung
+                      <NumberInput
+                        aria-label={`Liefermenge ${i.name}`}
+                        min="0"
+                        max={Math.max(
+                          0,
+                          i.quantity - (o.delivered?.[i.id] || 0),
+                        )}
+                        step="1"
+                        value={quantities[i.id] || 0}
+                        onChange={(e) =>
+                          changeQuantity(
+                            i.id,
+                            Number(e.target.value),
+                            Math.max(
+                              0,
+                              i.quantity - (o.delivered?.[i.id] || 0),
+                            ),
+                          )
+                        }
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      className="button secondary"
+                      disabled={!quantities[i.id]}
+                      onClick={() =>
+                        changeQuantity(
+                          i.id,
+                          0,
+                          Math.max(0, i.quantity - (o.delivered?.[i.id] || 0)),
+                        )
+                      }
+                    >
+                      Nicht dabei
+                    </button>
+                  </div>
                 </div>
               ))}
               <button
                 className="button secondary"
-                disabled={op.busy}
+                disabled={
+                  op.busy || !hasDeliveryItems || !o.approved_payment_method
+                }
                 onClick={() => save(false)}
               >
                 Entwurf speichern
@@ -1090,7 +1137,8 @@ export function DeliveryManager({
                 ) : (
                   <>
                     <p>
-                      Vorgabe im Kundenprofil: {paymentLabels[expectedPayment]}
+                      Für diesen Auftrag freigegeben:{" "}
+                      {paymentLabels[expectedPayment]}
                     </p>
                     <label>
                       Zahlungsart vor Ort
@@ -1100,6 +1148,8 @@ export function DeliveryManager({
                         onChange={(e) => {
                           setDeliveryPayment(e.target.value as "cash" | "card");
                           setPaymentConfirmed(false);
+                          setSignature(null);
+                          setSignatureVersion((v) => v + 1);
                         }}
                       >
                         <option value="cash">Barzahlung</option>
@@ -1121,6 +1171,17 @@ export function DeliveryManager({
                   </>
                 )}
               </section>
+              {!o.approved_payment_method && (
+                <p className="notice">
+                  Bitte zuerst die Zahlungsart unter Bestellungen freigeben.
+                </p>
+              )}
+              {!hasDeliveryItems && (
+                <p className="notice">
+                  Keine Ware dabei: Es wird kein Lieferschein und keine Rechnung
+                  gebucht. Der Auftrag bleibt offen.
+                </p>
+              )}
               <h3>Übergabe bestätigen</h3>
               <label>
                 Name des Empfängers / Abstellvermerk
@@ -1136,11 +1197,13 @@ export function DeliveryManager({
                     "Im Kundenprofil freigegeben"}
                 </p>
               )}
-              <Signature onChange={setSignature} />
+              <Signature key={signatureVersion} onChange={setSignature} />
               <button
                 className="button full"
                 disabled={
                   op.busy ||
+                  !hasDeliveryItems ||
+                  !o.approved_payment_method ||
                   !recipient ||
                   (expectedPayment !== "invoice" && !paymentConfirmed) ||
                   (!signature && !o.preference_snapshot?.dropoff_allowed)

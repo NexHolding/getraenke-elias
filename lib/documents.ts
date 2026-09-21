@@ -83,7 +83,14 @@ export function businessDocument(
         ? ["Artikel", "Menge", "USt.", "Netto", "Brutto", "Pfand"]
         : ["Artikel", "Bestellt", "Diese Lieferung", "Noch offen"],
     ],
-    body: record.items.map((l) => {
+    body: (kind === "delivery"
+      ? order.items.map((item) => ({
+          ...item,
+          quantity:
+            record.items.find((line) => line.id === item.id)?.quantity || 0,
+        }))
+      : record.items
+    ).map((l) => {
       const o = order.items.find((x) => x.id === l.id);
       return kind === "invoice"
         ? [
@@ -92,11 +99,11 @@ export function businessDocument(
             `${l.tax_rate}%`,
             euro(
               Math.round(
-                (l.quantity * l.price_cents * 100) / (100 + l.tax_rate),
+                (l.quantity * l.price_cents * 100) / (100 + (l.tax_rate ?? 19)),
               ),
             ),
             euro(l.quantity * l.price_cents),
-            euro(l.quantity * l.deposit_cents),
+            euro(l.quantity * (l.deposit_cents || 0)),
           ]
         : [
             l.name,

@@ -65,6 +65,7 @@ test("checkout requires all four address components and keeps order-specific add
     ...address,
     request_id: crypto.randomUUID(),
     customer_name: "Test Kunde",
+    requested_payment_method: "cash",
     email: "kunde@example.test",
     phone: "0123456789",
     adult: "on",

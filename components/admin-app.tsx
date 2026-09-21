@@ -1,4 +1,5 @@
 "use client";
+import OrderApproval from "./order-approval";
 import { nativeApp, nativeRequest } from "@/lib/native-app";
 import ReceiptManager from "./receipt-manager";
 import POSCatalog from "./pos-catalog";
@@ -1224,36 +1225,17 @@ export default function AdminApp({ section }: { section: string }) {
                               </span>
                               <h2>{o.customer_name}</h2>
                             </div>
-                            <select
-                              value={o.status}
-                              aria-label={`Status Anfrage ${o.number}`}
-                              disabled={[
-                                "partial",
-                                "completed",
-                                "cancelled",
-                              ].includes(o.status)}
-                              onChange={(e) =>
-                                act(
-                                  "order-status",
-                                  { id: o.id, status: e.target.value },
-                                  "Anfragestatus aktualisiert.",
-                                )
-                              }
-                            >
-                              <option value="new">Neu</option>
-                              <option value="confirmed">Bestätigt</option>
-                              <option value="delivering">In Lieferung</option>
 
-                              <option value="partial" disabled>
-                                Restlieferung offen
-                              </option>
-                              <option value="completed" disabled>
-                                Vollständig geliefert
-                              </option>
-                              <option value="cancelled">Storniert</option>
-                            </select>
                           </div>
                           <p>{o.address}</p>
+                          <OrderApproval
+                            key={`${o.id}:${o.payment_revision || 0}:${o.status}`}
+                            order={o}
+                            busy={busy}
+                            save={(value) =>
+                              act("order-status", value, "Auftrag und Zahlungsart aktualisiert.")
+                            }
+                          />
                           {!["new", "cancelled", "completed"].includes(
                             o.status,
                           ) && (

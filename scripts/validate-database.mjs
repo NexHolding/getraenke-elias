@@ -80,7 +80,7 @@ await assert.rejects(() =>
 );
 const customer = (
   await query(
-    "insert into customers(name,email,phone,address,dropoff_allowed) values('QA Customer','qa@example.test','012345678','QA Street 1',true) returning id",
+    "insert into customers(name,email,phone,address,dropoff_allowed,payment_method) values('QA Customer','qa@example.test','012345678','QA Street 1',true,'invoice') returning id",
   )
 )[0].id;
 const items = [

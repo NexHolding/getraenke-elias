@@ -126,7 +126,15 @@ const pause = {
 };
 await save(pause);
 assert.deepEqual(await save(pause), await save(pause));
-await q("update orders set status='confirmed' where id=$1", [order.id]);
+await q("select approve_order_payment($1,$2)", [
+  JSON.stringify({
+    id: order.id,
+    status: "confirmed",
+    payment_method: "invoice",
+    expected_revision: 0,
+  }),
+  owner,
+]);
 order = (
   await q("select to_jsonb(orders)o from orders where id=$1", [order.id])
 )[0].o;

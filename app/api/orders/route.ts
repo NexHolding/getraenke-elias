@@ -126,6 +126,7 @@ export async function POST(req: Request) {
         const { data: created, error } = await db
           .from("customers")
           .insert({
+            payment_method: "cash",
             name: v.customer_name,
             email: v.email.toLowerCase(),
             phone: v.phone,
@@ -152,6 +153,7 @@ export async function POST(req: Request) {
       .from("orders")
       .insert({
         request_id: v.request_id,
+        requested_payment_method: v.requested_payment_method,
         customer_id: customer?.id,
         preference_snapshot: user
           ? {

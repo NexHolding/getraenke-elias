@@ -97,6 +97,7 @@ export const supplierSchema = z
 export const orderSchema = z
   .object({
     request_id: z.uuid(),
+    requested_payment_method: z.enum(["cash", "card", "invoice"]),
     customer_name: z.string().min(2).max(120),
     email: z.email().max(200),
     phone: z.string().min(5).max(60),

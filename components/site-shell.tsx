@@ -570,6 +570,27 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
                   </label>
                   <DeliveryAddressFields value={customer} />
                   <label>
+                    Gewünschte Zahlungsart
+                    <select
+                      name="requested_payment_method"
+                      aria-label="Gewünschte Zahlungsart"
+                      required
+                      defaultValue=""
+                    >
+                      <option value="" disabled>
+                        Bitte auswählen
+                      </option>
+                      <option value="cash">Bar bei Lieferung</option>
+                      <option value="card">EC-Karte bei Lieferung</option>
+                      <option value="invoice">Rechnung anfragen</option>
+                    </select>
+                  </label>
+                  <p className="fineprint">
+                    Deine Zahlungsart ist ein Wunsch. Getränke Elias bestätigt
+                    sie bei der Freigabe oder vereinbart eine andere Zahlungsart
+                    mit dir.
+                  </p>
+                  <label>
                     Wunschtermin & Hinweise
                     <textarea
                       name="notes"

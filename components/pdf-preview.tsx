@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
+import { nativeApp } from "@/lib/native-app";
 import { useDialog } from "./use-dialog";
 export default function PdfPreview() {
   const [url, setUrl] = useState("");
@@ -12,7 +13,7 @@ export default function PdfPreview() {
     const open = (e: Event) => {
       const value = (e as CustomEvent<string>).detail;
       if (
-        /^\/api\/(receipts\/[a-f0-9-]+\?format=pdf|documents\/(invoice|delivery)\/[a-f0-9-]+|communications\/attachments\/[a-f0-9-]+(?:\?customer=[a-f0-9-]+)?)$/.test(
+        /^\/api\/(delivery-list\?date=\d{4}-\d{2}-\d{2}|receipts\/[a-f0-9-]+\?format=pdf|documents\/(invoice|delivery)\/[a-f0-9-]+|communications\/attachments\/[a-f0-9-]+(?:\?customer=[a-f0-9-]+)?)$/.test(
           value,
         )
       ) {
@@ -85,6 +86,46 @@ export default function PdfPreview() {
       cleanup?.();
     };
   }, [url]);
+  const print = async () => {
+    const canvases = container.current?.querySelectorAll("canvas");
+    if (!canvases?.length) return;
+    const frame = document.createElement("iframe");
+    frame.style.cssText =
+      "position:fixed;width:1px;height:1px;bottom:0;left:0;border:0";
+    frame.title = "Druckansicht Lieferliste";
+    document.body.appendChild(frame);
+    const target = frame.contentDocument;
+    if (!target) {
+      frame.remove();
+      return;
+    }
+    target.open();
+    target.write(
+      "<!doctype html><html><head><title>Elias Lieferliste</title><style>@page{size:A4 landscape;margin:0}body{margin:0}img{display:block;width:100%;break-after:page}img:last-child{break-after:auto}</style></head><body></body></html>",
+    );
+    target.close();
+    try {
+      for (const canvas of canvases) {
+        const img = target.createElement("img");
+        img.src = canvas.toDataURL("image/png");
+        target.body.appendChild(img);
+        await img.decode();
+      }
+      frame.contentWindow?.addEventListener(
+        "afterprint",
+        () => frame.remove(),
+        { once: true },
+      );
+      frame.contentWindow?.focus();
+      frame.contentWindow?.print();
+      setTimeout(() => frame.remove(), 60000);
+    } catch {
+      frame.remove();
+      setError(
+        "Druckansicht konnte nicht geöffnet werden. Bitte die PDF herunterladen.",
+      );
+    }
+  };
   if (!url) return null;
   const title = url.startsWith("/api/receipts/") ? "PDF-Bon" : "PDF-Dokument";
   return (
@@ -96,7 +137,25 @@ export default function PdfPreview() {
     >
       <section className="pdf-preview">
         <header>
-          <h2>{title}</h2>
+          <h2>
+            {url.startsWith("/api/delivery-list") ? "Lieferliste" : title}
+          </h2>
+          {url.startsWith("/api/delivery-list") && !loading && !error && (
+            <div className="inline-actions">
+              {!nativeApp() && (
+                <button className="button" onClick={print}>
+                  Drucken
+                </button>
+              )}
+              <a
+                className="button secondary"
+                href={`${url}&download=1`}
+                download
+              >
+                {nativeApp() ? "PDF drucken / teilen" : "PDF herunterladen"}
+              </a>
+            </div>
+          )}
           <button
             autoFocus
             type="button"

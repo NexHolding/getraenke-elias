@@ -48,6 +48,9 @@ export type Supplier = {
 };
 export type CartLine = { product: Product; quantity: number };
 export type Order = Partial<DeliveryAddress> & {
+  requested_payment_method?: "cash" | "card" | "invoice" | null;
+  approved_payment_method?: "cash" | "card" | "invoice" | null;
+  payment_revision?: number;
   requested_delivery_date?: string | null;
   subscription_id?: string | null;
   recurrence_date?: string | null;
