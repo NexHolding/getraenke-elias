@@ -628,12 +628,15 @@ export function MapCard() {
   return (
     <div className="map-card">
       {loaded ? (
+        <>
+        <button className="map-revoke" type="button" onClick={() => setLoaded(false)}>Google-Karte deaktivieren</button>
         <iframe
           title="Google Maps: Getränke Elias, Wartbergstraße 3, Heilbronn"
           src="https://maps.google.com/maps?q=Wartbergstra%C3%9Fe%203%2074076%20Heilbronn&output=embed"
           loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
+          referrerPolicy="no-referrer"
         />
+        </>
       ) : (
         <div className="map-placeholder">
           <MapPin size={38} />
@@ -643,7 +646,7 @@ export function MapCard() {
             Google-Karte laden <ArrowUpRight size={16} />
           </button>
           <small>
-            Mit dem Laden wird deine IP-Adresse an Google übertragen.
+            Mit deiner Einwilligung werden IP-Adresse und Browserdaten an Google übertragen. Dabei kann Google Informationen auf deinem Gerät speichern oder auslesen. Du kannst die Karte jederzeit wieder deaktivieren.
           </small>
         </div>
       )}

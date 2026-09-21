@@ -5,7 +5,7 @@ import { receiptArchive, archivedPdf } from "@/lib/receipt-archive";
 async function access(id: string) {
   z.uuid().parse(id);
   const staff = await requireStaff();
-  if (!can(staff, "kasse") && !can(staff, "finanzen"))
+  if (!can(staff, "kasse") && !can(staff, "finanzen") && !can(staff,"storno"))
     throw new Error("FORBIDDEN");
   const { data: sale, error } = await serviceDb()
     .from("sales")
@@ -15,7 +15,7 @@ async function access(id: string) {
   if (
     error ||
     !sale ||
-    !(sale.actor === staff.user.id || can(staff, "finanzen"))
+    !(sale.actor === staff.user.id || can(staff, "finanzen") || can(staff,"storno"))
   )
     throw new Error("FORBIDDEN");
   return { sale, staff };

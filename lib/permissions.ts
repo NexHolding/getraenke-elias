@@ -12,6 +12,7 @@ export const modules = {
   einkauf: "Einkauf",
   lieferanten: "Lieferanten",
   einstellungen: "Einstellungen",
+  storno: "Belege stornieren und Rückgaben buchen",
   rabatt: "Rabatte auf Artikel und Warenkorb vergeben",
 } as const;
 export type Permission = keyof typeof modules;

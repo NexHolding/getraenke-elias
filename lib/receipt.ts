@@ -138,9 +138,18 @@ export async function createReceiptPdf(sale: Sale) {
   if (issuer.vat_id) text(`USt-IdNr.: ${issuer.vat_id}`, 7.5, false, true);
   rule();
   text(sale.test_mode ? "EINRICHTUNGSBELEG" : "KASSENBELEG", 10, true, true);
+  if (sale.record_type === "cancellation" || sale.record_type === "return") {
+    text(sale.record_type === "return" ? "RÜCKGABEBELEG" : "STORNOBELEG", 10, true, true);
+    text(`Zu Originalbon E-${String(sale.original_number).padStart(6,"0")}`, 8, true);
+    text(`Grund: ${sale.reversal_reason || ""}`, 8);
+    if (sale.reversal_note) text(sale.reversal_note, 7.5);
+  }
   text(`Bon E-${String(sale.number).padStart(6, "0")}`, 9, true, true);
   if (sale.test_mode)
     text("Nicht fiskalisiert - kein steuerlicher Echtbetrieb", 7, false, true);
+  if (sale.items.some(l => l.return_eligible) && (!sale.record_type || sale.record_type === "sale")) {
+    text("Freigegebene Nicht-Lebensmittel: freiwillige Rücknahme binnen 14 Tagen, unbenutzt, vollständig, mit Originalbon. Gesetzliche Mängelrechte bleiben unberührt.", 7);
+  }
   gap(2);
   pair("Belegdatum", dateTime(sale.created_at), 7.5);
   pair(
@@ -162,6 +171,7 @@ export async function createReceiptPdf(sale: Sale) {
   for (const line of sale.items) {
     const itemStart = blocks.length;
     text(line.name, 8.5, true);
+    if (line.return_eligible && (!sale.record_type || sale.record_type === "sale")) text("14 Tage freiwillige Rücknahme", 7);
     if (line.price_cents || line.quantity > 0)
       pair(
         `${line.quantity} x ${euro(line.price_cents)}`,

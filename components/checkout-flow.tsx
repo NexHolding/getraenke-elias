@@ -38,11 +38,7 @@ async function request(path: string, body?: unknown) {
   return data;
 }
 export function receiptDownload(id: string) {
-  window.open(
-    `/api/receipts/${id}?format=pdf`,
-    "_blank",
-    "noopener,noreferrer",
-  );
+  window.dispatchEvent(new CustomEvent("elias:pdf-preview", { detail: `/api/receipts/${id}?format=pdf` }));
 }
 
 export default function CheckoutFlow({

@@ -51,9 +51,10 @@ export const employeeSchema = z.object({
         "lieferanten",
         "einstellungen",
         "rabatt",
+        "storno",
       ]),
     )
-    .max(13),
+    .max(14),
   active: z.boolean(),
   pin: z
     .string()

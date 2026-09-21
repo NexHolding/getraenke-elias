@@ -1,5 +1,7 @@
 # Bezahlablauf und Epson-Bondruck
 
+Aktueller Stand vom 21.09.2026: Native iOS-App mit Netzwerkbrücke vorhanden, vorgesehenes Gerät Epson TM-m30II; reale Druckeradresse und bestätigter Hardwaretest fehlen weiterhin. [Aktuelle Prüfung](KASSEN-RECHTSPRUEFUNG-2026-09-21.md) hat Vorrang vor dem folgenden historischen Entwicklungsstand.
+
 Stand: 17.09.2026. Ergänzung zur vorhandenen Web-/iPad-Oberfläche; keine native iOS-App und keine TSE-Aktivierung.
 
 ## Bedienung

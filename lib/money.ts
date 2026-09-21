@@ -19,11 +19,12 @@ export function totals(lines: SaleLine[]) {
       !Number.isSafeInteger(l.deposit_cents)
     )
       throw new Error("Ungültige Cent-Beträge oder Mengen.");
-    for (const [amount, rate] of [
-      [l.quantity * l.price_cents, l.tax_rate],
-      [l.quantity * l.deposit_cents, l.deposit_tax_rate],
-    ]) {
-      const n = Math.round((amount * 100) / (100 + rate));
+    for (const [amount, rate, storedNet] of [
+      [l.quantity * l.price_cents, l.tax_rate, l.net_cents],
+      [l.quantity * l.deposit_cents, l.deposit_tax_rate, l.deposit_net_cents],
+    ] as [number, number, number | undefined][]) {
+      const n = storedNet ?? Math.sign(amount) * Math.round((Math.abs(amount) * 100) / (100 + rate));
+      if (!Number.isSafeInteger(n)) throw new Error("Ungültiger Nettobetrag.");
       gross += amount;
       net += n;
       const group = taxes[rate] ?? { gross: 0, net: 0, tax: 0 };

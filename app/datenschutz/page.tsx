@@ -1,74 +1,15 @@
 import SiteShell from "@/components/site-shell";
 export const metadata = { title: "Datenschutz" };
 export default function Page() {
-  return (
-    <SiteShell>
-      <article className="legal container">
-        <span className="eyebrow">DEINE DATEN</span>
-        <h1>Datenschutzhinweise</h1>
-        <h2>Verantwortlicher</h2>
-        <p>
-          Frank Elias, Getränkeshop Elias, Wartbergstraße 3, 74076 Heilbronn.
-          Kontakt: info@getraenke-elias.de, Telefon +49 7131 797 52 25.
-        </p>
-        <h2>Lieferanfragen</h2>
-        <p>
-          Wenn du eine Lieferanfrage sendest, verarbeiten wir deinen Namen,
-          E-Mail-Adresse, Telefonnummer, Lieferadresse, deine Getränkeauswahl
-          und freiwillige Hinweise zur Bearbeitung deiner Anfrage und zur
-          Vertragsanbahnung (Art. 6 Abs. 1 lit. b DSGVO). Die Daten werden nur
-          so lange gespeichert, wie es für die Bearbeitung sowie gegebenenfalls
-          bestehende gesetzliche Aufbewahrungspflichten erforderlich ist. Bitte
-          übermittle keine sensiblen Daten in den Freitextfeldern.
-        </p>
-        <h2>Kundenkonto, Lieferplanung und Übergabe</h2>
-        <p>Im Kundenkonto speichern wir Kontaktdaten, Bestellverlauf, gewünschte Lieferzeiten und eine freiwillige Abstellgenehmigung. Lieferabos erzeugen wiederkehrende Aufträge. Bei der Übergabe dokumentieren wir die tatsächlich gelieferten Mengen, den Zeitpunkt, den Empfängernamen und gegebenenfalls die auf dem Gerät gezeichnete Unterschrift. Zugehörige Lieferscheine und Rechnungen werden im Kundenkonto abgelegt und gemäß Versandpräferenz per E-Mail zugestellt.</p>
-        <p>Wenn der Betrieb den Adressabgleich aktiviert, wird die Lieferadresse zur Ermittlung von Kartenkoordinaten an den Nominatim-Dienst von OpenStreetMap übertragen. Navigationslinks öffnen Google Maps oder Apple Karten erst beim Anklicken. Diese Daten unterstützen die vereinbarte Lieferung; es wird kein laufender Kundenstandort erfasst.</p>
-        <h2>Website und Datenbank</h2>
-        <p>
-          Das Hosting erfolgt über Vercel; die Anfragedaten werden in einer
-          Supabase-Datenbank in der EU-Region Frankfurt verarbeitet. Beim
-          Zugriff werden technisch notwendige Verbindungsdaten verarbeitet, um
-          die Website bereitzustellen und abzusichern (Art. 6 Abs. 1 lit. f
-          DSGVO). Die Anbieter können Unterauftragsverarbeiter einsetzen.
-          Verträge zur Auftragsverarbeitung und gegebenenfalls Garantien für
-          Drittlandübermittlungen sind vor dem regulären Geschäftsbetrieb durch
-          den Verantwortlichen zu vervollständigen.
-        </p>
-        <h2>Lokale Speicherung und Anmeldung</h2>
-        <p>
-          Deine Getränkeauswahl wird für die laufende Sitzung im Browser
-          gespeichert. Für den geschützten Mitarbeiterbereich werden technisch
-          erforderliche Anmeldedaten in Cookies verwendet. Das gilt ebenso für das Kundenkonto und angemeldete Kassengeräte. Es gibt auf dieser
-          Website keine Werbe- oder Analyse-Cookies.
-        </p>
-        <h2>Google Maps und externe Links</h2>
-        <p>
-          Die Google-Karte wird erst geladen, wenn du „Google-Karte laden“
-          auswählst. Dabei werden Verbindungsdaten, insbesondere deine
-          IP-Adresse, an Google übertragen (Einwilligung, Art. 6 Abs. 1 lit. a
-          DSGVO). Ohne Zustimmung bleibt die Karte deaktiviert. Externe Links zu
-          Google Maps oder Instagram öffnen die jeweilige Website erst beim
-          Anklicken. Dort gelten die Datenschutzhinweise des jeweiligen
-          Anbieters.
-        </p>
-        <h2>Deine Rechte</h2>
-        <p>
-          Du hast nach Maßgabe der gesetzlichen Voraussetzungen das Recht auf
-          Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung und
-          Datenübertragbarkeit. Bei einer Verarbeitung auf Grundlage
-          berechtigter Interessen kannst du widersprechen. Eine Einwilligung
-          kannst du für die Zukunft widerrufen. Außerdem kannst du dich bei
-          einer Datenschutzaufsichtsbehörde beschweren, insbesondere beim
-          Landesbeauftragten für den Datenschutz und die Informationsfreiheit
-          Baden-Württemberg.
-        </p>
-        <p>
-          Stand: September 2026. Vor dem regulären Betrieb müssen die konkreten
-          Anbieter-Verträge, Löschfristen und betrieblichen Abläufe mit diesen
-          Hinweisen abgeglichen werden.
-        </p>
-      </article>
-    </SiteShell>
-  );
+ return <SiteShell><article className="legal container"><span className="eyebrow">DEINE DATEN</span><h1>Datenschutzhinweise</h1>
+ <p>Diese Hinweise gelten für die Website, das Kundenkonto und den darüber angebotenen Lieferservice von Getränke Elias. Stand: 21. September 2026.</p>
+ <h2>1. Verantwortlicher und Datenschutzkontakt</h2><p>Frank Elias, Getränkeshop Elias, Wartbergstraße 3, 74076 Heilbronn, Deutschland. Telefon: +49 7131 797 52 25. E-Mail: <a href="mailto:info@getraenke-elias.de">info@getraenke-elias.de</a>. An diese Adresse kannst du auch Datenschutzanfragen richten. Der Inhaber ist Verantwortlicher für die Verarbeitung und dein Datenschutzkontakt.</p>
+ <h2>2. Bereitstellung der Website</h2><p>Beim Besuch werden technisch erforderliche Verbindungsdaten verarbeitet, insbesondere IP-Adresse, Zeitpunkt, angeforderte Seite, Browserinformationen und Fehlermeldungen. Sie dienen der Bereitstellung, Sicherheit und Fehlerbehebung. Grundlage ist unser berechtigtes Interesse an einem sicheren Onlineangebot (Art. 6 Abs. 1 lit. f DSGVO). Hosting und Bereitstellung erfolgen über Vercel, Datenbank, Dateispeicherung und Authentifizierung über Supabase. Die Projektdatenbank wird in der EU-Region Frankfurt betrieben. Dienstleister und deren Unterauftragnehmer können technische Daten auch außerhalb der EU verarbeiten. Informationen zu ihren Verarbeitungen und Transfergarantien: <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noreferrer">Vercel</a> und <a href="https://supabase.com/privacy" target="_blank" rel="noreferrer">Supabase</a>. Eine EU-Datenbankregion bedeutet nicht, dass sämtliche Dienstleisterverarbeitung ausschließlich in der EU stattfindet.</p>
+ <h2>3. Lieferanfragen, Kundenkonto und Bestellungen</h2><p>Wir verarbeiten Name, E-Mail-Adresse, Telefonnummer, Straße, Hausnummer, Postleitzahl, Ort, Artikelauswahl, Mengen sowie freiwillige Hinweise und Lieferwünsche. Die Verarbeitung erfolgt zur Bearbeitung deiner Anfrage und zur Durchführung des Vertrags (Art. 6 Abs. 1 lit. b DSGVO). Erforderliche Angaben sind im Formular gekennzeichnet; ohne Kontakt- und Lieferdaten kann die Lieferung nicht bearbeitet werden. Bitte gib keine sensiblen Daten in Freitextfelder ein.</p><p>Im Kundenkonto werden Anmeldedaten, Bestellverlauf, Liefertermine, Rechnungen und gegebenenfalls wiederkehrende Lieferwünsche verwaltet. Bei der Registrierung bestätigst du deine E-Mail-Adresse. Für die Passwortwiederherstellung erhältst du einen zeitlich begrenzten Link; wir versenden kein bestehendes Passwort im Klartext. Eine gespeicherte Abstellgenehmigung ist freiwillig und kann für künftige Lieferungen geändert werden.</p>
+ <h2>4. Lieferung, Belege und Kommunikation</h2><p>Zur Übergabe dokumentieren wir die gelieferten Mengen, Zeitpunkt und Empfängername sowie gegebenenfalls eine auf dem Gerät gezeichnete Unterschrift. Berechtigte Mitarbeiter erhalten die zur Lieferung benötigten Angaben. Bestell- und Konto-E-Mails, Versandzeitpunkt, Versandstatus und gegebenenfalls Anhänge werden zur Nachvollziehbarkeit in der Kommunikationshistorie erfasst. Nachrichten werden über die eingerichteten E-Mail-Dienste versendet. Grundlagen sind Art. 6 Abs. 1 lit. b und f DSGVO sowie für gesetzlich erforderliche Dokumentation Art. 6 Abs. 1 lit. c DSGVO.</p><p>Kassenbons, Rechnungen, Storno- und Rückgabebelege dokumentieren Positionen, Beträge, Steuerdaten, Zahlungskategorie, Zeitpunkt und die verantwortliche Bedienung. Bei einer zugeordneten Kundenrechnung enthalten sie auch Kundendaten. Steuerberater erhalten im freigegebenen Finanzzugang die für Buchhaltung und steuerliche Pflichten erforderlichen Belege. Das separate EC-Terminal verarbeitet Kartenzahlungen außerhalb dieser Website; vollständige Karten- oder PIN-Daten werden in unserem Kassensystem nicht gespeichert.</p>
+ <h2>5. Speicherung auf deinem Gerät</h2><p>Der Warenkorb wird für die laufende Browsersitzung unter „elias-cart“ im Sitzungsspeicher abgelegt. Supabase-Anmeldecookies ermöglichen das Kundenkonto und den geschützten Mitarbeiterzugang. Auf freigegebenen Mitarbeitergeräten werden außerdem „elias-device“ (bis zu 30 Tage) und „elias-operator“ (bis zu acht Stunden) für Gerätefreigabe und PIN-Sitzung verwendet. Kassengeräte speichern zusätzlich technische Angaben zur Druckereinrichtung und zu noch nicht abgeschlossenen Belegabläufen, damit unterbrochene Vorgänge wiederaufgenommen werden können. Diese Speicherungen dienen ausdrücklich angeforderten Funktionen und sind nach § 25 Abs. 2 Nr. 2 TDDDG erforderlich. Personenbezogene Daten werden auf den jeweils genannten Grundlagen der DSGVO verarbeitet.</p><p>Wir setzen im eigenen Angebot keine Werbetracker und keine Analyse-Cookies ein. Für die notwendigen Funktionen ist deshalb kein allgemeines Einwilligungsbanner erforderlich. Die optionale Google-Karte bleibt bis zu deiner Einwilligung ausgeschaltet.</p>
+ <h2>6. Karten und externe Links</h2><p>Erst mit „Google-Karte laden“ wird die eingebettete Karte von Google geladen. Google erhält dabei unter anderem IP-Adresse und Browserdaten und kann Informationen auf deinem Gerät speichern oder auslesen. Grundlage ist deine Einwilligung (Art. 6 Abs. 1 lit. a DSGVO und § 25 Abs. 1 TDDDG). Eine Verarbeitung in Drittländern, insbesondere den USA, ist möglich. Weitere Informationen: <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer">Google-Datenschutz</a>. Über „Google-Karte deaktivieren“ beendest du die Einbettung für die Zukunft; alternativ lädst du die Seite neu. Bereits erfolgte Übermittlungen werden dadurch nicht rückgängig gemacht.</p><p>Links zu Instagram, Google Maps oder Apple Karten öffnen externe Angebote erst beim Anklicken. Wenn der Betrieb die optionale Adressauflösung für die Lieferplanung aktiviert, wird die Lieferadresse zur Ermittlung von Koordinaten an den Nominatim-Dienst der OpenStreetMap Foundation übermittelt. Dies dient der Lieferplanung (Art. 6 Abs. 1 lit. b DSGVO). Es findet keine fortlaufende Standortverfolgung von Kunden statt. <a href="https://osmfoundation.org/wiki/Privacy_Policy" target="_blank" rel="noreferrer">Datenschutzhinweise der OpenStreetMap Foundation</a>.</p>
+ <h2>7. Speicherdauer</h2><p>Wir speichern personenbezogene Daten, solange sie für den jeweiligen Zweck benötigt werden. Kundenkonten können auf Anfrage gelöscht werden, soweit keine gesetzlichen Pflichten oder offenen Vorgänge entgegenstehen. Nach Ablauf der einschlägigen Aufbewahrungsfristen werden Daten gelöscht oder anonymisiert. Für steuerliche Unterlagen gelten je nach Dokumentart regelmäßig zehn Jahre (unter anderem Bücher und Aufzeichnungen), acht Jahre für Buchungsbelege und sechs Jahre für Geschäftsbriefe; Fristverlängerungen etwa bei laufenden Verfahren bleiben möglich (§ 147 AO). Technische Fehler- und Sicherheitsprotokolle werden nur so lange vorgehalten, wie es für Sicherheit, Fehlerbehebung und Nachweiszwecke erforderlich ist. Gesetzlich aufzubewahrende Belege werden bei einer Kontolöschung nicht entfernt.</p>
+ <h2>8. Deine Rechte</h2><p>Nach Maßgabe der gesetzlichen Voraussetzungen hast du Rechte auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung und Datenübertragbarkeit. Einwilligungen kannst du mit Wirkung für die Zukunft widerrufen. Bei einer Verarbeitung nach Art. 6 Abs. 1 lit. f DSGVO kannst du aus Gründen deiner besonderen Situation widersprechen. Für Anfragen nutze unseren Datenschutzkontakt. Du kannst dich bei einer Aufsichtsbehörde beschweren, insbesondere beim <a href="https://www.baden-wuerttemberg.datenschutz.de/" target="_blank" rel="noreferrer">Landesbeauftragten für den Datenschutz und die Informationsfreiheit Baden-Württemberg</a>.</p><p>Es erfolgen keine ausschließlich automatisierten Entscheidungen mit rechtlicher oder ähnlich erheblicher Wirkung im Sinne von Art. 22 DSGVO. Wiederkehrende Lieferwünsche und betriebliche Nachbestellungen werden nach den vereinbarten beziehungsweise betrieblich eingerichteten Regeln verarbeitet.</p>
+ </article></SiteShell>;
 }

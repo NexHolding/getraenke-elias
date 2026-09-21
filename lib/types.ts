@@ -1,5 +1,6 @@
 import type { DeliveryAddress } from "./delivery-address";
 export type Product = {
+  return_eligible?: boolean;
   loose_stock?: number;
   cost_net_cents?: number | null;
   stock_version?: number;
@@ -101,6 +102,11 @@ export type FiscalReceipt = {
   signature_counter: string;
 };
 export type Sale = {
+  record_type?: "sale" | "cancellation" | "return";
+  original_sale_id?: string | null;
+  original_number?: number | null;
+  reversal_reason?: string;
+  reversal_note?: string;
   issuer_snapshot?: ReceiptIssuer | null;
   fiscal?: FiscalReceipt | null;
   actor_name?: string;
@@ -116,6 +122,11 @@ export type Sale = {
   test_mode: boolean;
 };
 export type SaleLine = {
+  return_eligible?: boolean;
+  original_line?: number;
+  net_cents?: number;
+  deposit_net_cents?: number;
+  restock?: boolean;
   original_price_cents?: number;
   discount_percent?: number;
   discount_reason?: string;
@@ -154,6 +165,10 @@ export type Purchase = {
   created_at: string;
 };
 export type Settings = {
+  business_street?: string;
+  business_house_number?: string;
+  business_postal_code?: string;
+  business_city?: string;
   live_mode?: boolean;
   guest_orders?: boolean;
   reorder_days?: number[];

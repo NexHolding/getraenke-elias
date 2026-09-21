@@ -1,4 +1,5 @@
 "use client";
+import { businessAddressFields, businessAddress } from "@/lib/business-address";
 import NumberInput from "./number-input";
 import EpsonWizard from "./epson-wizard";
 import { useState } from "react";
@@ -33,12 +34,14 @@ export default function SettingsPanel({
 }) {
   const router = useRouter();
   const [tab, setTab] = useState("betrieb");
-  const [v, setV] = useState({ ...settings, smtp_password: "" });
+  const [v, setV] = useState({ ...settings, ...businessAddressFields(settings), smtp_password: "" });
   const op = useOperations();
   const [employee, setEmployee] = useState<
     (Partial<Employee> & { pin?: string; password?: string }) | null
   >(null);
   const [note, setNote] = useState("");
+  const [tseNote, setTseNote] = useState("");
+  const [tseBusy, setTseBusy] = useState(false);
   const [reset, setReset] = useState("");
   const text = (key: keyof typeof v, label: string, type = "text") => (
     <label>
@@ -119,21 +122,19 @@ export default function SettingsPanel({
               className="form-grid two-columns"
               onSubmit={async (e) => {
                 e.preventDefault();
-                const result = await save(v);
+                setNote("");
+                const result = await save({...v,business_address:businessAddress(v)});
                 if (result !== null) setNote("Einstellungen gespeichert.");
               }}
             >
               {tab === "betrieb" && (
                 <>
                   {text("business_name", "Unternehmensname")}
-                  {text("business_address", "Geschäftsanschrift")}
-
-                  {num(
-                    "discount_percent",
-                    "Rabattvorschlag für den Warenkorb (%)",
-                    0,
-                    100,
-                  )}
+                  <h3 className="span-two">Geschäftsanschrift</h3>
+                  {text("business_street", "Straße")}
+                  {text("business_house_number", "Hausnummer")}
+                  {text("business_postal_code", "Postleitzahl")}
+                  {text("business_city", "Ort")}
                   {toggle(
                     "guest_orders",
                     "Bestellungen ohne Kundenkonto erlauben",
@@ -171,16 +172,7 @@ export default function SettingsPanel({
                   ).map(([key, label]) => (
                     <label key={key}>
                       {label}
-                      <select
-                        aria-label={label}
-                        value={v[key] ?? 19}
-                        onChange={(e) =>
-                          setV({ ...v, [key]: Number(e.target.value) })
-                        }
-                      >
-                        <option value={19}>19 % - Regelsteuersatz</option>
-                        <option value={7}>7 % - ermäßigter Steuersatz</option>
-                      </select>
+                      <NumberInput aria-label={label} min={0} max={100} step={1} value={v[key] ?? 19} onChange={(e) => setV({...v,[key]:Number(e.target.value)})} />
                     </label>
                   ))}
                   <p className="notice span-two">
@@ -343,6 +335,12 @@ export default function SettingsPanel({
                       </option>
                     </select>
                   </label>
+                  <button type="button" className="button secondary" disabled={!owner || tseBusy} onClick={async () => {
+                    setTseBusy(true);setTseNote("");
+                    try {const r=await fetch("/api/tse",{method:"POST"});const d=await r.json();setTseNote(d.error || [d.message,d.missing?.length ? "Fehlt: "+d.missing.join(", ") : "",d.tss_state ? "TSS-Status: "+d.tss_state : "",d.environment ? "Umgebung: "+d.environment : ""].filter(Boolean).join(" "));}catch{setTseNote("Verbindungsprüfung fehlgeschlagen.");}finally{setTseBusy(false);}
+                  }}>{tseBusy ? "Verbindung wird geprüft …" : "Fiskaly-Verbindung prüfen"}</button>
+                  {tseNote && <p role="status" className="notice span-two">{tseNote}</p>}
+                  <p className="fineprint span-two">Die Prüfung meldet den Server bei Fiskaly an und liest TSS und Kassen-Client. Es werden keine Verkaufsdaten übertragen und keine Transaktionen erzeugt. Ein erfolgreicher Verbindungstest ist noch keine Kassenabnahme.</p>
                   <p className="notice span-two">
                     Vor Live-Aktivierung: TSE-Vertrag, Transaktionssignierung,
                     Kassenseriennummer, DSFinV-K-Export und Meldung einrichten
@@ -355,7 +353,7 @@ export default function SettingsPanel({
                 <EpsonWizard
                   value={v}
                   onChange={(next) =>
-                    setV({ ...next, smtp_password: v.smtp_password })
+                    setV({ ...next, ...businessAddressFields(next), smtp_password: v.smtp_password })
                   }
                   save={save}
                   disabled={busy}

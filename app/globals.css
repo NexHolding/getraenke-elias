@@ -4156,3 +4156,32 @@ textarea {
 .terminal-destinations button:focus-visible { outline: 3px solid #b5cd89; outline-offset: 2px; }
 .terminal-action-links { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0 16px; }
 .terminal-action-links .terminal-back { min-height: 32px; font-size: 13px; }
+
+.pdf-preview-overlay { position:fixed; inset:0; z-index:10000; background:#1c2719aa; display:flex; padding:16px; align-items:center; justify-content:center; }
+.pdf-preview { background:#f0f2eb; border-radius:18px; width:min(760px,100%); height:calc(100dvh - 32px); display:flex; flex-direction:column; overflow:hidden; }
+.pdf-preview header { display:flex; align-items:center; justify-content:space-between; padding:16px 22px; background:white; }
+.pdf-preview header h2 { margin:0; font-size:20px; }
+.pdf-preview header button { min-height:44px; min-width:44px; border:0; border-radius:10px; background:#edf3df; cursor:pointer; display:grid; place-items:center; }
+.pdf-preview-pages { overflow:auto; padding:20px; min-height:0; flex:1; }
+.pdf-preview-pages canvas { display:block; max-width:100%; height:auto; margin:0 auto 16px; background:white; box-shadow:0 4px 20px #0002; }
+.pdf-preview>p { padding:12px 22px; }
+
+.receipt-manager-overlay { position:fixed; inset:0; z-index:9000; background:#1c2719aa; display:grid; place-items:center; padding:16px; }
+.receipt-manager { width:min(1080px,100%); max-height:calc(100dvh - 32px); display:flex; flex-direction:column; border-radius:18px; background:#fff; overflow:hidden; }
+.receipt-manager>header { display:flex; justify-content:space-between; align-items:center; padding:20px 24px; border-bottom:1px solid #dfe5d5; }
+.receipt-manager h2 { margin:6px 0 0; font-size:23px; }
+.receipt-manager>header button { min-width:44px; min-height:44px; display:grid; place-items:center; border:0; border-radius:10px; cursor:pointer; }
+.receipt-manager-content { padding:24px; overflow:auto; min-height:0; }
+.receipt-search { display:flex; gap:12px; align-items:end; }
+.receipt-search label { flex:1; }
+.receipt-manager label { display:grid; gap:7px; font-size:14px; font-weight:600; }
+.receipt-manager input:not([type=checkbox]), .receipt-manager select,.receipt-manager textarea { width:100%; min-height:44px; border:1px solid #bdcaaa; border-radius:8px; padding:10px; }
+.receipt-search-row { display:flex; justify-content:space-between; gap:16px; padding:18px 0; border-bottom:1px solid #e3e8da; }
+.receipt-search-row small,.reversal-line small { display:block; margin:6px 0; color:#667256; }
+.receipt-row-actions { display:flex; flex-wrap:wrap; align-content:center; gap:8px; }
+.reversal-fields { border:0; padding:0; display:grid; gap:18px; }
+.reversal-line { display:grid; grid-template-columns:1fr 110px 210px; gap:14px; align-items:center; padding:15px; background:#f5f7ef; border-radius:12px; }
+.receipt-manager .checkline { display:flex; align-items:center; gap:10px; font-size:13px; }
+.reversal-amount { font-size:22px; background:#edf4dc; padding:20px; border-radius:12px; }
+@media(max-width:700px) { .receipt-search-row { flex-direction:column; }.reversal-line { grid-template-columns:1fr 90px; }.reversal-line>.checkline { grid-column:1/-1; }.receipt-manager-content { padding:16px; } }
+.map-card { position:relative; }.map-revoke { position:absolute; top:10px; right:10px; z-index:1; padding:10px; border:1px solid #b4c49b; border-radius:8px; background:white; color:#344a1e; font-size:12px; cursor:pointer; }

@@ -1,3 +1,4 @@
+import PdfPreview from "@/components/pdf-preview";
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
@@ -35,7 +36,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="de" data-scroll-behavior="smooth" className={geist.variable}>
-      <body>{children}</body>
+      <body>{children}<PdfPreview /></body>
     </html>
   );
 }

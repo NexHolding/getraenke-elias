@@ -344,7 +344,7 @@ export async function createFinancePdf(r: FinanceReport) {
             timeZone: "Europe/Berlin",
           }),
           `${d.kind} / ${d.payment}`,
-          d.status,
+          [d.status, d.reference ? `zu ${d.reference}` : "",d.reason].filter(Boolean).join(" · "),
           euro(d.net),
           euro(d.tax),
           euro(d.gross),

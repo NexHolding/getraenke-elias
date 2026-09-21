@@ -1,0 +1,3 @@
+import {readFile,writeFile,mkdir} from 'node:fs/promises';import{createReceiptPdf}from'../lib/receipt.ts';import{createFinancePdf}from'../lib/finance-pdf.ts';import{buildFinanceReport,berlinDate}from'../lib/finance-report.ts';
+const f=JSON.parse(await readFile('output/reversals/fixtures.json','utf8'));await mkdir('output/pdf',{recursive:true});
+for(const [file,doc]of [['Elias-Rueckgabebeleg-Muster.pdf',await createReceiptPdf(f.second)],['Elias-Storno-Monatsbericht-Muster.pdf',await createFinancePdf(buildFinanceReport([f.sale,f.first,f.second],[],berlinDate(f.sale.created_at).slice(0,7),f.settings))]]){await writeFile('output/pdf/'+file,Buffer.from(doc.output('arraybuffer')));console.log(file,doc.getNumberOfPages(),'pages');}

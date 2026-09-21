@@ -7,9 +7,10 @@ export function useDialog(open: boolean, close: () => void) {
     const previous = document.activeElement as HTMLElement | null;
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const ownedDialog = Array.from(document.querySelectorAll<HTMLElement>('[role="dialog"]')).at(-1);
     const handle = (e: KeyboardEvent) => {
-      const dialog = document.querySelector<HTMLElement>('[role="dialog"]');
-      if (!dialog) return;
+      const dialog = Array.from(document.querySelectorAll<HTMLElement>('[role="dialog"]')).at(-1);
+      if (!dialog || dialog !== ownedDialog || e.defaultPrevented) return;
       if (e.key === "Escape") {
         e.preventDefault();
         onClose();

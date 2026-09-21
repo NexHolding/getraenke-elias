@@ -10,4 +10,5 @@ export const categories = [
   "Wein",
   "Sekt",
   "Für Ihre Feier",
+  "Non-Food",
 ];

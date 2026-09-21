@@ -1,5 +1,6 @@
 "use client";
 import { nativeApp, nativeRequest } from "@/lib/native-app";
+import ReceiptManager from "./receipt-manager";
 import POSCatalog from "./pos-catalog";
 import NumberInput from "./number-input";
 import ItemDiscountDialog from "./item-discount-dialog";
@@ -152,6 +153,7 @@ export default function AdminApp({ section }: { section: string }) {
       "products",
     ),
     [catalogVisit, setCatalogVisit] = useState(0),
+    [receiptManager, setReceiptManager] = useState(false),
     [editingDiscount, setEditingDiscount] = useState<string | null>(null),
     [showArchived, setShowArchived] = useState(false),
     [category, setCategory] = useState("Alle Getränke"),
@@ -435,6 +437,7 @@ export default function AdminApp({ section }: { section: string }) {
                 <Printer size={18} />
                 <span>Drucker</span>
               </button>
+              <button type="button" onClick={() => setReceiptManager(true)}><FileText size={18}/><span>Belege / Storno</span></button>
               <button
                 type="button"
                 onClick={async () => {
@@ -1466,7 +1469,7 @@ export default function AdminApp({ section }: { section: string }) {
                                     setDiscountMode(value);
                                     setDiscount(
                                       value === "cart"
-                                        ? (data.settings.discount_percent ?? 10)
+                                        ? 0
                                         : 0,
                                     );
                                     setDiscountReason("Aktion");
@@ -1822,6 +1825,7 @@ export default function AdminApp({ section }: { section: string }) {
                 })()}
               {section === "finanzen" && (
                 <>
+                  <button className="button secondary" onClick={() => setReceiptManager(true)}><Search size={18}/>Belegsuche · Storno · Rückgabe</button>
                   <InvoiceLedger readOnly={!!data.finance_readonly} />
                   {can(data, "inventur") && (
                     <p>
@@ -1938,7 +1942,7 @@ export default function AdminApp({ section }: { section: string }) {
                       <tbody>
                         {periodSales.map((s) => (
                           <tr key={s.id}>
-                            <td>E-{s.number}</td>
+                            <td>E-{s.number}{s.record_type && s.record_type !== "sale" && <small>{s.record_type === "return" ? "Rückgabe" : "Storno"} zu E-{s.original_number}</small>}</td>
                             <td>
                               {new Date(s.created_at).toLocaleString("de-DE", {
                                 timeZone: "Europe/Berlin",
@@ -1989,7 +1993,6 @@ export default function AdminApp({ section }: { section: string }) {
               )}
               {section === "einstellungen" && (
                 <SettingsPanel
-                  key={JSON.stringify(data.settings)}
                   settings={data.settings}
                   owner={data.role === "owner"}
                   busy={busy}
@@ -2003,6 +2006,7 @@ export default function AdminApp({ section }: { section: string }) {
           )}
         </main>
       </div>
+      {receiptManager && data && <ReceiptManager allowed={can(data,"storno")} close={() => setReceiptManager(false)} onChanged={load} />}
       {edit && (
         <Modal
           title={
@@ -2045,9 +2049,8 @@ export default function AdminApp({ section }: { section: string }) {
                     ...edit,
                     category: e.target.value,
                     kind:
-                      e.target.value === "Für Ihre Feier"
-                        ? "rental"
-                        : "beverage",
+                      e.target.value === "Für Ihre Feier" ? "rental" : e.target.value === "Non-Food" ? "nonfood" : "beverage",
+                    return_eligible: false,
                   })
                 }
               >
@@ -2170,38 +2173,10 @@ export default function AdminApp({ section }: { section: string }) {
                 })
               }
             />
-            <label>
-              Umsatzsteuer Artikel
-              <select
-                aria-label="Umsatzsteuer Artikel"
-                value={edit.tax_rate}
-                onChange={(e) =>
-                  setEdit({ ...edit, tax_rate: Number(e.target.value) })
-                }
-              >
-                {[19, 7, 0].map((r) => (
-                  <option value={r} key={r}>
-                    {r} %
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Umsatzsteuer Pfand
-              <select
-                aria-label="Umsatzsteuer Pfand"
-                value={edit.deposit_tax_rate}
-                onChange={(e) =>
-                  setEdit({ ...edit, deposit_tax_rate: Number(e.target.value) })
-                }
-              >
-                {[19, 7, 0].map((r) => (
-                  <option value={r} key={r}>
-                    {r} %
-                  </option>
-                ))}
-              </select>
-            </label>
+            <NumberField label="Umsatzsteuer Artikel (%)" value={edit.tax_rate} onChange={(v) => setEdit({...edit,tax_rate:v ?? 0})} />
+            <NumberField label="Umsatzsteuer Pfand (%)" value={edit.deposit_tax_rate} onChange={(v) => setEdit({...edit,deposit_tax_rate:v ?? 0})} />
+            <label>Artikelart<select value={edit.kind} onChange={(e) => setEdit({...edit,kind:e.target.value,return_eligible:false})}><option value="beverage">Getränk / Lebensmittel</option><option value="rental">Verleih</option><option value="nonfood">Nicht-Lebensmittel (z. B. Spielzeug)</option></select></label>
+            <label className="checkline"><input type="checkbox" disabled={edit.kind !== "nonfood"} checked={!!edit.return_eligible} onChange={(e) => setEdit({...edit,return_eligible:e.target.checked})} />Freiwillige Rücknahme innerhalb von 14 Tagen</label>
             <label>
               Istbestand (volle Gebinde)
               <input readOnly value={edit.stock ?? "Unbekannt"} />
@@ -2385,12 +2360,7 @@ export default function AdminApp({ section }: { section: string }) {
             ).map(([key, label]) => (
               <label key={key}>
                 {label}
-                <select aria-label={label} name={key} defaultValue="">
-                  <option value="">Unverändert</option>
-                  <option value="19">19 %</option>
-                  <option value="7">7 %</option>
-                  <option value="0">0 % (nur begründeter Sonderfall)</option>
-                </select>
+                <input type="number" aria-label={label} name={key} min="0" max="100" step="1" placeholder="Unverändert" />
               </label>
             ))}
             <p className="fineprint">

@@ -23,6 +23,8 @@ export type FinanceDocument = {
   day: string;
   payment: string;
   status: string;
+  reference: string;
+  reason: string;
   setup: boolean;
   items: SaleLine[];
   net: number;
@@ -80,7 +82,9 @@ export function buildFinanceReport(
         ? invoice.status === "paid"
           ? "Bezahlt"
           : "Offen"
-        : "Erfasst",
+        : sale?.record_type === "return" ? "Rückgabe" : sale?.record_type === "cancellation" ? "Storno" : "Erfasst",
+      reference: sale?.original_number ? `E-${sale.original_number}` : "",
+      reason: sale?.reversal_reason || "",
       setup: sale ? !!sale.test_mode : invoice!.mode === "setup",
       items: row.items,
       net: sum.net,
@@ -189,6 +193,7 @@ export type FinanceReport = ReturnType<typeof buildFinanceReport>;
 const money = (n: number) => (n / 100).toFixed(2).replace(".", ",");
 // Fixed rectangular schema: numeric amounts stay numeric, untrusted text cannot run formulas.
 export function financeCsv(report: FinanceReport) {
+  const rates = [...new Set(["0", "7", "19", ...Object.keys(report.taxes)])].sort((a,b)=>Number(a)-Number(b));
   const header = [
     "Bericht",
     "Zeitraum",
@@ -205,7 +210,9 @@ export function financeCsv(report: FinanceReport) {
     "USt EUR",
     "Brutto EUR",
     "Pfandsaldo brutto EUR",
-    ...["0", "7", "19"].flatMap((r) => [
+    "Originalbeleg",
+    "Korrekturgrund",
+    ...rates.flatMap((r) => [
       `Netto ${r}% EUR`,
       `USt ${r}% EUR`,
       `Brutto ${r}% EUR`,
@@ -227,7 +234,9 @@ export function financeCsv(report: FinanceReport) {
     money(d.tax),
     money(d.gross),
     money(d.deposit),
-    ...["0", "7", "19"].flatMap((r) => [
+    d.reference,
+    d.reason,
+    ...rates.flatMap((r) => [
       money(d.taxes[r]?.net || 0),
       money(d.taxes[r]?.tax || 0),
       money(d.taxes[r]?.gross || 0),
@@ -235,7 +244,7 @@ export function financeCsv(report: FinanceReport) {
   ]);
   const quote = (v: string, col: number) =>
     '"' +
-    (col < 11 && /^[\s]*[=+@-]/.test(v) ? "'" + v : v).replace(/"/g, '""') +
+    ((col < 11 || col === 15 || col === 16) && /^[\s]*[=+@-]/.test(v) ? "'" + v : v).replace(/"/g, '""') +
     '"';
   return (
     "\ufeff" +

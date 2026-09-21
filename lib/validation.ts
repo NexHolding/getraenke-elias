@@ -1,10 +1,13 @@
 import { z } from "zod";
+import { businessAddress } from "./business-address";
+export const taxRateSchema = z.number().int().min(0).max(100);
 import {
   deliveryAddressShape,
   formatDeliveryAddress,
 } from "./delivery-address";
 export const productSchema = z
   .object({
+    return_eligible: z.boolean().default(false),
     group_name: z.string().max(200).default(""),
     variant: z.string().max(100).default(""),
     image_url: z
@@ -45,14 +48,15 @@ export const productSchema = z
       "Wein",
       "Sekt",
       "Für Ihre Feier",
+      "Non-Food",
     ]),
     pack_count: z.number().int().min(1).max(1000),
     volume_ml: z.number().int().min(0).max(100000),
     price_cents: z.number().int().min(0).max(10000000),
     source_unit_price_cents: z.number().int().nullable().default(null),
     deposit_cents: z.number().int().min(0).max(100000).nullable(),
-    tax_rate: z.union([z.literal(0), z.literal(7), z.literal(19)]),
-    deposit_tax_rate: z.union([z.literal(0), z.literal(7), z.literal(19)]),
+    tax_rate: taxRateSchema,
+    deposit_tax_rate: taxRateSchema,
     stock: z.number().int().min(0).max(1000000).nullable(),
     min_stock: z.number().int().min(0).max(1000000),
     target_stock: z.number().int().min(0).max(1000000),
@@ -62,8 +66,9 @@ export const productSchema = z
     verified: z.boolean(),
     barcode: z.string().max(80),
     source: z.string().max(200),
-    kind: z.enum(["beverage", "rental"]),
+    kind: z.enum(["beverage", "rental", "nonfood"]),
   })
+  .refine((p) => !p.return_eligible || p.kind === "nonfood", "14-Tage-Rücknahme ist nur für Nicht-Lebensmittel möglich.")
   .refine(
     (p) => p.target_stock >= p.min_stock,
     "Zielbestand muss mindestens dem Mindestbestand entsprechen.",
@@ -146,13 +151,17 @@ export const settingsSchema = z.object({
     .regex(/^(DE[0-9]{9})?$/, "Deutsche USt-IdNr.: DE und neun Ziffern.")
     .default(""),
   register_id: z.string().trim().min(1).max(60).default("ELIAS-KASSE-01"),
-  default_tax_rate: z.union([z.literal(7), z.literal(19)]).default(19),
-  default_deposit_tax_rate: z.union([z.literal(7), z.literal(19)]).default(19),
+  default_tax_rate: taxRateSchema.default(19),
+  default_deposit_tax_rate: taxRateSchema.default(19),
   business_name: z
     .string()
     .min(1)
     .max(200)
     .default("Getränkeshop Elias · Frank Elias"),
+  business_street: deliveryAddressShape.street.optional(),
+  business_house_number: deliveryAddressShape.house_number.optional(),
+  business_postal_code: deliveryAddressShape.postal_code.optional(),
+  business_city: deliveryAddressShape.city.optional(),
   business_address: z
     .string()
     .min(1)
@@ -189,4 +198,8 @@ export const settingsSchema = z.object({
   smtp_user: z.string().max(200),
   smtp_from: z.union([z.email(), z.literal("")]),
   smtp_password: z.string().max(500).optional(),
+}).transform((v) => {
+  if (v.business_street && v.business_house_number && v.business_postal_code && v.business_city)
+    return {...v,business_address:businessAddress({business_street:v.business_street,business_house_number:v.business_house_number,business_postal_code:v.business_postal_code,business_city:v.business_city})};
+  return v;
 });

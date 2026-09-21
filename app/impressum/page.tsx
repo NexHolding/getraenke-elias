@@ -6,7 +6,7 @@ export default function Page() {
       <article className="legal container">
         <span className="eyebrow">RECHTLICHES</span>
         <h1>Impressum</h1>
-        <h2>Angaben zum Anbieter</h2>
+        <h2>Angaben gemäß § 5 DDG</h2>
         <p>
           Getränkeshop Elias
           <br />
@@ -24,11 +24,13 @@ export default function Page() {
           E-Mail:{" "}
           <a href="mailto:info@getraenke-elias.de">info@getraenke-elias.de</a>
         </p>
+        <h2>Verantwortlicher</h2><p>Frank Elias, erreichbar unter der oben genannten Anschrift und E-Mail-Adresse.</p>
         <h2>Bildnachweise</h2>
         <p>
           Original-Logo: Getränkeshop Elias. Die Getränkefotografie wurde für
           diese Website mit KI erstellt und zeigt keine tatsächliche Aufnahme
-          des Geschäfts.
+          des Geschäfts. Produktabbildungen zeigen die jeweiligen Marken und
+          Verpackungen; zugehörige Quellen sind in der Artikelverwaltung dokumentiert.
         </p>
         <p className="notice">
           Diese neue Website befindet sich in der Einrichtung. Die

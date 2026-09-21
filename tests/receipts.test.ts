@@ -90,7 +90,7 @@ test("long receipt continues with bounded 80-mm pages", async () => {
     assert.ok(pdf.internal.pageSize.getHeight() <= 346);
   }
 });
-test("tax defaults only accept current DE rates and tax ID has a separate validated field", () => {
+test("tax defaults support configured future integer rates and validate tax ID", () => {
   const base = {
     auto_reorder: false,
     instagram: "",
@@ -108,7 +108,8 @@ test("tax defaults only accept current DE rates and tax ID has a separate valida
     settingsSchema.parse({ ...base, default_tax_rate: 7 }).default_tax_rate,
     7,
   );
-  for (const rate of [0, 5, 16, 21, -1])
+  for (const rate of [0, 5, 16, 21]) assert.equal(settingsSchema.parse({...base,default_tax_rate:rate}).default_tax_rate,rate);
+  for (const rate of [-1, 101, 7.5])
     assert.equal(
       settingsSchema.safeParse({ ...base, default_tax_rate: rate }).success,
       false,

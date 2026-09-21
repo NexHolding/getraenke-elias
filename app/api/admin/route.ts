@@ -12,6 +12,7 @@ import {
   productSchema,
   supplierSchema,
   settingsSchema,
+  taxRateSchema,
 } from "@/lib/validation";
 import { smtpTransport } from "@/lib/mail";
 import { encrypt } from "@/lib/secrets";
@@ -198,12 +199,8 @@ export async function POST(req: Request) {
         .object({
           price_cents: z.number().int().min(0).max(10000000).optional(),
           deposit_cents: z.number().int().min(0).max(100000).optional(),
-          tax_rate: z
-            .union([z.literal(0), z.literal(7), z.literal(19)])
-            .optional(),
-          deposit_tax_rate: z
-            .union([z.literal(0), z.literal(7), z.literal(19)])
-            .optional(),
+          tax_rate: taxRateSchema.optional(),
+          deposit_tax_rate: taxRateSchema.optional(),
           supplier_id: z.string().optional(),
           active: z.boolean().optional(),
         })

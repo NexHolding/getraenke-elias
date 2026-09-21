@@ -1,4 +1,6 @@
 # TSE, Kasse und Betriebsfreigabe
+
+Aktualisierte Prüfung vom 21.09.2026 einschließlich Fiskaly-Einrichtung, Storno und Rückgaben: [Kassenprüfung und nächste Schritte](KASSEN-RECHTSPRUEFUNG-2026-09-21.md).
 Recherche: 17.09.2026. Die Quellen ersetzen keine Einzelfallprüfung durch den Steuerberater.
 
 ## Aktueller Entwicklungsstand
