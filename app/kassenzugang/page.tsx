@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Delete, LockKeyhole, UserRound } from "lucide-react";
+import { ArrowLeft, Delete, LockKeyhole, UserRound, LayoutDashboard, Store } from "lucide-react";
 import { Logo } from "@/components/site-shell";
 
 type Employee = { user_id: string; name: string; number: number; has_pin: boolean };
@@ -11,6 +11,7 @@ export default function Terminal() {
   const [data, setData] = useState<{ registered: boolean; employees?: Employee[] } | null>(null);
   const [selected, setSelected] = useState<Employee | null>(null);
   const [pin, setPin] = useState("");
+  const [destination, setDestination] = useState<"register" | "crm">("register");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const submitting = useRef(false);
@@ -43,7 +44,7 @@ export default function Terminal() {
       if (!r.ok) throw new Error(result.error || "Anmeldung fehlgeschlagen.");
       setPin("");
       // A fresh page also discards any cached data of the previous operator.
-      router.push("/crm/kasse");
+      router.push(destination === "crm" ? "/crm" : "/crm/kasse");
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Anmeldung fehlgeschlagen.");
@@ -60,12 +61,23 @@ export default function Terminal() {
       <section className={`login-card terminal-login-card ${selected ? "terminal-pin-card" : ""}`}>
         <Logo />
         <span className="eyebrow"><LockKeyhole size={15} /> KASSE GESPERRT</span>
-        <h1>{selected ? selected.name : "Wer ist an der Kasse?"}</h1>
+        <h1>{selected ? selected.name : destination === "crm" ? "Wer öffnet das CRM?" : "Wer ist an der Kasse?"}</h1>
+        {data?.registered && !selected && (
+          <div className="terminal-destinations" aria-label="Arbeitsbereich wählen">
+            <button type="button" aria-pressed={destination === "register"} onClick={() => setDestination("register")}><Store size={20} /> Zur Kasse</button>
+            <button type="button" aria-pressed={destination === "crm"} onClick={() => setDestination("crm")}><LayoutDashboard size={20} /> Zum CRM</button>
+          </div>
+        )}
         {data?.registered ? selected ? (
           <>
+            <div className="terminal-action-links">
             <button type="button" className="text-link terminal-back" disabled={busy} onClick={() => { setSelected(null); setPin(""); setError(""); }}>
               <ArrowLeft size={18} /> Anderen Mitarbeiter wählen
             </button>
+            <button type="button" className="text-link terminal-back" disabled={busy} onClick={() => { setDestination(destination === "crm" ? "register" : "crm"); setPin(""); setError(""); input.current?.focus(); }}>
+              {destination === "crm" ? <Store size={18} /> : <LayoutDashboard size={18} />}{destination === "crm" ? "Zur Kasse" : "Zum CRM"}
+            </button>
+            </div>
             {selected.has_pin ? (
               <form onSubmit={unlock} className="terminal-pin-form">
                 <label htmlFor="terminal-pin">Deine vierstellige Kassen-PIN</label>
@@ -79,13 +91,13 @@ export default function Terminal() {
                     </button>
                   ))}
                 </div>
-                <button className="button terminal-unlock" disabled={busy || pin.length !== 4}><LockKeyhole size={20} /> {busy ? "Kasse wird geöffnet …" : "Kasse entsperren"}</button>
+                <button className="button terminal-unlock" disabled={busy || pin.length !== 4}><LockKeyhole size={20} /> {busy ? "Anmeldung läuft …" : destination === "crm" ? "CRM öffnen" : "Kasse entsperren"}</button>
               </form>
             ) : <p className="notice">Für diesen Mitarbeiter ist noch keine Kassen-PIN hinterlegt. Der Inhaber kann sie unter Einstellungen → Mitarbeiter vergeben.</p>}
           </>
         ) : (
           <>
-            <p>Tippe auf deinen Namen und gib deine PIN ein.</p>
+            <p>{destination === "crm" ? "CRM, Finanzen und Tagesumsatz: Tippe auf deinen Namen und melde dich mit deiner PIN an. Es gelten deine Mitarbeiterrechte." : "Tippe auf deinen Namen und gib deine PIN ein."}</p>
             <div className="terminal-employee-grid">
               {data.employees?.map((employee) => (
                 <button type="button" key={employee.user_id} onClick={() => { setSelected(employee); setPin(""); setError(""); }}>

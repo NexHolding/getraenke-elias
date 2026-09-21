@@ -75,6 +75,23 @@ try{
   await page.locator('#terminal-pin').fill('1234');await page.getByRole('button',{name:'Kasse entsperren'}).click();await page.getByRole('alert').waitFor();assert.equal(await page.locator('#terminal-pin').inputValue(),'');
  }
  accept=true;await page.locator('#terminal-pin').fill('1234');await page.getByRole('button',{name:'Kasse entsperren'}).click();await page.waitForURL('**/crm/kasse');assert.deepEqual(posts.at(-1),{action:'unlock',user_id:'admin',pin:'1234'});
+ // Choosing CRM never navigates around the PIN check, and the target survives name selection.
+ await page.goto('http://127.0.0.1:3021/kassenzugang');
+ const beforeCRM=posts.length;
+ await page.getByRole('button',{name:'Zum CRM',exact:true}).click();
+ await page.getByRole('heading',{name:'Wer öffnet das CRM?'}).waitFor();
+ assert.equal(posts.length,beforeCRM);assert.ok(page.url().endsWith('/kassenzugang'));
+ await page.getByRole('button',{name:/Administration/}).click();
+ assert.equal(await page.getByRole('button',{name:'CRM öffnen',exact:true}).isDisabled(),true);
+ await page.locator('#terminal-pin').fill('1234');
+ await page.getByRole('button',{name:'Zur Kasse',exact:true}).click();
+ assert.equal(await page.locator('#terminal-pin').inputValue(),'');
+ await page.getByRole('button',{name:'Zum CRM',exact:true}).click();
+ await page.locator('#terminal-pin').fill('1234');
+ await page.screenshot({path:'output/terminal/crm-pin.png',fullPage:true});
+ await page.getByRole('button',{name:'CRM öffnen',exact:true}).click();
+ await page.waitForURL('http://127.0.0.1:3021/crm');
+ assert.equal(posts.length,beforeCRM+1);
  registered=false;await page.goto('http://127.0.0.1:3021/kassenzugang');await page.getByText(/Bitte einmal mit deinem Mitarbeiter-Passwort/).waitFor();assert.equal(await page.getByRole('button',{name:/Administration/}).count(),0);
- assert.deepEqual(errors,[]);console.log('PASS: names, masked keypad, clear/backspace, account switch, missing/incorrect PIN, unlock navigation, unpaired state and four viewports.');
+ assert.deepEqual(errors,[]);console.log('PASS: names, masked keypad, clear/backspace, account switch, missing/incorrect PIN, register/CRM navigation with mandatory PIN, unpaired state and four viewports.');
 }finally{await browser.close();await new Promise(r=>server.close(r));}

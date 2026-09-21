@@ -1845,9 +1845,7 @@ export default function AdminApp({ section }: { section: string }) {
                         className={mode === "day" ? "active" : ""}
                         onClick={() => {
                           setMode("day");
-                          setPeriod(
-                            period.length === 7 ? `${period}-01` : period,
-                          );
+                          setPeriod(dateKey(new Date().toISOString()));
                         }}
                       >
                         Tag

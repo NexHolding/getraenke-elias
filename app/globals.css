@@ -4149,3 +4149,10 @@ textarea {
 @media (max-height: 850px) { .terminal-pin-card { padding: 22px 28px; } .terminal-pin-card .brand-logo { margin-bottom: 12px; } .terminal-pin-card h1 { font-size: 26px; } .terminal-back { margin-bottom: 14px; } .terminal-pin-form { gap: 10px; } .terminal-keypad { gap: 8px; } .terminal-keypad button { min-height: 50px; } .terminal-pin-card .terminal-password-link { margin-top: 16px; } }
 
 .terminal-login-card > .brand-logo { margin-bottom: 24px; }
+
+.terminal-destinations { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 22px 0; }
+.terminal-destinations button { display: flex; justify-content: center; align-items: center; gap: 9px; min-height: 54px; padding: 12px; border: 2px solid #dce5cc; border-radius: 12px; background: #fff; color: #344c1a; font-weight: 700; cursor: pointer; touch-action: manipulation; }
+.terminal-destinations button[aria-pressed="true"] { background: #edf4dc; border-color: #6d912e; }
+.terminal-destinations button:focus-visible { outline: 3px solid #b5cd89; outline-offset: 2px; }
+.terminal-action-links { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0 16px; }
+.terminal-action-links .terminal-back { min-height: 32px; font-size: 13px; }

@@ -188,6 +188,26 @@ try {
     page = await ctx.newPage(),
     errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
+  // Day always returns to today's Berlin business date, even from an old month
+  // or after the open page crosses midnight. Historical dates remain selectable.
+  await page.clock.setFixedTime(new Date("2026-09-21T22:30:00Z"));
+  await page.goto("http://127.0.0.1:3019/crm/finanzen");
+  const periodInput = page.getByLabel("Auswertungszeitraum", { exact: true });
+  await periodInput.fill("2024-01");
+  await page.getByRole("button", { name: "Tag", exact: true }).click();
+  assert.equal(await periodInput.inputValue(), "2026-09-22");
+  await periodInput.fill("2026-08-15");
+  assert.equal(await periodInput.inputValue(), "2026-08-15");
+  await page.getByRole("button", { name: "Tag", exact: true }).click();
+  assert.equal(await periodInput.inputValue(), "2026-09-22");
+  await page.clock.setFixedTime(new Date("2026-09-22T22:30:00Z"));
+  await page.getByRole("button", { name: "Tag", exact: true }).click();
+  assert.equal(await periodInput.inputValue(), "2026-09-23");
+  const exportRequest = page.waitForRequest((request) => request.url().includes("/api/finance?"));
+  await page.getByRole("button", { name: "CSV", exact: true }).click();
+  assert.ok((await exportRequest).url().includes("period=2026-09-23"));
+  await page.screenshot({ path: "output/pos/finance-today.png", fullPage: true });
+  await page.clock.setFixedTime(new Date());
   await page.goto("http://127.0.0.1:3019/crm");
   const popupPromise = ctx.waitForEvent("page");
   await page
