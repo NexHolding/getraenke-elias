@@ -5,6 +5,7 @@ import DepositReturnGrid from "./deposit-return-grid";
 import OrderApproval from "./order-approval";
 import { nativeApp, nativeRequest } from "@/lib/native-app";
 import ReceiptManager from "./receipt-manager";
+import CashBook, { CashBookDialog } from "./cash-book";
 import POSCatalog from "./pos-catalog";
 import NumberInput from "./number-input";
 import ItemDiscountDialog from "./item-discount-dialog";
@@ -179,8 +180,8 @@ export default function AdminApp({ section }: { section: string }) {
     ),
     [discount, setDiscount] = useState(0),
     [discountReason, setDiscountReason] = useState<string>("Aktion"),
-    [opening, setOpening] = useState(0),
-    [counted, setCounted] = useState(0),
+    [cashBookOpen, setCashBookOpen] = useState(false),
+    [includeCashBook, setIncludeCashBook] = useState(false),
     [payment, setPayment] = useState("cash"),
     [saleId, setSaleId] = useState(() => crypto.randomUUID()),
     [lastSale, setLastSale] = useState<Sale | null>(null),
@@ -312,7 +313,7 @@ export default function AdminApp({ section }: { section: string }) {
     setError("");
     try {
       const response = await fetch(
-        `/api/finance?period=${encodeURIComponent(period)}&format=${format}`,
+        `/api/finance?period=${encodeURIComponent(period)}&format=${format}&cashbook=${includeCashBook ? "1" : "0"}`,
         { cache: "no-store" },
       );
       if (!response.ok) throw new Error((await response.json()).error);
@@ -407,6 +408,7 @@ export default function AdminApp({ section }: { section: string }) {
               Kasse <small>{data?.name}</small>
             </h1>
             <div className="register-tools">
+              <button type="button" onClick={() => setCashBookOpen(true)}><Wallet size={18}/><span>Kassenabschluss · Tagesbericht</span></button>
               <button
                 type="button"
                 onClick={() => {
@@ -1823,7 +1825,7 @@ export default function AdminApp({ section }: { section: string }) {
                     >
                       <Printer size={16} /> PDF
                     </button>
-                    {!data.finance_readonly && (
+                    {!data.finance_readonly && mode === "month" && (
                       <button
                         className="button small"
                         onClick={() => setConfirmClose(true)}
@@ -1833,10 +1835,12 @@ export default function AdminApp({ section }: { section: string }) {
                           (c) => c.kind === mode && c.period === period,
                         )
                           ? "Abschluss aktualisieren"
-                          : `${mode === "day" ? "Tages" : "Monats"}abschluss`}
+                          : "Monatsabschluss"}
                       </button>
                     )}
                   </div>
+                  <label className="checkline"><input type="checkbox" checked={includeCashBook} onChange={(e) => setIncludeCashBook(e.target.checked)}/>Kassenbuch im Tages- / Monatsbericht mit ausgeben</label>
+                  <CashBook period={period} onChange={() => { void load(); }} />
                   <p className="fineprint">
                     PDF und CSV enthalten Kassenbons und Lieferrechnungen mit
                     getrennten Summen. Die folgenden Kennzahlen beziehen sich
@@ -2348,6 +2352,7 @@ export default function AdminApp({ section }: { section: string }) {
           </form>
         </Modal>
       )}
+      {cashBookOpen && <CashBookDialog close={() => setCashBookOpen(false)} onChange={() => { void load(); }} />}
       {confirmClose && (
         <Modal
           title="Zeitraum abschließen"
@@ -2357,16 +2362,7 @@ export default function AdminApp({ section }: { section: string }) {
             Auswertung für {period}. Im Einrichtungsmodus kann der Abschluss
             nach weiteren Buchungen aktualisiert werden.
           </p>
-          <MoneyField
-            label="Kassenanfangsbestand (€)"
-            value={opening}
-            onChange={(v) => setOpening(v || 0)}
-          />
-          <MoneyField
-            label="Gezählter Bargeldbestand (€)"
-            value={counted}
-            onChange={(v) => setCounted(v || 0)}
-          />
+          <p>Die Bargeldzählung und das Kassenbuch werden separat über den Tagesabschluss geführt.</p>
           <button
             className="button"
             disabled={busy}
@@ -2374,7 +2370,7 @@ export default function AdminApp({ section }: { section: string }) {
               if (
                 await act(
                   "closing",
-                  { value: { kind: mode, period, opening, counted } },
+                  { value: { kind: mode, period } },
                   "Abschluss gespeichert.",
                 )
               )

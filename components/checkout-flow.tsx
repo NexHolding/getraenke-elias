@@ -38,7 +38,11 @@ async function request(path: string, body?: unknown) {
   return data;
 }
 export function receiptDownload(id: string) {
-  window.dispatchEvent(new CustomEvent("elias:pdf-preview", { detail: `/api/receipts/${id}?format=pdf` }));
+  window.dispatchEvent(
+    new CustomEvent("elias:pdf-preview", {
+      detail: `/api/receipts/${id}?format=pdf`,
+    }),
+  );
 }
 
 export default function CheckoutFlow({
@@ -142,10 +146,28 @@ export default function CheckoutFlow({
         disabled={
           disabled || inFlight || !!saved || !!activeReceipt || !!review
         }
-        onClick={() => {
+        onClick={async () => {
           if (disabled || lock.current || saved || activeReceipt) return;
+          lock.current = true;
+          setInFlight(true);
           setError("");
-          setReview({ payload, total: totalCents });
+          try {
+            const cash = await request("/api/cash-book?check=1");
+            if (cash.enabled && !cash.open)
+              throw new Error(
+                "Bitte unter Kassenabschluss · Tagesbericht zuerst die Tageskasse öffnen. Nach einem Tagesabschluss sind keine weiteren Verkäufe an diesem Tag möglich.",
+              );
+            setReview({ payload, total: totalCents });
+          } catch (e) {
+            setError(
+              e instanceof Error
+                ? e.message
+                : "Kassenstatus konnte nicht geprüft werden.",
+            );
+          } finally {
+            lock.current = false;
+            setInFlight(false);
+          }
         }}
       >
         {inFlight ? "Wird verbucht …" : "Bezahlen"}

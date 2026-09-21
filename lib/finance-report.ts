@@ -1,3 +1,4 @@
+import type { CashBookReport } from "./cash-book";
 import type {
   Sale,
   Invoice,
@@ -221,7 +222,7 @@ export function buildFinanceReport(
 export type FinanceReport = ReturnType<typeof buildFinanceReport>;
 const money = (n: number) => (n / 100).toFixed(2).replace(".", ",");
 // Fixed rectangular schema: numeric amounts stay numeric, untrusted text cannot run formulas.
-export function financeCsv(report: FinanceReport) {
+export function financeCsv(report: FinanceReport, cashBook?: CashBookReport) {
   const rates = [
     ...new Set(["0", "7", "19", ...Object.keys(report.taxes)]),
   ].sort((a, b) => Number(a) - Number(b));
@@ -301,9 +302,54 @@ export function financeCsv(report: FinanceReport) {
       ...rates.flatMap(() => [money(0), money(0), money(0)]),
       money(p.amount_cents),
     ]);
+  if (cashBook) {
+    const width = header.length;
+    header.push(
+      "Kassenbuch KB-Nummer",
+      "Kassenbuch Kategorie",
+      "Kassenbuch Eingang EUR",
+      "Kassenbuch Ausgang EUR",
+      "Kassenbuch Bestand EUR",
+      "Kassenbuch Bearbeiter",
+      "Kassenbuch Anhang",
+    );
+    for (const row of rows) row.push("", "", "", "", "", "", "");
+    for (const e of cashBook.entries) {
+      const row = Array<string>(width).fill("");
+      row[0] = report.title;
+      row[1] = report.period;
+      row[2] = e.test_mode ? "TESTDATEN" : "Echtbetrieb";
+      row[3] = report.created_at;
+      row[4] = "Kassenbuch (kein weiterer Umsatz)";
+      row[5] = e.reference;
+      row[6] = e.id;
+      row[7] = e.created_at;
+      row[8] = e.day;
+      row[9] = "Bar";
+      row[16] = e.description;
+      row.push(
+        `KB-${e.number}`,
+        e.category,
+        money(Math.max(e.amount_cents, 0)),
+        money(Math.max(-e.amount_cents, 0)),
+        money(e.balance_cents),
+        e.actor_name,
+        e.has_document ? "Ja" : "Nein",
+      );
+      rows.push(row);
+    }
+  }
   const quote = (v: string, col: number) =>
     '"' +
-    ((col < 11 || col === 15 || col === 16) && /^[\s]*[=+@-]/.test(v)
+    ((col < 11 ||
+      col === 15 ||
+      col === 16 ||
+      (cashBook &&
+        col >= header.length - 7 &&
+        ![header.length - 5, header.length - 4, header.length - 3].includes(
+          col,
+        ))) &&
+    /^[\s]*[=+@-]/.test(v)
       ? "'" + v
       : v
     ).replace(/"/g, '""') +

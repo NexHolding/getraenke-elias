@@ -13,6 +13,7 @@ export default function PdfPreview() {
     const open = (e: Event) => {
       const value = (e as CustomEvent<string>).detail;
       if (
+        /^\/api\/cash-book(?:\?period=\d{4}-\d{2}(?:-\d{2})?&format=pdf|\/document\?id=[a-f0-9-]+)$/.test(value) ||
         /^\/api\/(delivery-list\?date=\d{4}-\d{2}-\d{2}|receipts\/[a-f0-9-]+\?format=pdf|documents\/(invoice|delivery)\/[a-f0-9-]+|communications\/attachments\/[a-f0-9-]+(?:\?customer=[a-f0-9-]+)?)$/.test(
           value,
         )

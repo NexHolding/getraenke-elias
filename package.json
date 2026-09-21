@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "node --import tsx --test tests/*.test.ts",
-    "test:db": "node scripts/validate-database.mjs && node scripts/validate-inventory.mjs && node scripts/validate-discounts.mjs && node scripts/validate-receipts.mjs && node scripts/validate-reversals.mjs && node --import tsx scripts/validate-delivery-flow.mjs && node scripts/validate-mail-workers.mjs && node --import tsx scripts/validate-billing.mjs && node --import tsx scripts/validate-customer-provision.mjs && node --import tsx scripts/validate-delivery-corrections.mjs && node --import tsx scripts/validate-delivery-returns.mjs && node --import tsx scripts/validate-order-automation.mjs",
+    "test:db": "node scripts/validate-database.mjs && node scripts/validate-inventory.mjs && node scripts/validate-discounts.mjs && node scripts/validate-receipts.mjs && node scripts/validate-reversals.mjs && node --import tsx scripts/validate-delivery-flow.mjs && node scripts/validate-mail-workers.mjs && node --import tsx scripts/validate-billing.mjs && node --import tsx scripts/validate-customer-provision.mjs && node --import tsx scripts/validate-delivery-corrections.mjs && node --import tsx scripts/validate-delivery-returns.mjs && node --import tsx scripts/validate-order-automation.mjs && node --import tsx scripts/validate-cash-book.mjs",
     "prebuild": "node scripts/prepare-print-assets.mjs",
     "predev": "node scripts/prepare-print-assets.mjs"
   },

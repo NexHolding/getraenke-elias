@@ -1,3 +1,5 @@
+import { readCashBook } from "@/lib/cash-book-server";
+import { appendCashBookPdf } from "@/lib/cash-book-pdf";
 import { requireStaff, serviceDb, safeError } from "@/lib/server";
 import { readAllRows } from "@/lib/database-read";
 import {
@@ -48,8 +50,14 @@ export async function GET(req: Request) {
       "Cache-Control": "private, no-store",
       "X-Content-Type-Options": "nosniff",
     };
-    if (format === "csv") return new Response(financeCsv(report), { headers });
+    const cashBook =
+      url.searchParams.get("cashbook") === "1"
+        ? (await readCashBook(period)).report
+        : undefined;
+    if (format === "csv")
+      return new Response(financeCsv(report, cashBook), { headers });
     const pdf = await createFinancePdf(report);
+    if (cashBook) await appendCashBookPdf(pdf, cashBook, settings.data.value);
     return new Response(new Uint8Array(pdf.output("arraybuffer")), { headers });
   } catch (e) {
     return safeError(e);
