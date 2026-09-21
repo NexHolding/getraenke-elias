@@ -68,7 +68,7 @@ export function businessDocument(
   doc.text(
     [
       `Beleg: ${number}`,
-      `Datum: ${new Date(documentDate).toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" })}`,
+      `Datum: ${new Date(documentDate).toLocaleDateString("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit", year: "numeric" })}`,
       `Auftrag: EL-${String(order.number).padStart(5, "0")}`,
     ],
     130,
@@ -148,7 +148,7 @@ export function businessDocument(
     }
     y += 8;
     doc.text(
-      `Leistungsdatum: ${new Date(record.created_at).toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" })} · ${invoice.status === "paid" ? "Bezahlt" : "Zahlungsstatus: offen"}`,
+      `Leistungsdatum: ${new Date(record.created_at).toLocaleDateString("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit", year: "numeric" })} · ${invoice.status === "paid" ? "Bezahlt" : "Zahlungsstatus: offen"}`,
       16,
       y,
     );
