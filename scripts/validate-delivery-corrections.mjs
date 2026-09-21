@@ -53,7 +53,7 @@ try {
   ]);
   let o = (
     await q(
-      `insert into orders(customer_id,customer_name,email,phone,address,items,requested_payment_method,status,preference_snapshot)values($1,$2,$3,'071310000',$4,$5,'invoice','new','{"dropoff_allowed":true}')returning *`,
+      `insert into orders(auto_processing,customer_id,customer_name,email,phone,address,items,requested_payment_method,status,preference_snapshot)values(false,$1,$2,$3,'071310000',$4,$5,'invoice','new','{"dropoff_allowed":true}')returning *`,
       [c.id, c.name, c.email, c.address, JSON.stringify(items)],
     )
   )[0];

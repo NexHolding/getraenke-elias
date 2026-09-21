@@ -925,6 +925,29 @@ export function DeliveryManager({
           Tagestour planen
         </button>
         <button
+          className="button"
+          disabled={
+            op.busy ||
+            date !== berlinDate(new Date().toISOString()) ||
+            !tour.some(
+              (o) =>
+                ["confirmed", "partial"].includes(o.status) &&
+                o.approved_payment_method,
+            )
+          }
+          onClick={async () => {
+            const result = await op.act("start-tour", { date });
+            if (result) {
+              setPlanMessage(
+                `${result.started} Bestellungen sind jetzt in Lieferung.${result.payment_pending ? ` ${result.payment_pending} ${result.payment_pending === 1 ? "Auftrag wartet" : "Aufträge warten"} auf Zahlungsfreigabe.` : ""}`,
+              );
+              await reload();
+            }
+          }}
+        >
+          Tour starten
+        </button>
+        <button
           className="button secondary"
           disabled={!date}
           onClick={() =>
@@ -980,6 +1003,15 @@ export function DeliveryManager({
                     CA. {order.eta_start}–{order.eta_end} UHR
                   </span>
                   <h3>{order.customer_name}</h3>
+                  <span
+                    className={`badge ${order.status === "delivering" ? "green" : ""}`}
+                  >
+                    {order.status === "delivering"
+                      ? "In Lieferung"
+                      : !order.approved_payment_method
+                        ? "Zahlungsfreigabe fehlt"
+                        : "Bereit zur Auslieferung"}
+                  </span>
                   <p>{order.address}</p>
                   <p className="delivery-payment-hint">
                     {op.data.deliveries.some(

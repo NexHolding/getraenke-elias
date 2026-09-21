@@ -1,4 +1,6 @@
 "use client";
+import OrderInbox from "./order-inbox";
+import OrderStockInfo from "./order-stock-info";
 import DepositReturnGrid from "./deposit-return-grid";
 import OrderApproval from "./order-approval";
 import { nativeApp, nativeRequest } from "@/lib/native-app";
@@ -468,6 +470,14 @@ export default function AdminApp({ section }: { section: string }) {
               </button>
             </div>
           </header>
+        )}
+        {data && (can(data, "bestellungen") || can(data, "lieferung")) && (
+          <OrderInbox
+            key={data.operatorId}
+            operatorId={data.operatorId}
+            canManageOrders={can(data, "bestellungen")}
+            onChanged={load}
+          />
         )}
         <header className="admin-topbar">
           <span>
@@ -1218,7 +1228,7 @@ export default function AdminApp({ section }: { section: string }) {
                   <div className="panel">
                     {data.orders.length ? (
                       data.orders.map((o) => (
-                        <article className="order-card" key={o.id}>
+                        <article className="order-card" id={`auftrag-${o.id}`} key={o.id}>
                           <div className="panel-head">
                             <div>
                               <span className="eyebrow">
@@ -1229,6 +1239,7 @@ export default function AdminApp({ section }: { section: string }) {
 
                           </div>
                           <p>{o.address}</p>
+                          <OrderStockInfo order={o}/>
                           <OrderApproval
                             key={`${o.id}:${o.payment_revision || 0}:${o.status}`}
                             order={o}

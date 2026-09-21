@@ -244,7 +244,7 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
       setNativeSubmitted(false);
       setRequestId(crypto.randomUUID());
       setMessage(
-        `Danke! Deine Anfrage ${d.number} ist eingegangen. Deine gewählten Sorten und der Pfandbetrag wurden übernommen. Elias bestätigt den Liefertermin.`,
+        d.status === "confirmed" ? `Deine Bestellung ${d.number} ist automatisch bestätigt. Die Ware ist verfügbar. ${d.payment_pending ? "Dein Zahlungswunsch wird noch abgestimmt. " : ""}Elias bestätigt den Liefertermin separat.` : `Danke! Deine Anfrage ${d.number} ist eingegangen. Wir prüfen den verfügbaren Bestand. Elias bestätigt den Liefertermin.`,
       );
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "Bitte versuche es erneut.");

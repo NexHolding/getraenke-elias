@@ -47,7 +47,13 @@ export type Supplier = {
   auto_send: boolean;
 };
 export type CartLine = { product: Product; quantity: number };
+export type OrderStockLine = {id:string;name:string;required:number;stock:number|null;reserved:number;available:number|null;missing:number|null;state:"available"|"shortage"|"unknown"|"inactive"};
 export type Order = Partial<DeliveryAddress> & {
+  auto_processing?:boolean;
+  auto_confirmed_at?:string|null;
+  stock_check?:OrderStockLine[];
+  stock_checked_at?:string|null;
+  delivery_started_at?:string|null;
   requested_payment_method?: "cash" | "card" | "invoice" | null;
   approved_payment_method?: "cash" | "card" | "invoice" | null;
   payment_revision?: number;

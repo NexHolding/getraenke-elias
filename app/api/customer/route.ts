@@ -20,7 +20,7 @@ export async function GET() {
     return Response.json(
       {
         customer: { ...c, ...deliveryAddressFields(c), notes: "" },
-        orders,
+        orders: orders.map(o=>Object.fromEntries(Object.entries(o).filter(([key])=>!["stock_check","stock_checked_at","delivery_started_by","auto_processing"].includes(key)))),
         deliveries: deliveries.filter((d) => d.status === "delivered"),
         invoices: await invoiceDetails(invoices as { id: string }[]),
         subscriptions,

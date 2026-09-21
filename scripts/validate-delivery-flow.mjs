@@ -98,7 +98,8 @@ let order = (
     subscription.id,
   ])
 )[0].o;
-assert.equal(order.status, "new");
+assert.equal(order.status, "confirmed");
+assert.ok(order.auto_confirmed_at);
 assert.equal(
   (await q("select count(*)n from mail_outbox where kind='order_ack'"))[0].n,
   1,

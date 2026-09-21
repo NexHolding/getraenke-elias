@@ -1,3 +1,4 @@
+import {processOrderAutomation} from "@/lib/order-automation";
 import { timingSafeEqual } from "node:crypto";
 import { dispatchAuthMail } from "@/lib/auth-mail-dispatch";
 import { dispatchMail } from "@/lib/mail";
@@ -18,6 +19,7 @@ export async function GET(req: Request) {
     .eq("id", 1)
     .single();
   try {
+    await processOrderAutomation();
     const { data: reminders, error: reminderError } = await serviceDb().rpc(
       "queue_invoice_reminders",
     );

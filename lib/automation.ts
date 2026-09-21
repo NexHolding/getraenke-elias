@@ -1,10 +1,12 @@
 import "server-only";
+import {processOrderAutomation} from "./order-automation";
 import { serviceDb } from "./server";
 import { planDay } from "./delivery-plan";
 export async function dailyAutomation() {
   const db = serviceDb();
   const { error } = await db.rpc("generate_subscription_orders");
   if (error) throw error;
+  await processOrderAutomation();
   const date = new Intl.DateTimeFormat("sv-SE", {
     timeZone: "Europe/Berlin",
   }).format(new Date());
@@ -23,7 +25,7 @@ export async function dailyAutomation() {
       eta_end: null,
       route_position: null,
     })
-    .in("status", ["confirmed", "partial", "delivering"])
+    .in("status", ["confirmed", "partial"])
     .lt("delivery_date", date);
   if (stale) throw stale;
   const { data: orders, error: oe } = await db

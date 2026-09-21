@@ -1,3 +1,4 @@
+import { initialOrderPaymentApproval } from "@/lib/order-payment-policy";
 import { isSystemAccountEmail } from "@/lib/account-visibility";
 import { createHash } from "node:crypto";
 import { serviceDb, sameOrigin, userDb } from "@/lib/server";
@@ -48,12 +49,14 @@ export async function POST(req: Request) {
     }
     const existing = await db
       .from("orders")
-      .select("number")
+      .select("number,status,auto_confirmed_at,approved_payment_method")
       .eq("request_id", v.request_id)
       .maybeSingle();
     if (existing.data)
       return Response.json({
         number: `EL-${String(existing.data.number).padStart(5, "0")}`,
+        status: existing.data.status,
+        payment_pending: !existing.data.approved_payment_method,
       });
     const ip =
       req.headers.get("x-vercel-forwarded-for") ||
@@ -154,6 +157,11 @@ export async function POST(req: Request) {
       .insert({
         request_id: v.request_id,
         requested_payment_method: v.requested_payment_method,
+        approved_payment_method: initialOrderPaymentApproval(
+          v.requested_payment_method,
+          user?.id,
+          customer,
+        ),
         customer_id: customer?.id,
         preference_snapshot: user
           ? {
@@ -177,22 +185,28 @@ export async function POST(req: Request) {
         notes: v.notes,
         items,
       })
-      .select("number")
+      .select("number,status,auto_confirmed_at,approved_payment_method")
       .single();
     if (insertError?.code === "23505") {
       const repeat = await db
         .from("orders")
-        .select("number")
+        .select("number,status,auto_confirmed_at,approved_payment_method")
         .eq("request_id", v.request_id)
         .single();
       if (repeat.data)
         return Response.json({
           number: `EL-${String(repeat.data.number).padStart(5, "0")}`,
+          status: repeat.data.status,
+          payment_pending: !repeat.data.approved_payment_method,
         });
     }
     if (insertError) throw insertError;
     return Response.json(
-      { number: `EL-${String(order.number).padStart(5, "0")}` },
+      {
+        number: `EL-${String(order.number).padStart(5, "0")}`,
+        status: order.status,
+        payment_pending: !order.approved_payment_method,
+      },
       { status: 201 },
     );
   } catch {

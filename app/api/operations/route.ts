@@ -319,6 +319,14 @@ export async function POST(req: Request) {
         archive_pending: archivePending,
         mail_status: v.finalize ? "queued" : null,
       });
+    } else if (action === "start-tour") {
+      check("lieferung");
+      const { data, error } = await db.rpc("start_delivery_tour", {
+        p_date: z.iso.date().parse(b.date),
+        p_actor: a.user.id,
+      });
+      if (error) throw new Error(error.message);
+      return Response.json(data);
     } else if (action === "plan") {
       check("lieferung");
       const date = z.iso.date().parse(b.date);
@@ -330,7 +338,7 @@ export async function POST(req: Request) {
       const { data: orders, error } = await db
         .from("orders")
         .select("*")
-        .in("status", ["confirmed", "partial", "delivering"])
+        .in("status", ["confirmed", "partial"])
         .or(`delivery_date.is.null,delivery_date.eq.${date}`)
         .or(
           `requested_delivery_date.is.null,requested_delivery_date.lte.${date}`,

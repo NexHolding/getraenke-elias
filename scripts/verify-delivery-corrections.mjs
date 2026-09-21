@@ -79,6 +79,7 @@ const css = (await readFile("app/globals.css", "utf8")).replace(
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, "http://127.0.0.1:3029");
   res.setHeader("content-type", "application/json");
+  if (url.pathname === "/api/order-inbox") return res.end(JSON.stringify({orders:[],revision:"fixture"}));
   if (req.method === "POST" && url.pathname.startsWith("/api/")) {
     let body = "";
     for await (const c of req) body += c;
