@@ -13,6 +13,7 @@ export const customerSchema = z
     ...deliveryAddressShape,
     notes: z.string().max(1000).default(""),
     invoice_email: z.boolean().default(true),
+    payment_method: z.enum(["cash", "card", "invoice"]).default("invoice"),
     dropoff_allowed: z.boolean().default(false),
     dropoff_note: z.string().max(500).default(""),
     windows: z

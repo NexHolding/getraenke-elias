@@ -1,4 +1,8 @@
 "use client";
+import { useDialog } from "./use-dialog";
+import InvoiceStatus from "./invoice-status";
+import { paymentLabels } from "@/lib/billing";
+import { berlinDate } from "@/lib/finance-report";
 import SubscriptionManager from "./subscription-manager";
 import OrderHistory from "./order-history";
 import NumberInput from "./number-input";
@@ -18,6 +22,7 @@ import { DeliveryAddressFields } from "./delivery-address-fields";
 import { formatDeliveryAddress } from "@/lib/delivery-address";
 import { euro } from "@/lib/money";
 export type OperationsData = {
+  can_manage_payments?: boolean;
   customers: Customer[];
   employees: Employee[];
   deliveries: Delivery[];
@@ -25,6 +30,7 @@ export type OperationsData = {
   subscriptions: Subscription[];
 };
 export function useOperations() {
+  const actionLock = useRef(false);
   const [data, setData] = useState<OperationsData>({
     customers: [],
     employees: [],
@@ -59,6 +65,8 @@ export function useOperations() {
     };
   }, []);
   const act = async (action: string, payload: Record<string, unknown> = {}) => {
+    if (actionLock.current) return null;
+    actionLock.current = true;
     setBusy(true);
     setMessage("");
     try {
@@ -70,12 +78,13 @@ export function useOperations() {
       const d = await r.json();
       if (!r.ok) throw new Error(d.error);
       await load();
-      setMessage("Gespeichert.");
+      setMessage(d.message || "Gespeichert.");
       return d;
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "Aktion fehlgeschlagen.");
       return null;
     } finally {
+      actionLock.current = false;
       setBusy(false);
     }
   };
@@ -88,6 +97,7 @@ export const customerDefaults: Partial<Customer> = {
   address: "",
   notes: "",
   invoice_email: true,
+  payment_method: "invoice",
   dropoff_allowed: false,
   dropoff_note: "",
   windows: [],
@@ -136,6 +146,30 @@ export function CustomerFields({
           })
         }
       />
+      {internal ? (
+        <label>
+          Zahlungsart bei Lieferung
+          <select
+            aria-label="Zahlungsart bei Lieferung"
+            value={value.payment_method || "invoice"}
+            onChange={(e) =>
+              onChange({
+                ...value,
+                payment_method: e.target.value as Customer["payment_method"],
+              })
+            }
+          >
+            <option value="cash">Bar – Fahrer kassiert</option>
+            <option value="card">EC-Karte – Fahrer kassiert</option>
+            <option value="invoice">Rechnung – Zahlung nach Lieferung</option>
+          </select>
+        </label>
+      ) : (
+        <p className="notice span-two">
+          Zahlungsart: {paymentLabels[value.payment_method || "invoice"]}.
+          Änderungen bitte mit Getränke Elias abstimmen.
+        </p>
+      )}
       {internal && text("notes", "Interne Notizen")}
       {internal &&
         (["latitude", "longitude"] as const).map((key, i) => (
@@ -314,6 +348,9 @@ export function DocumentsList({
               })}{" "}
               · {d.status}
             </small>
+            {d.kind === "invoice" && (
+              <InvoiceStatus invoice={invoices.find((i) => i.id === d.id)!} />
+            )}
             {d.amount !== null && <b>{euro(d.amount)}</b>}
           </div>
           <button
@@ -405,6 +442,13 @@ export function CustomerManager({
                   <small>
                     K-{String(c.number).padStart(5, "0")} · {c.email}
                   </small>
+                  <small>
+                    {c.online_account?.user_id
+                      ? c.online_account.confirmed
+                        ? "Online-Account aktiv"
+                        : "Bestätigung ausstehend"
+                      : "Kein Online-Account"}
+                  </small>
                 </span>
                 <ArrowRight size={16} />
               </button>
@@ -483,11 +527,57 @@ export function CustomerManager({
                     <br />
                     {c.phone} · {c.email}
                   </p>
-                  <p>
-                    {c.user_id ? "Kundenkonto verknüpft" : "Ohne Kundenlogin"} ·{" "}
-                    Rechnung und Lieferschein automatisch per E-Mail
-                  </p>
-                  <div className="stats-grid">
+                  <section
+                    className="customer-access-card"
+                    aria-label="Online-Zugang"
+                  >
+                    <h3>Online-Zugang</h3>
+                    <span
+                      className={`invoice-status ${c.online_account?.confirmed ? "paid" : "open"}`}
+                    >
+                      {c.online_account?.user_id
+                        ? c.online_account.confirmed
+                          ? "Online-Account aktiv"
+                          : "Bestätigung ausstehend"
+                        : "Kein Online-Account"}
+                    </span>
+                    <dl>
+                      <div>
+                        <dt>Benutzer / E-Mail</dt>
+                        <dd>{c.online_account?.email || c.email}</dd>
+                      </div>
+                      <div>
+                        <dt>Passwort</dt>
+                        <dd>
+                          {c.online_account?.has_password
+                            ? "•••••••• · hinterlegt"
+                            : "Noch nicht festgelegt"}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Zahlungsart</dt>
+                        <dd>{paymentLabels[c.payment_method || "invoice"]}</dd>
+                      </div>
+                    </dl>
+                    <p className="fineprint">
+                      Passwörter sind nicht auslesbar. Der Kunde bestätigt seine
+                      E-Mail-Adresse und vergibt sein Passwort über einen
+                      persönlichen Link. Rechnung und Lieferschein gehen
+                      automatisch in den E-Mail-Ausgang.
+                    </p>
+                    <button
+                      className="button secondary"
+                      disabled={op.busy}
+                      onClick={() => op.act("customer-access", { id: c.id })}
+                    >
+                      {c.online_account?.user_id
+                        ? c.online_account.confirmed
+                          ? "Neuen Zugangslink senden"
+                          : "Zugang / Bestätigung erneut senden"
+                        : "Online-Zugang einladen"}
+                    </button>
+                  </section>
+                  <div className="stats-grid customer-stats">
                     <div className="stat">
                       <small>Bestellungen</small>
                       <strong>{own.length}</strong>
@@ -510,17 +600,6 @@ export function CustomerManager({
                       </strong>
                     </div>
                   </div>
-                  <button
-                    className="button secondary"
-                    disabled={op.busy || !!c.user_id}
-                    onClick={() => op.act("customer-invite", { id: c.id })}
-                  >
-                    Kundenkonto per E-Mail einladen
-                  </button>
-                  <p className="fineprint">
-                    Eine Einladung wird über den eingerichteten
-                    Auth-E-Mail-Dienst versendet.
-                  </p>
                 </>
               )}
             </>
@@ -641,6 +720,13 @@ export function DeliveryManager({
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [signature, setSignature] = useState<string | null>(null);
   const [recipient, setRecipient] = useState("");
+  const [expectedPayment, setExpectedPayment] = useState<
+    "cash" | "card" | "invoice"
+  >("invoice");
+  const [deliveryPayment, setDeliveryPayment] = useState<
+    "cash" | "card" | "invoice"
+  >("invoice");
+  const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const [draftId, setDraftId] = useState("");
   const [revision, setRevision] = useState(0);
   const [planMessage, setPlanMessage] = useState("");
@@ -663,6 +749,12 @@ export function DeliveryManager({
     pendingDelivery.current = null;
     setDeliveryPending(false);
     setSelected(order.id);
+    const method =
+      op.data.customers.find((c) => c.id === order.customer_id)
+        ?.payment_method || "invoice";
+    setExpectedPayment(method);
+    setDeliveryPayment(method);
+    setPaymentConfirmed(false);
     const draft = op.data.deliveries.find(
       (d) => d.order_id === order.id && d.status === "draft",
     );
@@ -695,6 +787,9 @@ export function DeliveryManager({
       finalize,
       signature,
       signed_name: recipient,
+      expected_payment_method: expectedPayment,
+      payment_method: deliveryPayment,
+      payment_confirmed: paymentConfirmed,
     };
     pendingDelivery.current = value;
     setDeliveryPending(true);
@@ -813,6 +908,20 @@ export function DeliveryManager({
                 </span>
                 <h3>{order.customer_name}</h3>
                 <p>{order.address}</p>
+                <p className="delivery-payment-hint">
+                  {
+                    paymentLabels[
+                      op.data.customers.find((c) => c.id === order.customer_id)
+                        ?.payment_method || "invoice"
+                    ]
+                  }
+                  {op.data.customers.find((c) => c.id === order.customer_id)
+                    ?.payment_method &&
+                  op.data.customers.find((c) => c.id === order.customer_id)
+                    ?.payment_method !== "invoice"
+                    ? " · Vor Ort kassieren"
+                    : " · Nicht vor Ort kassieren"}
+                </p>
                 <p>
                   {order.preference_snapshot?.dropoff_allowed
                     ? `Abstellen erlaubt: ${order.preference_snapshot.dropoff_note || "siehe Kundenhinweis"}`
@@ -938,12 +1047,13 @@ export function DeliveryManager({
                     min="0"
                     max={i.quantity - (o.delivered?.[i.id] || 0)}
                     value={quantities[i.id] || 0}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      setPaymentConfirmed(false);
                       setQuantities({
                         ...quantities,
                         [i.id]: Math.max(0, Math.floor(Number(e.target.value))),
-                      })
-                    }
+                      });
+                    }}
                   />
                 </div>
               ))}
@@ -954,6 +1064,63 @@ export function DeliveryManager({
               >
                 Entwurf speichern
               </button>
+              <section className="delivery-payment-box">
+                <h3>
+                  {expectedPayment === "invoice"
+                    ? "Rechnungskunde · nicht kassieren"
+                    : "Zahlung vor Ort"}
+                </h3>
+                <strong>
+                  {euro(
+                    o.items.reduce(
+                      (sum, i) =>
+                        sum +
+                        (quantities[i.id] || 0) *
+                          (i.price_cents + (i.deposit_cents || 0)),
+                      0,
+                    ),
+                  )}{" "}
+                  inkl. Pfand
+                </strong>
+                {expectedPayment === "invoice" ? (
+                  <p>
+                    Die Rechnung wird mit Zahlungsziel erstellt und bleibt bis
+                    zum Zahlungseingang offen.
+                  </p>
+                ) : (
+                  <>
+                    <p>
+                      Vorgabe im Kundenprofil: {paymentLabels[expectedPayment]}
+                    </p>
+                    <label>
+                      Zahlungsart vor Ort
+                      <select
+                        aria-label="Zahlungsart vor Ort"
+                        value={deliveryPayment}
+                        onChange={(e) => {
+                          setDeliveryPayment(e.target.value as "cash" | "card");
+                          setPaymentConfirmed(false);
+                        }}
+                      >
+                        <option value="cash">Barzahlung</option>
+                        <option value="card">
+                          EC-Karte am separaten Gerät
+                        </option>
+                      </select>
+                    </label>
+                    <label className="checkline">
+                      <input
+                        type="checkbox"
+                        checked={paymentConfirmed}
+                        onChange={(e) => setPaymentConfirmed(e.target.checked)}
+                      />
+                      {deliveryPayment === "cash"
+                        ? "Vollständigen Barbetrag erhalten"
+                        : "EC-Zahlung am separaten Gerät erfolgreich"}
+                    </label>
+                  </>
+                )}
+              </section>
               <h3>Übergabe bestätigen</h3>
               <label>
                 Name des Empfängers / Abstellvermerk
@@ -975,6 +1142,7 @@ export function DeliveryManager({
                 disabled={
                   op.busy ||
                   !recipient ||
+                  (expectedPayment !== "invoice" && !paymentConfirmed) ||
                   (!signature && !o.preference_snapshot?.dropoff_allowed)
                 }
                 onClick={() => save(true)}
@@ -1013,40 +1181,192 @@ export function DeliveryManager({
 }
 export function InvoiceLedger({ readOnly = false }: { readOnly?: boolean }) {
   const op = useOperations();
+  const [selected, setSelected] = useState<Invoice | null>(null);
+  const [method, setMethod] = useState<"bank" | "cash" | "card">("bank");
+  const [paidOn, setPaidOn] = useState(berlinDate(new Date().toISOString()));
+  const [confirmed, setConfirmed] = useState(false);
+  useDialog(!!selected, () => {
+    if (!op.busy) setSelected(null);
+  });
+  const open = op.data.invoices.filter((i) => i.status === "open");
+  const dateLabel = (date: string) =>
+    new Date(
+      date.length === 10 ? date + "T12:00:00Z" : date,
+    ).toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" });
   return (
     <section className="panel">
       <div className="panel-head">
         <h2>Lieferrechnungen</h2>
         <FileText />
       </div>
-      {op.message && <p role="status">{op.message}</p>}
-      <DocumentsList deliveries={[]} invoices={op.data.invoices} />
-      {op.data.invoices
-        .filter((i) => i.status === "open")
-        .map((i) => (
-          <div className="ledger-row" key={i.id}>
-            <span>
-              RE-{i.number} · Netto {euro(i.net_cents)} · USt.{" "}
-              {euro(i.tax_cents)}
-            </span>
-            {!readOnly && (
+      <p>
+        {open.length} offene Rechnungen ·{" "}
+        {euro(open.reduce((sum, i) => sum + i.total_cents, 0))} offen
+      </p>
+      {op.message && (
+        <p className="notice" role="status">
+          {op.message}
+        </p>
+      )}
+      <div className="invoice-ledger">
+        {op.data.invoices.map((i) => (
+          <article className="invoice-ledger-card" key={i.id}>
+            <div className="panel-head">
+              <div>
+                <strong>RE-{String(i.number).padStart(6, "0")}</strong>
+                <p>{i.customer_snapshot.name}</p>
+              </div>
+              <InvoiceStatus invoice={i} />
+            </div>
+            <div className="invoice-facts">
+              <div>
+                <small>Rechnungsbetrag</small>
+                <strong>{euro(i.total_cents)}</strong>
+              </div>
+              <div>
+                <small>Rechnungsdatum</small>
+                <b>{dateLabel(i.created_at)}</b>
+              </div>
+              <div>
+                <small>Zahlungsziel</small>
+                <b>
+                  {i.due_date
+                    ? dateLabel(i.due_date)
+                    : "Altbeleg · nicht hinterlegt"}
+                </b>
+              </div>
+            </div>
+            <p className="fineprint">
+              Netto {euro(i.net_cents)} · USt. {euro(i.tax_cents)} ·{" "}
+              {paymentLabels[i.payment_method || "invoice"]}
+              {i.mode === "setup"
+                ? " · Einrichtung: keine automatischen Mahnungen"
+                : ""}
+            </p>
+            {i.status === "paid" && (
+              <p className="payment-received">
+                Zahlung eingegangen
+                {i.paid_at ? ` am ${dateLabel(i.paid_at)}` : ""}
+                {i.payment_entry
+                  ? ` · ${paymentLabels[i.payment_entry.method]}`
+                  : ""}
+              </p>
+            )}
+            <div className="inline-actions">
               <button
                 className="button secondary"
-                disabled={op.busy}
-                onClick={() => op.act("invoice-paid", { id: i.id })}
+                onClick={() =>
+                  window.dispatchEvent(
+                    new CustomEvent("elias:pdf-preview", {
+                      detail: `/api/documents/invoice/${i.id}`,
+                    }),
+                  )
+                }
               >
-                Zahlungseingang buchen
+                Rechnung anzeigen
               </button>
-            )}
-          </div>
+              {!readOnly &&
+                op.data.can_manage_payments &&
+                i.status === "open" && (
+                  <button
+                    className="button"
+                    disabled={op.busy}
+                    onClick={() => {
+                      setSelected(i);
+                      setMethod("bank");
+                      setPaidOn(berlinDate(new Date().toISOString()));
+                      setConfirmed(false);
+                    }}
+                  >
+                    Zahlungseingang buchen
+                  </button>
+                )}
+            </div>
+          </article>
         ))}
+      </div>
       {!op.data.invoices.length && (
         <p>Noch keine Lieferrechnungen vorhanden.</p>
       )}
       <p className="fineprint">
-        Lieferrechnungen werden separat vom Kassenumsatz geführt, damit keine
-        Umsätze doppelt gezählt werden.
+        Rechnungen zählen ab Erstellung zum Rechnungsumsatz, auch unbezahlt.
+        Zahlungseingänge werden separat dokumentiert und erzeugen keinen zweiten
+        Umsatz.
       </p>
+      {selected && (
+        <div className="modal-backdrop">
+          <section
+            className="modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Zahlungseingang buchen"
+          >
+            <div className="panel-head">
+              <h2>Zahlungseingang · RE-{selected.number}</h2>
+              <button disabled={op.busy} onClick={() => setSelected(null)}>
+                Schließen
+              </button>
+            </div>
+            <form
+              className="form-grid"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (
+                  await op.act("invoice-paid", {
+                    id: selected.id,
+                    method,
+                    paid_on: paidOn,
+                    confirmed,
+                  })
+                )
+                  setSelected(null);
+              }}
+            >
+              <strong>
+                {euro(selected.total_cents)} · {selected.customer_snapshot.name}
+              </strong>
+              <label>
+                Zahlungsart
+                <select
+                  aria-label="Zahlungsart des Eingangs"
+                  value={method}
+                  onChange={(e) => setMethod(e.target.value as typeof method)}
+                >
+                  <option value="bank">Überweisung</option>
+                  <option value="cash">Barzahlung</option>
+                  <option value="card">EC-Karte</option>
+                </select>
+              </label>
+              <label>
+                Tag des Zahlungseingangs
+                <input
+                  type="date"
+                  required
+                  min={berlinDate(selected.created_at)}
+                  max={berlinDate(new Date().toISOString())}
+                  value={paidOn}
+                  onChange={(e) => setPaidOn(e.target.value)}
+                />
+              </label>
+              <label className="checkline">
+                <input
+                  type="checkbox"
+                  checked={confirmed}
+                  onChange={(e) => setConfirmed(e.target.checked)}
+                />
+                Vollständigen Zahlungseingang geprüft
+              </label>
+              <p className="fineprint">
+                Markiert die Rechnung als bezahlt und stoppt weitere Mahnungen.
+              </p>
+              {op.message && <p role="status">{op.message}</p>}
+              <button className="button" disabled={op.busy || !confirmed}>
+                Zahlung verbindlich buchen
+              </button>
+            </form>
+          </section>
+        </div>
+      )}
     </section>
   );
 }

@@ -344,7 +344,9 @@ export async function createFinancePdf(r: FinanceReport) {
             timeZone: "Europe/Berlin",
           }),
           `${d.kind} / ${d.payment}`,
-          [d.status, d.reference ? `zu ${d.reference}` : "",d.reason].filter(Boolean).join(" · "),
+          [d.status, d.reference ? `zu ${d.reference}` : "", d.reason]
+            .filter(Boolean)
+            .join(" · "),
           euro(d.net),
           euro(d.tax),
           euro(d.gross),
@@ -363,6 +365,41 @@ export async function createFinancePdf(r: FinanceReport) {
       7: { halign: "right" },
     },
   );
+  if (r.payments.length) {
+    doc.addPage();
+    header("Zahlungseingänge Lieferrechnungen");
+    text(
+      "Separates Zahlungsjournal - kein zusätzlicher Umsatz",
+      M,
+      42,
+      9,
+      MUTED,
+    );
+    text(
+      `Bar ${euro(r.received.cash)} / EC ${euro(r.received.card)} / Überweisung ${euro(r.received.bank)}`,
+      M,
+      49,
+      9,
+      INK,
+      true,
+    );
+    table(
+      ["Rechnung", "Kunde", "Zahlungstag (Berlin)", "Zahlungsart", "Betrag"],
+      r.payments.map((p) => [
+        `RE-${p.number}`,
+        p.customer,
+        berlinDateLabel(p.paid_at),
+        p.method === "cash"
+          ? "Bar"
+          : p.method === "card"
+            ? "EC-Karte"
+            : "Überweisung",
+        euro(p.amount_cents),
+      ]),
+      57,
+      { 4: { halign: "right" } },
+    );
+  }
   const pages = doc.getNumberOfPages();
   for (let n = 1; n <= pages; n++) {
     doc.setPage(n);
@@ -398,4 +435,10 @@ function group(r: FinanceReport, payment: string) {
     euro(rows.reduce((n, d) => n + d.tax, 0)),
     euro(rows.reduce((n, d) => n + d.gross, 0)),
   ];
+}
+
+function berlinDateLabel(date: string) {
+  return new Date(date).toLocaleDateString("de-DE", {
+    timeZone: "Europe/Berlin",
+  });
 }

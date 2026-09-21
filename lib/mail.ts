@@ -82,6 +82,30 @@ export async function dispatchMail() {
           continue;
         }
       }
+      if (m.kind.startsWith("invoice_reminder_")) {
+        const { data: invoice, error: invoiceError } = await db
+          .from("invoices")
+          .select("status,mode,payment_method")
+          .eq("id", m.reference_id)
+          .single();
+        if (invoiceError) throw invoiceError;
+        if (
+          !invoice ||
+          invoice.status !== "open" ||
+          invoice.mode !== "live" ||
+          invoice.payment_method !== "invoice"
+        ) {
+          await db
+            .from("mail_outbox")
+            .update({
+              status: "failed",
+              error:
+                "Rechnung nicht mehr offen oder nicht mahnfähig. Kein Versand.",
+            })
+            .eq("id", m.id);
+          continue;
+        }
+      }
       const { data: communication, error: archiveError } = await db
         .from("customer_communications")
         .select("id")
@@ -96,8 +120,12 @@ export async function dispatchMail() {
         if (error) throw error;
       }
       const attachments = [];
-      if (m.kind === "delivery_document" || m.kind === "invoice_document") {
-        const kind = m.kind === "invoice_document" ? "invoice" : "delivery";
+      if (
+        m.kind === "delivery_document" ||
+        m.kind === "invoice_document" ||
+        m.kind.startsWith("invoice_reminder_")
+      ) {
+        const kind = m.kind === "delivery_document" ? "delivery" : "invoice";
         const { businessDocumentArchive } =
           await import("./business-document-archive");
         const pdf = await businessDocumentArchive(kind, m.reference_id);
@@ -105,6 +133,24 @@ export async function dispatchMail() {
         attachments.push(
           await archiveAttachment(communication.id, pdf.filename, pdf.bytes),
         );
+      }
+      if (m.kind.startsWith("invoice_reminder_")) {
+        const { data: i, error } = await db
+          .from("invoices")
+          .select("status")
+          .eq("id", m.reference_id)
+          .single();
+        if (error) throw error;
+        if (i?.status !== "open") {
+          await db
+            .from("mail_outbox")
+            .update({
+              status: "failed",
+              error: "Zahlung eingegangen – Mahnung nicht versendet.",
+            })
+            .eq("id", m.id);
+          continue;
+        }
       }
       const result = await transport.sendMail({
         attachments,

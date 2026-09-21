@@ -1,3 +1,6 @@
+import { invoiceDetails } from "@/lib/invoice-details";
+import { requestCustomerAccess } from "@/lib/customer-access";
+import { invoicePaymentSchema } from "@/lib/billing";
 import { archiveDeliveryDocuments } from "@/lib/business-document-archive";
 import { subscriptionCommandSchema } from "@/lib/subscriptions";
 import { staffOrderSchema, staffSubscriptionSchema } from "@/lib/staff-orders";
@@ -46,11 +49,27 @@ export async function GET() {
         ),
         read("subscriptions", can(a, "kunden") || can(a, "bestellungen")),
       ]);
+    const db = serviceDb();
+    const [access, detailedInvoices] = await Promise.all([
+      can(a, "kunden") && customers.length
+        ? db.rpc("customer_login_status", {
+            p_ids: customers.filter(visible).map((c) => c.id),
+          })
+        : Promise.resolve({ data: [], error: null }),
+      invoiceDetails(invoices as { id: string }[]),
+    ]);
+    if (access.error) throw access.error;
     return Response.json(
       {
         customers: customers
           .filter(visible)
-          .map((c) => ({ ...c, ...deliveryAddressFields(c) })),
+          .map((c) => ({
+            ...c,
+            ...deliveryAddressFields(c),
+            online_account: access.data?.find(
+              (x: { customer_id: string }) => x.customer_id === c.id,
+            ),
+          })),
         employees: employees.filter(visible).map((row) => {
           const { pin_hash, ...rest } = row as unknown as Record<
             string,
@@ -59,7 +78,8 @@ export async function GET() {
           return { ...rest, has_pin: !!pin_hash };
         }),
         deliveries,
-        invoices,
+        invoices: detailedInvoices,
+        can_manage_payments: a.role === "owner",
         subscriptions: subscriptions.filter((s) =>
           customers.some((c) => c.id === s.customer_id && visible(c)),
         ),
@@ -199,6 +219,10 @@ export async function POST(req: Request) {
           .single();
         if (error) throw error;
         if (isSystemAccountEmail(existing.email)) throw new Error("FORBIDDEN");
+        if (existing.user_id && existing.email.toLowerCase() !== v.email)
+          throw new Error(
+            "HINWEIS:Die E-Mail eines verknüpften Online-Kontos kann hier nicht geändert werden.",
+          );
         if (existing.user_id) {
           const { data: account, error: accountError } = await db
             .from("staff")
@@ -215,19 +239,11 @@ export async function POST(req: Request) {
         ? await db.from("customers").update(record).eq("id", id)
         : await db.from("customers").insert(record);
       if (error) throw error;
-    } else if (action === "customer-invite") {
-      owner();
-      const { data: c, error } = await db
-        .from("customers")
-        .select("email")
-        .eq("id", z.uuid().parse(b.id))
-        .single();
-      if (error) throw error;
-      if (isSystemAccountEmail(c.email)) throw new Error("FORBIDDEN");
-      const result = await db.auth.admin.inviteUserByEmail(c.email, {
-        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || "https://getraenke-elias.vercel.app"}/auth/callback?next=/passwort`,
-      });
-      if (result.error) throw result.error;
+    } else if (action === "customer-invite" || action === "customer-access") {
+      check("kunden");
+      return Response.json(
+        await requestCustomerAccess(z.uuid().parse(b.id), a.user.id),
+      );
     } else if (action === "delivery") {
       check("lieferung");
       const v = z
@@ -245,6 +261,13 @@ export async function POST(req: Request) {
             .min(1)
             .max(200),
           finalize: z.boolean(),
+          expected_payment_method: z
+            .enum(["cash", "card", "invoice"])
+            .default("invoice"),
+          payment_method: z
+            .enum(["cash", "card", "invoice"])
+            .default("invoice"),
+          payment_confirmed: z.boolean().default(false),
           signature: z
             .string()
             .max(180000)
@@ -255,19 +278,15 @@ export async function POST(req: Request) {
           signed_name: z.string().max(150),
         })
         .parse(b.value);
-      const { data, error } = await db.rpc("save_delivery", {
-        p_order: v.order_id,
-        p_id: v.id,
-        p_items: v.items,
-        p_revision: v.revision,
+      const { data, error } = await db.rpc("save_delivery_payment", {
+        p_value: v,
         p_actor: a.user.id,
-        p_finalize: v.finalize,
-        p_signature: v.signature,
-        p_signed_name: v.signed_name,
       });
       if (error)
         throw new Error(
-          "HINWEIS:Lieferung nicht gespeichert. Bitte Restmengen, Lagerbestand und Unterschrift prüfen und bei paralleler Bearbeitung neu laden.",
+          error.message.startsWith("HINWEIS:")
+            ? error.message
+            : "HINWEIS:Lieferung nicht gespeichert. Bitte Mengen, Lagerbestand, Unterschrift und Zahlungsbestätigung prüfen.",
         );
       let documents = null,
         archivePending = false;
@@ -381,17 +400,15 @@ export async function POST(req: Request) {
           })
           .eq("id", o.id);
     } else if (action === "invoice-paid") {
-      check("finanzen");
-      const { error } = await db
-        .from("invoices")
-        .update({
-          status: "paid",
-          paid_at: new Date().toISOString(),
-          paid_by: a.user.id,
-        })
-        .eq("id", z.uuid().parse(b.id))
-        .eq("status", "open");
-      if (error) throw error;
+      owner();
+      const v = invoicePaymentSchema.parse(b);
+      const { error } = await db.rpc("mark_invoice_paid", {
+        p_id: v.id,
+        p_method: v.method,
+        p_paid_on: v.paid_on,
+        p_actor: a.user.id,
+      });
+      if (error) throw new Error(error.message);
     } else if (action === "reset") {
       owner();
       if (b.confirm !== "EINRICHTUNG ZURÜCKSETZEN")

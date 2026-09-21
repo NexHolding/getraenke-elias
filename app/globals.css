@@ -4652,3 +4652,13 @@ textarea {
   overflow: hidden;
   white-space: nowrap;
 }
+
+/* Customer account status and delivery receivables */
+.customer-access-card,.delivery-payment-box { padding:22px; border:1px solid #dce5cc; border-radius:16px; background:#f8faf3; margin:18px 0; }
+.customer-access-card dl { display:grid; gap:14px; }.customer-access-card dl div { display:grid; grid-template-columns:150px 1fr; gap:12px; }.customer-access-card dt { color:#65715b; }.customer-access-card dd { margin:0; overflow-wrap:anywhere; }
+.invoice-status { display:inline-flex; align-items:center; gap:7px; padding:7px 11px; border-radius:999px; font-size:12px; font-weight:650; background:#edf1e5; color:#58634e; }
+.invoice-status.paid { background:#e0f2df; color:#275d33; }.invoice-status.overdue,.invoice-status.reminder-1 { background:#fff1c7; color:#72510e; }.invoice-status.reminder-2 { background:#ffe2cd; color:#884320; }.invoice-status.reminder-3 { background:#fae0de; color:#9a3030; }
+.invoice-ledger { display:grid; gap:16px; }.invoice-ledger-card { padding:22px; border:1px solid #e0e7d6; border-radius:16px; background:#fff; }.invoice-ledger-card .panel-head { flex-wrap:wrap; gap:12px; }.invoice-ledger-card p { margin:8px 0; }.invoice-facts { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:18px 0; }.invoice-facts small { display:block; color:#68745d; margin-bottom:7px; }.invoice-facts strong { font-size:22px; }.payment-received { color:#275d33; }.delivery-payment-box>strong { display:block; font-size:28px; margin-bottom:16px; }.delivery-payment-box label { display:grid; gap:8px; margin-top:14px; }.delivery-payment-box .checkline { display:flex; align-items:center; }.delivery-payment-hint { font-weight:650; color:#546f23; }
+@media(max-width:600px) { .invoice-facts { grid-template-columns:1fr; }.customer-access-card dl div { grid-template-columns:1fr; gap:4px; }.invoice-ledger-card { padding:16px; } }
+.customer-stats { grid-template-columns:repeat(3,minmax(0,1fr)); margin-top:20px; }.customer-stats .stat { display:grid; gap:8px; padding:14px; background:#f6f8f1; border-radius:12px; }.customer-stats .stat strong { font-size:22px; }.customer-stats .stat small { color:#65715b; }
+.delivery-payment-box select { width:100%; min-height:48px; padding:12px; border:1px solid #bdcca9; border-radius:10px; background:white; color:#283322; font:inherit; }.delivery-payment-box .checkline { min-height:48px; padding:12px; border:1px solid #d8e2c9; border-radius:10px; background:white; }.delivery-payment-box .checkline input { width:22px; height:22px; flex:none; }

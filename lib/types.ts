@@ -203,8 +203,17 @@ export type Settings = {
   smtp_user: string;
   smtp_from: string;
   smtp_password_set?: boolean;
+  invoice_payment_days?: number;
+  invoice_reminders_enabled?: boolean;
 };
 export type Customer = Partial<DeliveryAddress> & {
+  payment_method?: "cash" | "card" | "invoice";
+  online_account?: {
+    user_id: string | null;
+    email: string | null;
+    confirmed: boolean;
+    has_password: boolean;
+  };
   id: string;
   number: number;
   user_id: string | null;
@@ -250,6 +259,13 @@ export type Delivery = {
   mode: string;
 };
 export type Invoice = {
+  payment_method?: "cash" | "card" | "invoice";
+  payment_terms_days?: number | null;
+  due_date?: string | null;
+  paid_at?: string | null;
+  reminder_stage?: number;
+  reminder_status?: string;
+  payment_entry?: InvoicePayment | null;
   id: string;
   number: number;
   order_id: string;
@@ -275,4 +291,15 @@ export type Subscription = {
   interval: string;
   next_date: string;
   active: boolean;
+};
+
+export type InvoicePayment = {
+  id: string;
+  invoice_id: string;
+  amount_cents: number;
+  method: "cash" | "card" | "bank";
+  paid_at: string;
+  actor: string;
+  source: "delivery" | "manual";
+  created_at: string;
 };

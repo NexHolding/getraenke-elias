@@ -201,7 +201,7 @@ for (const kind of ["delivery_document", "invoice_document"])
 assert.equal(
   (
     await q(
-      "select count(*)n from customer_communications where customer_id=$1",
+      "select count(*)n from customer_communications where customer_id=$1 and kind not like 'order_schedule_%'",
       [c.id],
     )
   )[0].n,

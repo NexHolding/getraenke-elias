@@ -26,6 +26,15 @@ const tables = {
   orders: [{ id: "order-1" }],
   purchases: [],
   suppliers: [],
+  customers: [
+    {
+      id: "11111111-1111-4111-8111-111111111111",
+      email: "poststelle@nex-consulting.de",
+      user_id: null,
+      name: "Testkunde",
+    },
+  ],
+  audit_log: [],
 };
 const encryptionKey = randomBytes(32);
 process.env.SETTINGS_ENCRYPTION_KEY = encryptionKey.toString("hex");
@@ -41,7 +50,26 @@ const encrypt = (value) => {
 tables.settings[0].smtp_secret = encrypt("local-only-smtp-password");
 const sent = [];
 let fail = false;
+let accountStatus = { user_id: null, confirmed: false, has_password: false };
 const fake = {
+  auth: {
+    admin: {
+      async generateLink({ email }) {
+        return {
+          data: {
+            user: { id: "22222222-2222-4222-8222-222222222222", email },
+            properties: {
+              hashed_token: "sensitive-reset-token-abcdefghijklmnop",
+            },
+          },
+          error: null,
+        };
+      },
+    },
+    async resend() {
+      return { error: null };
+    },
+  },
   from(table) {
     let op = "read",
       value,
@@ -108,7 +136,8 @@ const fake = {
     };
     return query;
   },
-  async rpc(name, { p_id } = {}) {
+  async rpc(name, params = {}) {
+    const { p_id } = params;
     if (name === "claim_auth_mail") {
       const jobs = tables.auth_mail_dispatch.filter(
         (q) => !q.claimed_at && (!p_id || q.communication_id === p_id),
@@ -120,6 +149,24 @@ const fake = {
         ).status = "sending";
       }
       return { data: [...jobs], error: null };
+    }
+    if (name === "allow_customer_access") return { data: true, error: null };
+    if (name === "customer_login_status")
+      return { data: [accountStatus], error: null };
+    if (name === "queue_auth_mail") {
+      const id = crypto.randomUUID();
+      tables.customer_communications.push({
+        id,
+        recipient: params.p_recipient,
+        subject: params.p_subject,
+        body: params.p_body,
+        status: "pending",
+      });
+      tables.auth_mail_dispatch.push({
+        communication_id: id,
+        encrypted_payload: params.p_secret,
+      });
+      return { data: id, error: null };
     }
     if (name === "claim_mail")
       return {
@@ -149,7 +196,7 @@ const target = ".local/mail-worker-test.mjs";
 await build({
   stdin: {
     contents:
-      'export {dispatchMail} from "./lib/mail";export {dispatchAuthMail} from "./lib/auth-mail-dispatch";',
+      'export {dispatchMail} from "./lib/mail";export {dispatchAuthMail} from "./lib/auth-mail-dispatch";export {requestCustomerAccess} from "./lib/customer-access";',
     resolveDir: process.cwd(),
   },
   bundle: true,
@@ -191,7 +238,8 @@ await build({
   ],
 });
 try {
-  const { dispatchAuthMail, dispatchMail } = await import("../" + target);
+  const { dispatchAuthMail, dispatchMail, requestCustomerAccess } =
+    await import("../" + target);
   const body = "Persönlicher Link https://example.test/auth?token=secret-token";
   tables.customer_communications.push({
     id: "auth-1",
@@ -302,6 +350,82 @@ try {
     "Automatic dispatch still requires supplier approval",
   );
   assert.equal(tables.mail_outbox.at(-1).status, "failed");
+  // Reminders reuse the immutable invoice PDF and are checked again against live payment status.
+  Object.assign(tables.invoices[0], {
+    status: "open",
+    mode: "live",
+    payment_method: "invoice",
+  });
+  for (const stage of [1, 2]) {
+    const id = `reminder-${stage}`;
+    tables.mail_outbox.push({
+      id,
+      kind: `invoice_reminder_${stage}`,
+      reference_id: "invoice-1",
+      recipient: "poststelle@nex-consulting.de",
+      subject: `${stage}. Mahnung`,
+      body: "Offene Rechnung",
+      status: "pending",
+    });
+    tables.customer_communications.push({
+      id: `archive-${id}`,
+      source_key: `outbox:${id}`,
+      status: "pending",
+    });
+    if (stage === 1) {
+      assert.equal((await dispatchMail()).sent, 1);
+      assert.equal(
+        Buffer.compare(
+          sent.at(-1).attachments[0].content,
+          mail.attachments[0].content,
+        ),
+        0,
+      );
+    } else {
+      tables.invoices[0].status = "paid";
+      const count = sent.length;
+      assert.equal((await dispatchMail()).sent, 0);
+      assert.equal(sent.length, count);
+      assert.equal(tables.mail_outbox.at(-1).status, "failed");
+    }
+  }
+  const customerId = tables.customers[0].id;
+  const invite = await requestCustomerAccess(customerId, "qa-owner");
+  assert.match(invite.message, /Mailserver/);
+  assert.match(sent.at(-1).text, /type=invite/);
+  assert.ok(
+    !tables.customer_communications
+      .at(-1)
+      .body.includes("sensitive-reset-token"),
+  );
+  assert.equal(tables.auth_mail_dispatch.length, 0);
+  accountStatus = {
+    user_id: tables.customers[0].user_id,
+    confirmed: true,
+    has_password: true,
+  };
+  const recovery = await requestCustomerAccess(customerId, "qa-owner");
+  assert.match(recovery.message, /Mailserver/);
+  assert.match(sent.at(-1).text, /type=recovery/);
+  assert.ok(
+    !JSON.stringify(tables.customer_communications).includes(
+      "sensitive-reset-token",
+    ),
+  );
+  tables.settings[0].value.smtp_enabled = false;
+  const before = sent.length;
+  await assert.rejects(
+    () => requestCustomerAccess(customerId, "qa-owner"),
+    /E-Mail-Ausgang/,
+  );
+  assert.equal(sent.length, before);
+  tables.settings[0].value.smtp_enabled = true;
+  console.log(
+    "PASS: CRM invite and recovery links reach isolated SMTP; archive excludes tokens; disabled SMTP blocks access mail without false success.",
+  );
+  console.log(
+    "PASS: reminder sends the archived invoice attachment; paid invoices suppress queued reminders. No real email sent.",
+  );
   console.log(
     "PASS: manual supplier mail dispatches only after explicit queueing; automatic supplier permission remains required. No outgoing mail.",
   );

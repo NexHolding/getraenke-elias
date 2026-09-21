@@ -1,3 +1,4 @@
+import { invoiceDetails } from "@/lib/invoice-details";
 import { subscriptionCommandSchema } from "@/lib/subscriptions";
 import { deliveryAddressFields } from "@/lib/delivery-address";
 import { serviceDb, sameOrigin, safeError } from "@/lib/server";
@@ -21,7 +22,7 @@ export async function GET() {
         customer: { ...c, ...deliveryAddressFields(c), notes: "" },
         orders,
         deliveries: deliveries.filter((d) => d.status === "delivered"),
-        invoices,
+        invoices: await invoiceDetails(invoices as { id: string }[]),
         subscriptions,
       },
       { headers: { "Cache-Control": "no-store" } },
@@ -42,6 +43,7 @@ export async function POST(req: Request) {
         id: c.id,
         email: c.email,
         notes: c.notes,
+        payment_method: c.payment_method || "invoice",
         latitude: c.latitude,
         longitude: c.longitude,
       });

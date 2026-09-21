@@ -34,7 +34,13 @@ export default function SettingsPanel({
 }) {
   const router = useRouter();
   const [tab, setTab] = useState("betrieb");
-  const [v, setV] = useState({ ...settings, ...businessAddressFields(settings), smtp_password: "" });
+  const [v, setV] = useState({
+    invoice_payment_days: 14,
+    invoice_reminders_enabled: true,
+    ...settings,
+    ...businessAddressFields(settings),
+    smtp_password: "",
+  });
   const op = useOperations();
   const [employee, setEmployee] = useState<
     (Partial<Employee> & { pin?: string; password?: string }) | null
@@ -123,7 +129,10 @@ export default function SettingsPanel({
               onSubmit={async (e) => {
                 e.preventDefault();
                 setNote("");
-                const result = await save({...v,business_address:businessAddress(v)});
+                const result = await save({
+                  ...v,
+                  business_address: businessAddress(v),
+                });
                 if (result !== null) setNote("Einstellungen gespeichert.");
               }}
             >
@@ -172,7 +181,16 @@ export default function SettingsPanel({
                   ).map(([key, label]) => (
                     <label key={key}>
                       {label}
-                      <NumberInput aria-label={label} min={0} max={100} step={1} value={v[key] ?? 19} onChange={(e) => setV({...v,[key]:Number(e.target.value)})} />
+                      <NumberInput
+                        aria-label={label}
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={v[key] ?? 19}
+                        onChange={(e) =>
+                          setV({ ...v, [key]: Number(e.target.value) })
+                        }
+                      />
                     </label>
                   ))}
                   <p className="notice span-two">
@@ -241,6 +259,25 @@ export default function SettingsPanel({
               )}
               {tab === "lieferung" && (
                 <>
+                  {num(
+                    "invoice_payment_days",
+                    "Zahlungsziel für neue Rechnungen (Tage)",
+                    1,
+                    365,
+                  )}
+                  {toggle(
+                    "invoice_reminders_enabled",
+                    "Automatische Mahnungen aktivieren",
+                  )}
+                  <p className="fineprint span-two">
+                    Zahlungsziel ab Rechnungsdatum, standardmäßig 14 Tage. Erste
+                    Mahnung am Tag nach Fälligkeit; zweite und dritte jeweils
+                    sieben Tage nach Versand der vorherigen Mahnung. Keine
+                    automatischen Gebühren. Bezahlte Rechnungen und
+                    Einrichtungsbelege werden nicht gemahnt. Änderungen gelten
+                    für neue Rechnungen.
+                  </p>
+
                   <div className="span-two">
                     Mögliche Liefertage{days("delivery_days")}
                   </div>
@@ -335,12 +372,51 @@ export default function SettingsPanel({
                       </option>
                     </select>
                   </label>
-                  <button type="button" className="button secondary" disabled={!owner || tseBusy} onClick={async () => {
-                    setTseBusy(true);setTseNote("");
-                    try {const r=await fetch("/api/tse",{method:"POST"});const d=await r.json();setTseNote(d.error || [d.message,d.missing?.length ? "Fehlt: "+d.missing.join(", ") : "",d.tss_state ? "TSS-Status: "+d.tss_state : "",d.environment ? "Umgebung: "+d.environment : ""].filter(Boolean).join(" "));}catch{setTseNote("Verbindungsprüfung fehlgeschlagen.");}finally{setTseBusy(false);}
-                  }}>{tseBusy ? "Verbindung wird geprüft …" : "Fiskaly-Verbindung prüfen"}</button>
-                  {tseNote && <p role="status" className="notice span-two">{tseNote}</p>}
-                  <p className="fineprint span-two">Die Prüfung meldet den Server bei Fiskaly an und liest TSS und Kassen-Client. Es werden keine Verkaufsdaten übertragen und keine Transaktionen erzeugt. Ein erfolgreicher Verbindungstest ist noch keine Kassenabnahme.</p>
+                  <button
+                    type="button"
+                    className="button secondary"
+                    disabled={!owner || tseBusy}
+                    onClick={async () => {
+                      setTseBusy(true);
+                      setTseNote("");
+                      try {
+                        const r = await fetch("/api/tse", { method: "POST" });
+                        const d = await r.json();
+                        setTseNote(
+                          d.error ||
+                            [
+                              d.message,
+                              d.missing?.length
+                                ? "Fehlt: " + d.missing.join(", ")
+                                : "",
+                              d.tss_state ? "TSS-Status: " + d.tss_state : "",
+                              d.environment ? "Umgebung: " + d.environment : "",
+                            ]
+                              .filter(Boolean)
+                              .join(" "),
+                        );
+                      } catch {
+                        setTseNote("Verbindungsprüfung fehlgeschlagen.");
+                      } finally {
+                        setTseBusy(false);
+                      }
+                    }}
+                  >
+                    {tseBusy
+                      ? "Verbindung wird geprüft …"
+                      : "Fiskaly-Verbindung prüfen"}
+                  </button>
+                  {tseNote && (
+                    <p role="status" className="notice span-two">
+                      {tseNote}
+                    </p>
+                  )}
+                  <p className="fineprint span-two">
+                    Die Prüfung meldet den Server bei Fiskaly an und liest TSS
+                    und Kassen-Client. Es werden keine Verkaufsdaten übertragen
+                    und keine Transaktionen erzeugt. Ein erfolgreicher
+                    Verbindungstest ist noch keine Kassenabnahme.
+                  </p>
                   <p className="notice span-two">
                     Vor Live-Aktivierung: TSE-Vertrag, Transaktionssignierung,
                     Kassenseriennummer, DSFinV-K-Export und Meldung einrichten
@@ -353,7 +429,13 @@ export default function SettingsPanel({
                 <EpsonWizard
                   value={v}
                   onChange={(next) =>
-                    setV({ ...next, ...businessAddressFields(next), smtp_password: v.smtp_password })
+                    setV({
+                      invoice_payment_days: 14,
+                      invoice_reminders_enabled: true,
+                      ...next,
+                      ...businessAddressFields(next),
+                      smtp_password: v.smtp_password,
+                    })
                   }
                   save={save}
                   disabled={busy}
@@ -396,11 +478,11 @@ export default function SettingsPanel({
                     Dieses Gerät als Kasse freigeben
                   </button>
                   <p className="fineprint span-two">
-                    Beim ersten Sperren wird das angemeldete Kassengerät für
-                    die Mitarbeiterauswahl freigegeben. Gerätefreigabe: 30 Tage,
+                    Beim ersten Sperren wird das angemeldete Kassengerät für die
+                    Mitarbeiterauswahl freigegeben. Gerätefreigabe: 30 Tage,
                     PIN-Sitzung: 8 Stunden. Vergib jedem Mitarbeiter mit
-                    Kassenzugang eine eigene vierstellige PIN. Das gilt auch
-                    für die iPad-Kassen-App.
+                    Kassenzugang eine eigene vierstellige PIN. Das gilt auch für
+                    die iPad-Kassen-App.
                   </p>
                 </>
               )}

@@ -189,6 +189,8 @@ export const settingsSchema = z.object({
     .optional(),
   printer_width_dots: z.union([z.literal(512), z.literal(576)]).optional(),
   tse_provider: z.enum(["", "fiskaly", "other"]),
+  invoice_payment_days: z.number().int().min(1).max(365).default(14),
+  invoice_reminders_enabled: z.boolean().default(true),
   smtp_enabled: z.boolean().default(false),
   smtp_host: z.string().max(200),
   smtp_port: z

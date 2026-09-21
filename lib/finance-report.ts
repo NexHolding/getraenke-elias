@@ -1,4 +1,10 @@
-import type { Sale, Invoice, SaleLine, Settings } from "./types";
+import type {
+  Sale,
+  Invoice,
+  SaleLine,
+  Settings,
+  InvoicePayment,
+} from "./types";
 import { totals } from "./money";
 export type FinanceClosing = {
   id?: string;
@@ -52,6 +58,7 @@ export function buildFinanceReport(
   settings: Partial<Settings>,
   closings: FinanceClosing[] = [],
   now = new Date().toISOString(),
+  invoicePayments: InvoicePayment[] = [],
 ) {
   if (!validFinancePeriod(period))
     throw new Error("Bitte einen gültigen Tag oder Monat auswählen.");
@@ -82,7 +89,11 @@ export function buildFinanceReport(
         ? invoice.status === "paid"
           ? "Bezahlt"
           : "Offen"
-        : sale?.record_type === "return" ? "Rückgabe" : sale?.record_type === "cancellation" ? "Storno" : "Erfasst",
+        : sale?.record_type === "return"
+          ? "Rückgabe"
+          : sale?.record_type === "cancellation"
+            ? "Storno"
+            : "Erfasst",
       reference: sale?.original_number ? `E-${sale.original_number}` : "",
       reason: sale?.reversal_reason || "",
       setup: sale ? !!sale.test_mode : invoice!.mode === "setup",
@@ -152,9 +163,25 @@ export function buildFinanceReport(
     day.count++;
     days[d.day] = day;
   }
-  const setupCount = documents.filter((d) => d.setup).length;
-  const mode = documents.length
-    ? setupCount === documents.length
+  const invoiceIndex = new Map(invoices.map((i) => [i.id, i]));
+  const payments = invoicePayments
+    .filter((p) => berlinDate(p.paid_at).startsWith(period))
+    .map((p) => ({
+      ...p,
+      number: invoiceIndex.get(p.invoice_id)?.number,
+      customer: invoiceIndex.get(p.invoice_id)?.customer_snapshot.name || "",
+    }));
+  const received = { cash: 0, card: 0, bank: 0 };
+  for (const p of payments) received[p.method] += p.amount_cents;
+  if (payments.some((p) => !invoiceIndex.has(p.invoice_id)))
+    throw new Error("Zahlung ohne zugehörige Rechnung im Export.");
+  const recordModes = [
+    ...documents.map((d) => d.setup),
+    ...payments.map((p) => invoiceIndex.get(p.invoice_id)?.mode === "setup"),
+  ];
+  const setupCount = recordModes.filter(Boolean).length;
+  const mode = recordModes.length
+    ? setupCount === recordModes.length
       ? "Einrichtungsdaten"
       : setupCount
         ? "Gemischte Daten: Einrichtung + Echtbetrieb"
@@ -162,7 +189,7 @@ export function buildFinanceReport(
     : settings.live_mode
       ? "Echtbetrieb"
       : "Einrichtungsdaten";
-  if (setupCount > 0 && setupCount < documents.length)
+  if (setupCount > 0 && setupCount < recordModes.length)
     throw new Error(
       "Einrichtungs- und Echtbelege dürfen nicht in einem gemeinsamen Umsatzbericht summiert werden.",
     );
@@ -177,6 +204,8 @@ export function buildFinanceReport(
     vat_id: settings.vat_id || "",
     mode,
     documents,
+    payments,
+    received,
     all,
     taxes,
     days,
@@ -193,7 +222,9 @@ export type FinanceReport = ReturnType<typeof buildFinanceReport>;
 const money = (n: number) => (n / 100).toFixed(2).replace(".", ",");
 // Fixed rectangular schema: numeric amounts stay numeric, untrusted text cannot run formulas.
 export function financeCsv(report: FinanceReport) {
-  const rates = [...new Set(["0", "7", "19", ...Object.keys(report.taxes)])].sort((a,b)=>Number(a)-Number(b));
+  const rates = [
+    ...new Set(["0", "7", "19", ...Object.keys(report.taxes)]),
+  ].sort((a, b) => Number(a) - Number(b));
   const header = [
     "Bericht",
     "Zeitraum",
@@ -217,6 +248,7 @@ export function financeCsv(report: FinanceReport) {
       `USt ${r}% EUR`,
       `Brutto ${r}% EUR`,
     ]),
+    "Zahlungseingang EUR",
   ];
   const rows = report.documents.map((d) => [
     report.title,
@@ -241,10 +273,40 @@ export function financeCsv(report: FinanceReport) {
       money(d.taxes[r]?.tax || 0),
       money(d.taxes[r]?.gross || 0),
     ]),
+    money(0),
   ]);
+  for (const p of report.payments)
+    rows.push([
+      report.title,
+      report.period,
+      report.mode,
+      report.created_at,
+      "Zahlungseingang Lieferrechnung",
+      `RE-${p.number}`,
+      p.id,
+      p.paid_at,
+      berlinDate(p.paid_at),
+      p.method === "cash"
+        ? "Bar"
+        : p.method === "card"
+          ? "Karte"
+          : "Überweisung",
+      "Bezahlt",
+      money(0),
+      money(0),
+      money(0),
+      money(0),
+      `RE-${p.number}`,
+      "Kein zusätzlicher Umsatz",
+      ...rates.flatMap(() => [money(0), money(0), money(0)]),
+      money(p.amount_cents),
+    ]);
   const quote = (v: string, col: number) =>
     '"' +
-    ((col < 11 || col === 15 || col === 16) && /^[\s]*[=+@-]/.test(v) ? "'" + v : v).replace(/"/g, '""') +
+    ((col < 11 || col === 15 || col === 16) && /^[\s]*[=+@-]/.test(v)
+      ? "'" + v
+      : v
+    ).replace(/"/g, '""') +
     '"';
   return (
     "\ufeff" +

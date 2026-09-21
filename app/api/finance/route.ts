@@ -7,7 +7,7 @@ import {
   type FinanceClosing,
 } from "@/lib/finance-report";
 import { createFinancePdf } from "@/lib/finance-pdf";
-import type { Sale, Invoice } from "@/lib/types";
+import type { Sale, Invoice, InvoicePayment } from "@/lib/types";
 export async function GET(req: Request) {
   try {
     await requireStaff("finanzen");
@@ -24,11 +24,12 @@ export async function GET(req: Request) {
         { error: "PDF oder CSV auswählen." },
         { status: 400 },
       );
-    const [sales, invoices, closings, settings] = await Promise.all([
+    const [sales, invoices, closings, settings, payments] = await Promise.all([
       readAllRows<Sale>("sales"),
       readAllRows<Invoice>("invoices"),
       readAllRows<FinanceClosing>("closings"),
       serviceDb().from("settings").select("value").eq("id", 1).single(),
+      readAllRows<InvoicePayment>("invoice_payments"),
     ]);
     if (settings.error) throw settings.error;
     const report = buildFinanceReport(
@@ -37,6 +38,8 @@ export async function GET(req: Request) {
       period,
       settings.data.value,
       closings,
+      new Date().toISOString(),
+      payments,
     );
     const headers = {
       "Content-Type":

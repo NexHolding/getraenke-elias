@@ -18,11 +18,23 @@ export async function GET(req: Request) {
     .eq("id", 1)
     .single();
   try {
+    const { data: reminders, error: reminderError } = await serviceDb().rpc(
+      "queue_invoice_reminders",
+    );
+    if (reminderError) throw reminderError;
     const auth = await dispatchAuthMail();
     if (!data?.value.smtp_enabled)
-      return Response.json({ skipped: true, auth_sent: auth.sent });
+      return Response.json({
+        skipped: true,
+        auth_sent: auth.sent,
+        reminders_queued: reminders,
+      });
     const mail = await dispatchMail();
-    return Response.json({ ...mail, auth_sent: auth.sent });
+    return Response.json({
+      ...mail,
+      auth_sent: auth.sent,
+      reminders_queued: reminders,
+    });
   } catch {
     return Response.json(
       { error: "E-Mail-Verbindung nicht verfügbar." },

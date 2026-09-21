@@ -1,3 +1,4 @@
+import { paymentLabels } from "./billing";
 import { receiptLogo } from "./receipt-logo";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -149,6 +150,16 @@ export function businessDocument(
     y += 8;
     doc.text(
       `Leistungsdatum: ${new Date(record.created_at).toLocaleDateString("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit", year: "numeric" })} · ${invoice.status === "paid" ? "Bezahlt" : "Zahlungsstatus: offen"}`,
+      16,
+      y,
+    );
+    y += 7;
+    doc.text(
+      invoice.status === "paid"
+        ? `Zahlung erhalten: ${paymentLabels[invoice.payment_method || "invoice"]}`
+        : invoice.due_date
+          ? `Zahlbar bis ${new Date(invoice.due_date + "T12:00:00Z").toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "Europe/Berlin" })} (${invoice.payment_terms_days} Tage ab Rechnungsdatum).`
+          : "Zahlungsziel gemäß vereinbarter Konditionen.",
       16,
       y,
     );
