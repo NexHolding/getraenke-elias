@@ -17,7 +17,7 @@ try {
   let beforeUpdate = null;
   const client = {
     from(table) {
-      assert.equal(table, "customers");
+      assert.ok(["customers", "customer_account_deletions"].includes(table));
       let insert, update;
       const filters = [];
       return {
@@ -61,7 +61,7 @@ try {
               );
             } else {
               rows = await q(
-                `select * from customers where ${filters.map(([k], i) => k + "=$" + (i + 1)).join(" and ")}`,
+                `select * from ${table} where ${filters.map(([k], i) => k + "=$" + (i + 1)).join(" and ")}`,
                 filters.map(([, v]) => v),
               );
             }

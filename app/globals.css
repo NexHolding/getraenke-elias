@@ -4700,3 +4700,16 @@ textarea {
 .order-inbox-launch{position:fixed;bottom:20px;left:24px;z-index:85;box-shadow:0 4px 18px #27321b30}.order-inbox-overlay{z-index:210}.order-inbox-dialog{width:min(900px,95vw)}.order-inbox-error{position:fixed;bottom:75px;left:24px;z-index:85;max-width:350px;background:#fff1d9;padding:12px;border-radius:12px}.order-stock-info{padding:16px;margin:16px 0;border:1px solid #dae5c8;border-radius:14px;background:#f6f9ef}.order-stock-info.needs-stock{background:#fff7e9;border-color:#e6ca98}.order-stock-info>p{font-size:.85rem}.order-stock-table{overflow:auto}.order-stock-table table{width:100%;border-collapse:collapse;font-size:.85rem}.order-stock-table th,.order-stock-table td{text-align:left;padding:9px 8px;border-bottom:1px solid #dce2d2}.order-stock-table td:not(:first-child){white-space:nowrap}@media(max-width:600px){.order-inbox-launch{left:12px;bottom:12px;font-size:.8rem}.order-inbox-dialog{padding:20px}.order-stock-info{padding:12px}}
 
 .cash-book-dialog{width:min(1180px,96vw);max-width:1180px;max-height:94dvh;overflow:auto}.cash-book-panel{margin:20px 0}.cash-book-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0}.cash-book-summary>div{padding:16px;background:#f4f7ed;border-radius:12px;display:grid;gap:8px}.cash-book-summary strong{font-size:24px}.cash-book-summary small,.cash-book-detail{display:block;color:#626d59}.cash-book-form{padding:20px 0;border-top:1px solid #dce4d2}.cash-count-result{padding:18px;border-radius:12px;display:grid;gap:8px}.cash-count-result strong{font-size:22px}.cash-count-result.balanced{background:#eef6dc}.cash-count-result.difference{background:#fff0df;color:#894912}.cash-book-panel td .text-link{display:block;margin-top:7px}.cash-book-panel details{padding:16px;border:1px solid #dce4d2;border-radius:12px;margin:16px 0}.cash-book-panel summary{cursor:pointer;font-weight:700}.cash-book-panel .table-wrap{max-height:440px;overflow:auto}.cash-book-panel .table-wrap th{position:sticky;top:0;background:#f4f7ed}@media(max-width:620px){.cash-book-summary{grid-template-columns:1fr}.cash-book-dialog{padding:12px}.cash-book-panel{padding:14px}.cash-book-summary strong{font-size:20px}}
+
+.account-delete{max-width:720px;margin:0 auto;padding:clamp(20px,4vw,40px)}
+.account-delete h1{font-size:clamp(28px,5vw,42px)}
+.account-delete p,.account-delete li{line-height:1.65}
+.account-delete ul{padding-left:22px;list-style:disc}
+.account-delete li{margin:10px 0}
+.account-delete-form{display:grid;gap:20px;margin:28px 0}
+.account-delete-form>label{display:grid;gap:8px;font-weight:600}
+.account-delete-form input[type=password]{width:100%;min-height:48px;padding:12px;border:1px solid #8b9991;border-radius:10px;background:white;color:#182b25}
+.account-delete-form>.account-delete-confirm{display:flex;align-items:flex-start;font-weight:400;gap:12px}
+.account-delete-confirm input{width:22px;height:22px;flex-shrink:0;margin-top:3px}
+.account-delete-button{background:#a12828!important;color:white!important;min-height:48px}
+.account-delete-button:disabled{opacity:.5;cursor:not-allowed}

@@ -466,6 +466,9 @@ export default function Account() {
               )}
             </div>
             <div className="portal-account-actions">
+              <Link className="text-link" href="/konto/loeschen">
+                Konto löschen
+              </Link>
               <Link className="text-link" href="/datenschutz">
                 Datenschutz
               </Link>
@@ -489,6 +492,13 @@ export default function Account() {
               </button>
             </div>
           </>
+        )}
+        {!account && (
+          <p>
+            <Link className="text-link" href="/konto/loeschen">
+              Online-Konto löschen
+            </Link>
+          </p>
         )}
         {message && !account && (
           <p className="notice" role="status">

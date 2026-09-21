@@ -7,6 +7,7 @@ import SwiftUI
 #endif
 struct POSRoot: View {
   @StateObject private var workspace = WebWorkspace(mode: "pos", path: "/kassenzugang")
+  @State private var legalPage: WebWorkspace?
   @StateObject private var connection = ConnectionMonitor()
   @Environment(\.scenePhase) private var scenePhase
   var body: some View {
@@ -22,6 +23,12 @@ struct POSRoot: View {
             "Getränke Elias")
         }
         ToolbarItemGroup(placement: .topBarTrailing) {
+          Menu {
+            Button("Datenschutz") { legalPage = WebWorkspace(mode: "pos", path: "/datenschutz") }
+            Button("Impressum") { legalPage = WebWorkspace(mode: "pos", path: "/impressum") }
+            Button("Kontakt / Support") { legalPage = WebWorkspace(mode: "pos", path: "/kontakt") }
+          } label: { Label("Informationen", systemImage: "info.circle") }
+
           Button {
             workspace.showScanner = true
           } label: {
@@ -43,6 +50,11 @@ struct POSRoot: View {
         }
       }
       .sheet(isPresented: $workspace.showPrinter) { PrinterSettings() }
+      .sheet(item: $legalPage) { page in
+        NavigationStack {
+          WorkspaceView(workspace: page).toolbar { Button("Schließen") { legalPage = nil } }
+        }
+      }
       .overlay {
         if scenePhase != .active {
           AppConfig.background.ignoresSafeArea().overlay(

@@ -1,4 +1,5 @@
-import {processOrderAutomation} from "@/lib/order-automation";
+import { finishPendingCustomerDeletions } from "@/lib/customer-account-deletion";
+import { processOrderAutomation } from "@/lib/order-automation";
 import { timingSafeEqual } from "node:crypto";
 import { dispatchAuthMail } from "@/lib/auth-mail-dispatch";
 import { dispatchMail } from "@/lib/mail";
@@ -19,6 +20,7 @@ export async function GET(req: Request) {
     .eq("id", 1)
     .single();
   try {
+    const accountDeletions = await finishPendingCustomerDeletions(serviceDb());
     await processOrderAutomation();
     const { data: reminders, error: reminderError } = await serviceDb().rpc(
       "queue_invoice_reminders",
@@ -28,12 +30,14 @@ export async function GET(req: Request) {
     if (!data?.value.smtp_enabled)
       return Response.json({
         skipped: true,
+        account_deletions: accountDeletions,
         auth_sent: auth.sent,
         reminders_queued: reminders,
       });
     const mail = await dispatchMail();
     return Response.json({
       ...mail,
+      account_deletions: accountDeletions,
       auth_sent: auth.sent,
       reminders_queued: reminders,
     });

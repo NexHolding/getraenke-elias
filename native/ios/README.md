@@ -74,7 +74,7 @@ node scripts/verify-native-bridge.mjs
 
 Die Foundation-UI-Tests verwenden `--uitesting`, lokale Beispieldaten und einen statischen Web-Arbeitsplatz. Die zusätzlichen Live-Tests laden den öffentlichen Katalog und öffnen einen ausschließlich lokal zusammengestellten Warenkorb im Web-Abschluss, ohne Login, Eingabe von Kundendaten oder Bestellabsendung. Der Browser-Brückentest simuliert alle APIs und den Druckerkanal. Keine echten Bestellungen, Finanzbuchungen, E-Mails oder Druckaufträge werden erzeugt.
 
-Vor einem Store-Release zusätzlich: Apple-Team/Vertriebsweg, Kontolöschung in der Kunden-App, vollständige Datenschutzerklärung und Store-Datenschutzangaben, reale E-Mail-Zustellung, echte Geräte-/Druckerabnahme, fiskalischer Livebetrieb und gewünschte Zahlungsabwicklung. Das Privacy-Manifest bildet den derzeitigen funktionalen Datenumfang ab und muss mit dem endgültigen Datenfluss abgeglichen werden.
+Vor einem Store-Release zusätzlich: dauerhafter Vertriebsweg und vollständige Store-Datenschutzangaben, reale E-Mail-Zustellung, echte Geräte-/Druckerabnahme, fiskalischer Livebetrieb und gewünschte Zahlungsabwicklung. Das Privacy-Manifest bildet den derzeitigen funktionalen Datenumfang ab und muss mit dem endgültigen Datenfluss abgeglichen werden.
 
 ## Technische Primärquellen
 
@@ -91,3 +91,5 @@ Offene Entscheidungen stehen in [FRAGEN-FUER-MORGEN.md](FRAGEN-FUER-MORGEN.md).
 ## TestFlight und Entscheidungen vom 21.09.2026
 
 Beide Apps sollen über TestFlight getestet werden. Kundenbestellungen bleiben Lieferanfragen; Onlinezahlung folgt später. Die Kasse läuft auf dem iPad Pro, der Bondrucker ist ein Epson TM-m30II. SumUp bleibt ein separates EC-Gerät ohne Integration. Veröffentlichungsschritte und Testhinweise: [TESTFLIGHT.md](TESTFLIGHT.md). Kundenbenachrichtigungen: [PUSH-KONZEPT.md](PUSH-KONZEPT.md).
+
+Kontolöschung und Apple-Prüfung: [Prüfbericht vom 21. September 2026](../../docs/APPLE-APP-PRUEFUNG-2026-09-21.md). Kunden-App: Mein Konto → Kontoeinstellungen → Konto löschen; direkte serverseitige Löschung mit Bestätigung, Wiederholung bei Ausfall und Erhalt aufbewahrungspflichtiger Belege.

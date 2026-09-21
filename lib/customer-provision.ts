@@ -21,6 +21,17 @@ export async function provisionCustomer(
 ) {
   if (!user.email || !user.email_confirmed_at) throw new Error("UNAUTHORIZED");
   if (isSystemAccountEmail(user.email)) throw new Error("FORBIDDEN");
+  const { data: deleting, error: deletingError } = await db
+    .from("customer_account_deletions")
+    .select("id")
+    .eq("auth_user_id", user.id)
+    .eq("status", "pending")
+    .maybeSingle();
+  if (deletingError) throw deletingError;
+  if (deleting)
+    throw new Error(
+      "HINWEIS:Die Löschung dieses Kundenkontos wird bereits abgeschlossen.",
+    );
   const readLinked = () =>
     db.from("customers").select("*").eq("user_id", user.id).maybeSingle();
   const { data: linked, error } = await readLinked();

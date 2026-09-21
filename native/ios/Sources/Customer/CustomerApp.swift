@@ -26,6 +26,14 @@ struct CustomerRoot: View {
         NavigationStack {
           WorkspaceView(workspace: account).navigationTitle("Mein Elias")
             .navigationBarTitleDisplayMode(.inline).toolbar {
+              ToolbarItem(placement: .topBarLeading) {
+                Menu {
+                  Button("Kontoübersicht") { account.open("/konto") }
+                  Button("Konto löschen", role: .destructive) { account.open("/konto/loeschen") }
+                  Button("Datenschutz") { account.open("/datenschutz") }
+                } label: { Label("Kontoeinstellungen", systemImage: "gearshape") }
+                .accessibilityIdentifier("account-settings")
+              }
               ToolbarItem(placement: .topBarTrailing) {
                 Button {
                   account.reload()
@@ -39,8 +47,11 @@ struct CustomerRoot: View {
       }
     }
     .task { await shop.refresh() }
+    .onReceive(NotificationCenter.default.publisher(for: Notification.Name("elias.account.deleted"))) { _ in
+      shop.clearCustomerData()
+    }
     .overlay {
-      if scenePhase != .active && tab == 2 {
+      if scenePhase != .active {
         AppConfig.background.ignoresSafeArea().overlay(
           Image("Logo").resizable().scaledToFit().frame(width: 220))
       }

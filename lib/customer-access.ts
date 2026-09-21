@@ -9,10 +9,14 @@ export async function requestCustomerAccess(id: string, actor: string) {
   const db = serviceDb();
   const { data: c, error } = await db
     .from("customers")
-    .select("id,email,user_id,name")
+    .select("id,email,user_id,name,account_deleted_at")
     .eq("id", id)
     .single();
   if (error || !c) throw Error("HINWEIS:Kunde nicht gefunden.");
+  if (c.account_deleted_at)
+    throw Error(
+      "HINWEIS:Dieser Online-Zugang wurde auf Kundenwunsch gelöscht. Eine erneute Registrierung erfolgt durch den Kunden selbst.",
+    );
   if (isSystemAccountEmail(c.email)) throw Error("FORBIDDEN");
   const { data: cfg, error: cfgError } = await db
     .from("settings")
@@ -98,15 +102,13 @@ export async function requestCustomerAccess(id: string, actor: string) {
     p_secret: encrypt(message.body),
   });
   if (queueError) throw queueError;
-  await db
-    .from("audit_log")
-    .insert({
-      table_name: "customers",
-      record_id: id,
-      action: "access_link_requested",
-      actor,
-      details: { communication_id: mid, type },
-    });
+  await db.from("audit_log").insert({
+    table_name: "customers",
+    record_id: id,
+    action: "access_link_requested",
+    actor,
+    details: { communication_id: mid, type },
+  });
   const result = await dispatchAuthMail(mid);
   return {
     ok: true,

@@ -9,7 +9,7 @@ def add(key, body): objects[uid(key)] = body; return uid(key)
 sources = sorted(str(p.relative_to(root)) for p in (root/'Sources').rglob('*.swift'))
 resources = ['Resources/Assets.xcassets','Resources/PrivacyInfo.xcprivacy','Resources/catalog-preview.json']
 refs = []
-for path in sources+resources+['Tests/AppUITests.swift']:
+for path in sources+resources+['Resources/POS/PrivacyInfo.xcprivacy','Tests/AppUITests.swift']:
     typ = 'sourcecode.swift' if path.endswith('.swift') else 'folder.assetcatalog' if path.endswith('.xcassets') else 'text.xml' if path.endswith('.xcprivacy') else 'text.json'
     refs.append(add(path, f'isa = PBXFileReference; lastKnownFileType = {typ}; path = {q(path)}; sourceTree = SOURCE_ROOT;'))
 products=[];targets=[]
@@ -26,7 +26,8 @@ for name,flag,bundle,device in [('EliasCustomer','CUSTOMER_APP','de.getraenkeeli
         src=add(target+'Sources', 'isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = ('+','.join(builds)+'); runOnlyForDeploymentPostprocessing = 0;')
         rbuilds=[]
         if not is_test:
-            for path in resources: rbuilds.append(add(target+path, f'isa = PBXBuildFile; fileRef = {uid(path)};'))
+            app_resources = [p if p != "Resources/PrivacyInfo.xcprivacy" or flag == "CUSTOMER_APP" else "Resources/POS/PrivacyInfo.xcprivacy" for p in resources]
+            for path in app_resources: rbuilds.append(add(target+path, f'isa = PBXBuildFile; fileRef = {uid(path)};'))
         res=add(target+'Resources', 'isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = ('+','.join(rbuilds)+'); runOnlyForDeploymentPostprocessing = 0;')
         frame=add(target+'Frameworks','isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0;')
         cfgs=[]

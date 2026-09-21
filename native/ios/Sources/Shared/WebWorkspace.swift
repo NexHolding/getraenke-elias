@@ -243,6 +243,15 @@ final class WebWorkspace: NSObject, ObservableObject, Identifiable, WKNavigation
       replyHandler(nil, "Ungültige App-Anfrage.")
       return
     }
+    if mode == "customer", url.path == "/konto/loeschen", type == "account.deleted" {
+      downloadedFile = nil
+      try? FileManager.default.removeItem(at: FileManager.default.temporaryDirectory.appendingPathComponent("EliasExports", isDirectory: true))
+      NotificationCenter.default.post(name: Notification.Name("elias.account.deleted"), object: nil)
+      webView.configuration.websiteDataStore.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), modifiedSince: .distantPast) {
+        replyHandler(["ok": true], nil)
+      }
+      return
+    }
     if mode == "customer", NavigationPolicy.isCheckout(url), type == "checkout.load",
       let payload = checkout?(), payload.isValid,
       let data = try? JSONEncoder().encode(payload),

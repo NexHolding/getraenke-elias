@@ -96,6 +96,14 @@ import SwiftUI
       return false
     }
   }
+  func clearCustomerData() {
+    items = []
+    requestID = UUID()
+    pending = false
+    lastOrder = nil
+    error = nil
+    try? FileManager.default.removeItem(at: folder.appendingPathComponent("cart.json"))
+  }
   func refresh() async {
     guard !loading else { return }
     loading = true
