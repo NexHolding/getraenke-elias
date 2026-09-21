@@ -418,6 +418,9 @@ export default function Account() {
                 onClick={async () => {
                   await db().auth.signOut();
                   setAccount(null);
+                  setRegister(false);
+                  setProfile(customerDefaults);
+                  setMessage("");
                 }}
               >
                 Abmelden
