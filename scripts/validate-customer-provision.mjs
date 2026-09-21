@@ -183,6 +183,7 @@ try {
     items: [{ id: "elias-036-v1", quantity: 4 }],
     interval: "weekly",
     next_date: "2099-01-01",
+    delivery_windows: [{ day: 1, from: "10:00", to: "18:00" }],
     active: true,
     notes: "",
   };

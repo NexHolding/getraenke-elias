@@ -1,3 +1,4 @@
+import { loadTourPreview } from "@/lib/tour-preview-server";
 import { z } from "zod";
 import { serviceDb, requireStaff, safeError } from "@/lib/server";
 import { deliveryListPdf } from "@/lib/delivery-list";
@@ -6,6 +7,24 @@ export async function GET(req: Request) {
     await requireStaff("lieferung");
     const url = new URL(req.url),
       date = z.iso.date().parse(url.searchParams.get("date"));
+    if (url.searchParams.get("preview") === "1") {
+      const { preview, settings } = await loadTourPreview(date);
+      const bytes = deliveryListPdf(
+        preview.orders,
+        date,
+        settings,
+        [],
+        true,
+        preview.unplanned.map((o) => `${o.name}: ${o.reason}`),
+      );
+      return new Response(new Uint8Array(bytes), {
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `${url.searchParams.get("download") === "1" ? "attachment" : "inline"}; filename="Elias-Tourvorschau-${date}.pdf"`,
+          "Cache-Control": "private, no-store",
+        },
+      });
+    }
     const db = serviceDb();
     const [orders, settings] = await Promise.all([
       db

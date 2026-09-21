@@ -1,3 +1,4 @@
+import { deliveryWindowsSchema } from "./delivery-windows";
 import { z } from "zod";
 export const deliveryIntervals = {
   weekly: "Wöchentlich",
@@ -30,6 +31,7 @@ export const staffOrderSchema = z.object({
   request_id: z.uuid(),
   customer_id: z.uuid(),
   items,
+  delivery_windows: deliveryWindowsSchema.optional(),
   delivery_date: z.iso.date(),
   interval: deliveryIntervalSchema.nullable(),
   notes: z.string().max(1000).default(""),
@@ -38,6 +40,7 @@ export const staffSubscriptionSchema = z.object({
   id: z.uuid(),
   revision: z.number().int().min(0),
   items,
+  delivery_windows: deliveryWindowsSchema.optional(),
   interval: deliveryIntervalSchema,
   next_date: z.iso.date(),
   active: z.boolean(),

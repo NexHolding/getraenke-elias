@@ -1,4 +1,9 @@
 "use client";
+import SubscriptionWindows from "./subscription-windows";
+import {
+  deliveryWindowsSchema,
+  type DeliveryWindow,
+} from "@/lib/delivery-windows";
 import { earliestNewDelivery } from "@/lib/delivery-date";
 import { useRef, useState } from "react";
 import { Plus, Repeat2, Search, Trash2, X } from "lucide-react";
@@ -44,6 +49,7 @@ export default function StaffOrders({
   const [busy, setBusy] = useState(false);
   const requestId = useRef<string | null>(null);
   const submitting = useRef(false);
+  const [windows, setWindows] = useState<DeliveryWindow[]>([]);
   const customer = op.data.customers.find((c) => c.id === draft.customer_id);
   const chosen = draft.items.map((i) => ({
     line: i,
@@ -82,6 +88,7 @@ export default function StaffOrders({
     requestId.current = crypto.randomUUID();
     setEditing(s ?? null);
     setMessage("");
+    setWindows([]);
     setCustomerQuery("");
     setProductQuery("");
     setDraft(
@@ -89,7 +96,10 @@ export default function StaffOrders({
         ? {
             customer_id: s.customer_id,
             items: s.items.map((i) => ({ ...i })),
-            date: s.next_date,
+            date:
+              s.next_date > earliestNewDelivery()
+                ? s.next_date
+                : earliestNewDelivery(),
             interval: s.interval,
             notes: s.notes || "",
             active: s.active,
@@ -121,6 +131,17 @@ export default function StaffOrders({
   async function save(e: React.FormEvent) {
     e.preventDefault();
     if (submitting.current) return;
+    if (
+      draft.active &&
+      draft.interval &&
+      !customer?.windows?.length &&
+      !deliveryWindowsSchema.safeParse(windows).success
+    ) {
+      setMessage(
+        "Bitte mindestens eine gültige Lieferzeit ergänzen (Endzeit nach Startzeit).",
+      );
+      return;
+    }
     submitting.current = true;
     setBusy(true);
     setMessage("");
@@ -132,6 +153,13 @@ export default function StaffOrders({
               id: editing.id,
               revision: editing.revision,
               items: draft.items,
+              delivery_windows:
+                draft.active &&
+                draft.interval &&
+                !customer?.windows?.length &&
+                windows.length
+                  ? windows
+                  : undefined,
               next_date: draft.date,
               interval: draft.interval,
               notes: draft.notes,
@@ -141,6 +169,13 @@ export default function StaffOrders({
               request_id: requestId.current,
               customer_id: draft.customer_id,
               items: draft.items,
+              delivery_windows:
+                draft.active &&
+                draft.interval &&
+                !customer?.windows?.length &&
+                windows.length
+                  ? windows
+                  : undefined,
               delivery_date: draft.date,
               interval: draft.interval || null,
               notes: draft.notes,
@@ -226,6 +261,16 @@ export default function StaffOrders({
             </button>
           </div>
           <fieldset disabled={busy}>
+            {customer &&
+              draft.active &&
+              draft.interval &&
+              !customer.windows?.length && (
+                <SubscriptionWindows
+                  value={windows}
+                  onChange={setWindows}
+                  date={draft.date}
+                />
+              )}
             <div className="staff-order-fields">
               <div>
                 {!editing && (
@@ -245,9 +290,10 @@ export default function StaffOrders({
                     required
                     disabled={!!editing}
                     value={draft.customer_id}
-                    onChange={(e) =>
-                      setDraft({ ...draft, customer_id: e.target.value })
-                    }
+                    onChange={(e) => {
+                      setWindows([]);
+                      setDraft({ ...draft, customer_id: e.target.value });
+                    }}
                   >
                     <option value="">Kunden auswählen …</option>
                     {customers.map((c) => (

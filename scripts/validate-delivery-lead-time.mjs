@@ -10,7 +10,7 @@ try {
   const files = (await readdir("supabase/migrations"))
     .filter((f) => f.endsWith(".sql"))
     .sort();
-  for (const f of files.filter((f) => !f.includes("0033_")))
+  for (const f of files.filter((f) => f < "202609170033"))
     await db.exec(await readFile("supabase/migrations/" + f, "utf8"));
   const q = async (s, args = []) =>
     JSON.parse(JSON.stringify((await db.query(s, args)).rows));

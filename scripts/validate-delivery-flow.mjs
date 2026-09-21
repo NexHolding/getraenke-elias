@@ -60,6 +60,13 @@ const command = {
   items: [{ id: product.id, quantity: 4 }],
   interval: "biweekly",
   next_date: tomorrow,
+  delivery_windows: [
+    {
+      day: new Date(tomorrow + "T12:00:00Z").getUTCDay() || 7,
+      from: "10:00",
+      to: "18:00",
+    },
+  ],
   active: true,
   notes: "Bitte klingeln.",
 };

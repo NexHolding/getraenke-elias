@@ -1,4 +1,6 @@
 "use client";
+import SubscriptionWindows from "./subscription-windows";
+import { deliveryWindowsSchema } from "@/lib/delivery-windows";
 import { earliestNewDelivery } from "@/lib/delivery-date";
 import { useRef, useState } from "react";
 import { Plus, Repeat2, Search, Trash2, CalendarDays } from "lucide-react";
@@ -59,13 +61,27 @@ export default function SubscriptionManager({
       customer_id: customer.id,
       items: s?.items.map((i) => ({ ...i })) || [],
       interval: (s?.interval || "weekly") as SubscriptionCommand["interval"],
-      next_date: s?.next_date || earliestNewDelivery(),
+      next_date:
+        s?.next_date && s.next_date > earliestNewDelivery()
+          ? s.next_date
+          : earliestNewDelivery(),
+      delivery_windows: customer.windows?.length ? undefined : [],
       notes: s?.notes || "",
       active: s?.active ?? true,
     });
   }
   async function save(value: SubscriptionCommand) {
     if (lock.current) return;
+    if (
+      value.active &&
+      !customer.windows?.length &&
+      !deliveryWindowsSchema.safeParse(value.delivery_windows).success
+    ) {
+      setMessage(
+        "Bitte mindestens eine gültige Lieferzeit ergänzen (Endzeit nach Startzeit).",
+      );
+      return;
+    }
     lock.current = true;
     setBusy(true);
     setMessage("");
@@ -74,7 +90,16 @@ export default function SubscriptionManager({
       const r = await fetch(staff ? "/api/operations" : "/api/customer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "delivery-subscription", value }),
+        body: JSON.stringify({
+          action: "delivery-subscription",
+          value: {
+            ...value,
+            delivery_windows:
+              value.active && value.delivery_windows?.length
+                ? value.delivery_windows
+                : undefined,
+          },
+        }),
       });
       const d = await r.json();
       if (!r.ok) {
@@ -275,6 +300,15 @@ export default function SubscriptionManager({
                 Lieferabo aktiv
               </label>
             </div>
+            {draft.active && !customer.windows?.length && (
+              <SubscriptionWindows
+                value={draft.delivery_windows || []}
+                date={draft.next_date}
+                onChange={(windows) =>
+                  setDraft({ ...draft, delivery_windows: windows })
+                }
+              />
+            )}
             <h3>1. Getränke auswählen</h3>
             <label className="subscription-search">
               <Search size={18} />
@@ -399,10 +433,11 @@ export default function SubscriptionManager({
               </button>
             </div>
             <p className="fineprint">
-              Zum Fälligkeitstag entsteht eine Lieferanfrage zu den dann
-              gültigen Preisen. Elias bestätigt Verfügbarkeit und Liefertermin.
-              Die konkrete Zustellung erfolgt nach Tourenplanung und deinen
-              Lieferzeiten. Änderungen gelten für zukünftige Aufträge.
+              Am Vortag des Liefertermins entsteht eine Lieferanfrage zu den
+              dann gültigen Preisen. Elias bestätigt Verfügbarkeit und
+              Liefertermin. Die konkrete Zustellung erfolgt nach Tourenplanung
+              und deinen Lieferzeiten. Änderungen gelten für zukünftige
+              Aufträge.
             </p>
           </fieldset>
         </form>

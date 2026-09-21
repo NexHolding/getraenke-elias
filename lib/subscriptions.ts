@@ -1,3 +1,4 @@
+import { deliveryWindowsSchema } from "./delivery-windows";
 import { z } from "zod";
 import { deliveryIntervalSchema } from "./staff-orders";
 export const subscriptionCommandSchema = z
@@ -8,6 +9,7 @@ export const subscriptionCommandSchema = z
     customer_id: z.uuid(),
     interval: deliveryIntervalSchema,
     next_date: z.iso.date(),
+    delivery_windows: deliveryWindowsSchema.optional(),
     active: z.boolean(),
     notes: z.string().trim().max(1000).default(""),
     items: z

@@ -1,0 +1,11 @@
+# Tourvorschau und Lieferzeiten für Abos
+
+Die Lieferplanung öffnet sich für morgen. Heute/Morgen sind direkt wählbar, daneben kann ein beliebiges Datum gewählt werden. Für kommende Tage erscheint automatisch eine unverbindliche Tourvorschau mit offenen bestätigten Aufträgen und errechneten Abo-Lieferungen. Sie zeigt Zeitfenster, Mengen, voraussichtliche Beladung und nicht einplanbare Fälle; ein eigenes PDF kennzeichnet den Vorschaucharakter.
+
+Die Vorschau liest ausschließlich Daten. Sie erzeugt weder Aufträge noch Reservierungen, Belege oder E-Mails und verändert keinen Abo-Termin. Bereits vorhandene Aufträge derselben Abo-Wiederholung werden nicht doppelt angezeigt. Pausierte Abos entfallen. Fehlende Lieferzeiten und unklare Artikel werden ausgewiesen. Die tatsächliche Tour bleibt separat sichtbar. Beim ausdrücklichen Planen werden fällige Abos für morgen sofort vorbereitet, ohne den nächsten stündlichen Lauf abwarten zu müssen; weiter entfernte Wiederholungen bleiben Vorschauen bis zum Vortag.
+
+Neue und wieder aktivierte Abos starten frühestens morgen (Europe/Berlin). Das gilt im Kundenportal, in der Kunden-App und in beiden Mitarbeiterformularen. Beim Bearbeiten eines alten fälligen Termins wird frühestens morgen vorgeschlagen.
+
+Fehlen Lieferzeiten im Kundenprofil, fragt das Abo-Formular Wochentag, Beginn und Ende ab. Mindestens ein gültiges Zeitfenster ist erforderlich, auch bei hinterlegter Abstellgenehmigung. Migration 034 speichert fehlende Zeiten und das Abo in derselben Transaktion. Vorhandene Profilzeiten werden durch ältere Formulare nicht überschrieben. Ungeplante/unbegonnene Kundenaufträge ohne Zeitfenster erhalten die ergänzten Angaben; eventuell alte ungestartete Routenzuweisungen werden dabei zur Neuplanung freigegeben. Abgeschlossene oder fahrende Lieferungen bleiben unverändert. Pausieren funktioniert ohne neue Zeitangaben.
+
+Prüfung: 70 Unit-Tests, vollständige isolierte Datenbank-Testreihe, zusätzliche SQL-Prüfung aller drei Abo-Schreibwege, Berechtigungen, Wiederholung, Rückrollen bei Fehlern und Erhalt bestehender Profilzeiten. Browserprüfung auf iPad/Handy mit echter Abo-Zeitabfrage, Datumauswahl, Vorschau und gerendertem PDF. Keine echten Testbestellungen oder Kunden-E-Mails.

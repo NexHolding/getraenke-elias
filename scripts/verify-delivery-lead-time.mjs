@@ -1,9 +1,11 @@
 import { build } from "esbuild";
 import { chromium } from "@playwright/test";
 import { createServer } from "node:http";
-import { readFile, mkdir } from "node:fs/promises";
+import { readFile, mkdir, writeFile } from "node:fs/promises";
 import assert from "node:assert/strict";
 import { earliestNewDelivery, berlinDate } from "../lib/delivery-date.ts";
+import { buildTourPreview } from "../lib/subscription-preview.ts";
+import { deliveryListPdf } from "../lib/delivery-list.ts";
 import { planDay } from "../lib/delivery-plan.ts";
 const tomorrow = earliestNewDelivery(),
   today = berlinDate();
@@ -19,6 +21,15 @@ const customer = {
   city: "Heilbronn",
 };
 const products = JSON.parse(await readFile("data/catalog.json", "utf8"));
+const commands = [];
+const sub = {
+  id: "preview",
+  customer_id: customer.id,
+  active: true,
+  next_date: tomorrow,
+  interval: "weekly",
+  items: [{ id: products[0].id, quantity: 4 }],
+};
 const orders = [
   {
     id: "a",
@@ -39,7 +50,7 @@ const cfg = {
 };
 const bundle = await build({
   stdin: {
-    contents: `import React from 'react';import {createRoot} from 'react-dom/client';import {DeliveryManager} from './components/operations';import StaffOrders from './components/staff-orders';import SubscriptionManager from './components/subscription-manager';const data=${JSON.stringify({ customer, products, orders })};function App(){const[orders,setOrders]=React.useState(data.orders);const reload=async()=>setOrders(await(await fetch('/orders')).json());return location.pathname==='/staff'?<StaffOrders products={data.products} reload={reload}/>:location.pathname==='/subscription'?<SubscriptionManager customer={data.customer} subscriptions={[]} products={data.products} onChanged={reload}/>:<DeliveryManager orders={orders} reload={reload}/>};createRoot(document.getElementById('root')).render(<App/>);`,
+    contents: `import React from 'react';import {createRoot} from 'react-dom/client';import PdfPreview from './components/pdf-preview';import {DeliveryManager} from './components/operations';import StaffOrders from './components/staff-orders';import SubscriptionManager from './components/subscription-manager';const data=${JSON.stringify({ customer, products, orders })};function App(){const[orders,setOrders]=React.useState(data.orders);const reload=async()=>setOrders(await(await fetch('/orders')).json());return location.pathname==='/staff'?<StaffOrders products={data.products} reload={reload}/>:location.pathname==='/subscription'?<SubscriptionManager customer={data.customer} subscriptions={[]} products={data.products} onChanged={reload}/>:<DeliveryManager orders={orders} reload={reload}/>};createRoot(document.getElementById('root')).render(<><App/><PdfPreview/></>);`,
     resolveDir: process.cwd(),
     loader: "tsx",
   },
@@ -75,6 +86,52 @@ const css = (await readFile("app/globals.css", "utf8")).replace(
 );
 const server = createServer(async (req, res) => {
   res.setHeader("Content-Type", "application/json");
+  if (req.url.startsWith("/vendor/") && !req.url.includes("..")) {
+    res.setHeader(
+      "Content-Type",
+      req.url.endsWith(".mjs") ? "text/javascript" : "application/octet-stream",
+    );
+    return res.end(await readFile("public" + req.url));
+  }
+  if (req.url === "/api/customer" && req.method === "POST") {
+    let body = "";
+    for await (const chunk of req) body += chunk;
+    const command = JSON.parse(body);
+    commands.push(command);
+    customer.windows = command.value.delivery_windows;
+    return res.end(JSON.stringify({ id: command.value.id }));
+  }
+  if (req.url.startsWith("/api/delivery-preview")) {
+    const date = new URL(req.url, "http://localhost").searchParams.get("date");
+    return res.end(
+      JSON.stringify(
+        buildTourPreview(orders, [sub], [customer], products, date, cfg),
+      ),
+    );
+  }
+  if (req.url.startsWith("/api/delivery-list")) {
+    const date = new URL(req.url, "http://localhost").searchParams.get("date");
+    const preview = buildTourPreview(
+      orders,
+      [sub],
+      [customer],
+      products,
+      date,
+      cfg,
+    );
+    res.setHeader("Content-Type", "application/pdf");
+    const pdf = deliveryListPdf(
+      preview.orders,
+      date,
+      cfg,
+      [],
+      true,
+      preview.unplanned.map((o) => o.name + ": " + o.reason),
+    );
+    await mkdir("output/delivery-lead-time", { recursive: true });
+    await writeFile("output/delivery-lead-time/tour-preview.pdf", pdf);
+    return res.end(pdf);
+  }
   if (req.url === "/api/operations" && req.method === "POST") {
     let body = "";
     for await (const chunk of req) body += chunk;
@@ -134,13 +191,43 @@ try {
   const start = page.getByLabel("Starttermin", { exact: true });
   assert.equal(await start.inputValue(), tomorrow);
   assert.equal(await start.getAttribute("min"), tomorrow);
+  await page.getByLabel("Lieferzeiten für das Abo").waitFor();
+  await page
+    .getByRole("button", { name: "Lieferzeit hinzufügen", exact: true })
+    .click();
+  await page.getByLabel("Lieferzeit von 1", { exact: true }).fill("12:00");
+  await page.getByLabel("Lieferzeit bis 1", { exact: true }).fill("15:00");
+  await page.locator(".subscription-results button").first().click();
+  await page
+    .locator(".subscription-editor input[type=number]")
+    .first()
+    .fill("4");
+  await page
+    .getByRole("button", { name: "Lieferabo speichern", exact: true })
+    .click();
+  await page
+    .getByRole("status")
+    .filter({ hasText: "Lieferabo gespeichert" })
+    .waitFor();
+  assert.equal(commands.length, 1);
+  assert.equal(commands[0].value.next_date, tomorrow);
+  assert.equal(customer.windows[0].from, "12:00");
   await page.goto("http://127.0.0.1:3034/plan");
+  assert.equal(
+    await page.getByLabel("Liefertag auswählen", { exact: true }).inputValue(),
+    tomorrow,
+  );
+  await page
+    .getByLabel("Tourvorschau", { exact: true })
+    .getByText("Abo-Vorschau · noch kein Auftrag")
+    .waitFor();
+  await page.getByRole("button", { name: "Heute", exact: true }).click();
   await page.getByRole("button", { name: "Tagestour planen" }).click();
   await page
     .getByRole("status")
     .filter({ hasText: "0 Stopps geplant" })
     .waitFor();
-  await page.getByLabel("Liefertag", { exact: true }).fill(tomorrow);
+  await page.getByLabel("Liefertag auswählen", { exact: true }).fill(tomorrow);
   await page.getByRole("button", { name: "Tagestour planen" }).click();
   await page
     .getByRole("status")
@@ -149,10 +236,23 @@ try {
   await page.getByText(/10:20/).first().waitFor();
   await mkdir("output/delivery-lead-time", { recursive: true });
   await page.screenshot({
-    path: "output/delivery-lead-time/ipad.png",
+    path: "output/delivery-lead-time/ipad-abo.png",
     fullPage: true,
   });
-  await page.getByLabel("Liefertag", { exact: true }).fill("2020-01-01");
+  await page
+    .getByRole("button", { name: "Vorschau als PDF", exact: true })
+    .click();
+  await page.locator(".pdf-preview canvas").first().waitFor();
+  await page
+    .locator(".pdf-preview canvas")
+    .first()
+    .screenshot({ path: "output/delivery-lead-time/tour-preview-pdf.png" });
+  await page
+    .getByRole("button", { name: "PDF-Dokument schließen", exact: true })
+    .click();
+  await page
+    .getByLabel("Liefertag auswählen", { exact: true })
+    .fill("2020-01-01");
   assert.equal(
     await page.getByRole("button", { name: "Tagestour planen" }).isDisabled(),
     true,
@@ -170,9 +270,19 @@ try {
     ),
     false,
   );
+  await page
+    .getByRole("button", { name: "Lieferzeit hinzufügen", exact: true })
+    .click();
+  assert.equal(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth > innerWidth,
+    ),
+    false,
+    "time fields fit phone viewport",
+  );
   assert.deepEqual(errors, []);
   console.log(
-    "PASS real React forms: tomorrow default/minimum for staff and customer; same-day date invalid; real planner today 0 and tomorrow 1 stop; past-day plan disabled; iPad and phone rendering without JS errors. No production writes.",
+    "PASS real React forms: missing delivery windows collected and submitted with subscription; tomorrow default/minimum for staff and customer; subscription preview and inline PDF; same-day date invalid; real planner today 0 and tomorrow 1 stop; past-day plan disabled; iPad and phone rendering without JS errors. No production writes.",
   );
 } finally {
   await browser.close();

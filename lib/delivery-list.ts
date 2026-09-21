@@ -10,13 +10,15 @@ export function deliveryListPdf(
   date: string,
   cfg: Settings,
   drafts: Delivery[] = [],
+  preview = false,
+  unplanned: string[] = [],
 ) {
   const doc = new jsPDF({ orientation: "landscape" });
   const header = () => {
     doc.setTextColor(42, 54, 35);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(21);
-    doc.text("Lieferliste", 14, 23);
+    doc.text(preview ? "Tourvorschau · unverbindlich" : "Lieferliste", 14, 23);
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.text(
@@ -59,7 +61,7 @@ export function deliveryListPdf(
           0,
         );
     const method = draft?.payment_method || order.approved_payment_method;
-    const customer = `${order.customer_name}\n${order.address}\n${order.phone}\nEL-${String(order.number).padStart(5, "0")}`;
+    const customer = `${order.customer_name}\n${order.address || ""}\n${order.phone || ""}\n${"preview_only" in order && order.preview_only ? "Abo-Vorschau · noch kein Auftrag" : `EL-${String(order.number).padStart(5, "0")}`}`;
     return [
       String(index + 1),
       `${order.eta_start || "–"}–${order.eta_end || "–"}`,
@@ -104,12 +106,24 @@ export function deliveryListPdf(
     rowPageBreak: "avoid",
     didDrawPage: () => header(),
   });
+  if (preview && unplanned.length) {
+    doc.addPage();
+    autoTable(doc, {
+      startY: 42,
+      margin: { top: 42, bottom: 17, left: 14, right: 14 },
+      head: [["Noch nicht einplanbar"]],
+      body: unplanned.map((reason) => [reason]),
+      styles: { fontSize: 9, cellPadding: 3 },
+      headStyles: { fillColor: [235, 241, 219], textColor: [42, 54, 35] },
+      didDrawPage: () => header(),
+    });
+  }
   for (let page = 1; page <= doc.getNumberOfPages(); page++) {
     doc.setPage(page);
     doc.setFontSize(8);
     doc.setTextColor(95, 105, 84);
     doc.text(
-      `Planungsstand · Liefermengen prüfen · Kundenunterschrift erforderlich · Seite ${page}/${doc.getNumberOfPages()}`,
+      `${preview ? "Vorschau ohne Reservierung · Abo-Aufträge werden am Vortag vorbereitet" : "Planungsstand · Liefermengen prüfen · Kundenunterschrift erforderlich"} · Seite ${page}/${doc.getNumberOfPages()}`,
       14,
       202,
     );

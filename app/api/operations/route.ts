@@ -1,3 +1,4 @@
+import { processOrderAutomation } from "@/lib/order-automation";
 import { berlinDate } from "@/lib/delivery-date";
 import { invoiceDetails } from "@/lib/invoice-details";
 import { requestCustomerAccess } from "@/lib/customer-access";
@@ -333,6 +334,12 @@ export async function POST(req: Request) {
         throw new Error(
           "HINWEIS:Lieferplanung für vergangene Tage ist nicht möglich.",
         );
+      // Materialize due subscriptions immediately; no need to wait for the hourly cron.
+      const { error: subscriptionsError } = await db.rpc(
+        "generate_subscription_orders",
+      );
+      if (subscriptionsError) throw subscriptionsError;
+      await processOrderAutomation();
       const { data: cfg } = await db
         .from("settings")
         .select("value")

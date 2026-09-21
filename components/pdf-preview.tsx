@@ -16,7 +16,7 @@ export default function PdfPreview() {
         /^\/api\/cash-book(?:\?period=\d{4}-\d{2}(?:-\d{2})?&format=pdf|\/document\?id=[a-f0-9-]+)$/.test(
           value,
         ) ||
-        /^\/api\/(delivery-list\?date=\d{4}-\d{2}-\d{2}|receipts\/[a-f0-9-]+\?format=pdf|documents\/(invoice|delivery)\/[a-f0-9-]+|communications\/attachments\/[a-f0-9-]+(?:\?customer=[a-f0-9-]+)?)$/.test(
+        /^\/api\/(delivery-list\?date=\d{4}-\d{2}-\d{2}(?:&preview=1)?|receipts\/[a-f0-9-]+\?format=pdf|documents\/(invoice|delivery)\/[a-f0-9-]+|communications\/attachments\/[a-f0-9-]+(?:\?customer=[a-f0-9-]+)?)$/.test(
           value,
         )
       ) {
@@ -141,7 +141,11 @@ export default function PdfPreview() {
       <section className="pdf-preview">
         <header>
           <h2>
-            {url.startsWith("/api/delivery-list") ? "Lieferliste" : title}
+            {url.startsWith("/api/delivery-list")
+              ? url.includes("preview=1")
+                ? "Tourvorschau"
+                : "Lieferliste"
+              : title}
           </h2>
           {(url.startsWith("/api/delivery-list") ||
             url.startsWith("/api/cash-book")) &&

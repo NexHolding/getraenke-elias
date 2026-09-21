@@ -1,5 +1,9 @@
 "use client";
-import { earliestOrderDelivery } from "@/lib/delivery-date";
+import DeliveryTourPreview from "./delivery-tour-preview";
+import {
+  earliestNewDelivery,
+  earliestOrderDelivery,
+} from "@/lib/delivery-date";
 import DeliveryDepositDialog from "./delivery-deposit-dialog";
 import {
   deliveryAmount,
@@ -718,11 +722,7 @@ export function DeliveryManager({
   reload: () => Promise<void>;
 }) {
   const op = useOperations();
-  const [date, setDate] = useState(
-    new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(
-      new Date(),
-    ),
-  );
+  const [date, setDate] = useState(earliestNewDelivery);
   const [selected, setSelected] = useState<string | null>(null);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [signature, setSignature] = useState<string | null>(null);
@@ -901,12 +901,33 @@ export function DeliveryManager({
   return (
     <>
       <div className="table-toolbar">
+        <button
+          className="button secondary"
+          onClick={() => {
+            setPlanMessage("");
+            setDate(berlinDate(new Date().toISOString()));
+          }}
+        >
+          Heute
+        </button>
+        <button
+          className="button secondary"
+          onClick={() => {
+            setPlanMessage("");
+            setDate(earliestNewDelivery());
+          }}
+        >
+          Morgen
+        </button>
         <label>
-          Liefertag{" "}
+          Liefertag auswählen{" "}
           <input
             type="date"
             value={date}
-            onChange={(e) => setDate(e.target.value)}
+            onChange={(e) => {
+              setPlanMessage("");
+              setDate(e.target.value);
+            }}
           />
         </label>
         <button
@@ -970,6 +991,9 @@ export function DeliveryManager({
         Kundenzeitfenster werden berücksichtigt; heutige Touren beginnen
         frühestens ab der aktuellen Uhrzeit.
       </p>
+      {date && date > berlinDate(new Date().toISOString()) && (
+        <DeliveryTourPreview date={date} orders={orders} />
+      )}
       {(op.message || planMessage) && (
         <p className="notice" role="status">
           {planMessage || op.message}
