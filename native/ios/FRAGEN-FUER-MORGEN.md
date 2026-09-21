@@ -2,7 +2,7 @@
 
 Aktualisiert am 21.09.2026. Festgelegt: TestFlight für beide Apps, iPad Pro für die Kasse, Epson TM-m30II, Kundenbestellung als Lieferanfrage, Zahlung später und separates SumUp-EC-Gerät ohne Anbindung. Keine Passwörter oder geheimen Schlüssel im Chat senden.
 
-1. **Apple-Veröffentlichung:** Apple-Team Chris Neve (`LCYUVY9ZZ4`) ist zugeordnet; beide Apps sind angelegt. Kunden-App öffentlich im App Store; Kassen-App nur intern/gezielt verteilt oder ebenfalls öffentlich? TestFlight für beide Apps ist beauftragt; die Xcode-Anmeldung ist für die Signierung noch zu erneuern.
+1. **Apple-Veröffentlichung:** Apple-Team Chris Neve (`LCYUVY9ZZ4`) ist zugeordnet; beide Apps sind angelegt. Kunden-App öffentlich im App Store; Kassen-App nur intern/gezielt verteilt oder ebenfalls öffentlich? TestFlight-Build 0.1.0 (1) ist für beide Apps hochgeladen; der bestätigte Accountinhaber ist als interner Tester hinterlegt.
 2. **App-Namen und Kennungen:** Angelegt sind „Getränke Elias“ für Kunden und „Elias Kasse“ für das iPad. Registrierte Bundle-IDs: `de.getraenkeelias.kunden` und `de.getraenkeelias.kasse`.
 3. **Geräte und Drucker:** Festgelegt: iPad Pro und Epson TM-m30II. Verbunden erkannt: iPad Pro 12,9 Zoll (4. Generation), iPadOS 26.7. Noch offen: Papierbreite und Anschlussvariante des Druckers. Vorgabe der Basis: iOS/iPadOS 17+, HTTPS-Netzwerkdruck.
 4. **Kundenzahlung:** Entschieden: Lieferanfrage mit Bestätigung. Onlinezahlung kommt später hinzu; dafür ist jetzt keine Anbieterentscheidung nötig.

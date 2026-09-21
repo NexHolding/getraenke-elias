@@ -1,6 +1,6 @@
 # Elias iOS · erste App-Basis
 
-Zwei getrennte SwiftUI-Anwendungen, gemeinsamer Swift-/WebKit-Unterbau, vorhandenes Elias-Backend. Entwicklungsstand 0.1.0 vom 17.09.2026. Kein App-Store-/TestFlight-Release.
+Zwei getrennte SwiftUI-Anwendungen, gemeinsamer Swift-/WebKit-Unterbau, vorhandenes Elias-Backend. Entwicklungsstand 0.1.0 (Build 1), am 21.09.2026 zu TestFlight hochgeladen. Interne Abnahme; keine öffentliche App-Store-Veröffentlichung.
 
 ## In Xcode öffnen
 

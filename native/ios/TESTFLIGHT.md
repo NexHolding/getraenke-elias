@@ -1,13 +1,13 @@
 # TestFlight · beide Elias-Apps
 
-Stand 21.09.2026: Beide App-Datensätze und Bundle-IDs sind im Apple-Team **Chris Neve (`LCYUVY9ZZ4`)** angelegt. TestFlight-Beschreibungen, Feedbackadresse und Datenschutz-URL sind hinterlegt. Xcode 26.3 und ein Entwicklungszertifikat sind vorhanden; beide unsignierten Gerätearchive bauen erfolgreich. **Noch kein Build hochgeladen:** Der Signierversuch wird durch die abgelaufene Apple-Anmeldung in Xcode blockiert. Die erneute Browser-Anmeldung allein erneuert Xcodes Sitzung nicht.
+Stand 21.09.2026: Beide Apps wurden mit Xcode 26.3 signiert und erfolgreich zu App Store Connect hochgeladen: **Version 0.1.0 (Build 1)**. Apple-Team: **Chris Neve (`LCYUVY9ZZ4`)**. Die abgelaufene Xcode-Anmeldung wurde erneuert. Beide Upload-Kommandos endeten mit `EXPORT SUCCEEDED`; Apple hat beide Builds verarbeitet. TestFlight-Beschreibungen und Datenschutz-URL sind hinterlegt.
 
 | App | Apple-ID | App Store Connect |
 |---|---|---|
 | Getränke Elias | 6814398025 | [Kunden-App](https://appstoreconnect.apple.com/apps/6814398025/distribution) |
 | Elias Kasse | 6814398531 | [Kassen-App](https://appstoreconnect.apple.com/apps/6814398531/distribution) |
 
-Geprüfter Benutzerkreis bei Anlage: ausschließlich der bestehende Accountinhaber/Administrator Chris Neve; keine weiteren Apple-Benutzer angelegt oder eingeladen.
+Geprüfter Benutzerkreis: ausschließlich der bestehende Accountinhaber/Administrator Chris Neve. Dieser wurde auf ausdrücklichen Wunsch als interner Tester beider Apps hinzugefügt; keine weiteren Apple-Benutzer angelegt. Je App ist die Gruppe „Elias interne Abnahme“ mit manueller Build-Zuweisung eingerichtet, automatische Verteilung ist ausgeschaltet.
 
 Verbunden erkannt: iPhone 17 Pro Max und iPad Pro 12,9 Zoll (4. Generation). Auf dem iPad ist der Entwicklermodus für direkte Xcode-Tests noch deaktiviert. Es wurde noch keine Elias-App auf diesen Geräten installiert.
 
@@ -20,18 +20,18 @@ Verbunden erkannt: iPhone 17 Pro Max und iPad Pro 12,9 Zoll (4. Generation). Auf
 
 ## Veröffentlichung
 
-1. **Offen:** In Xcode → Settings → Accounts den vorhandenen Apple-Account erneut anmelden. Team `LCYUVY9ZZ4` ist im Projekt zugeordnet; beide Bundle-IDs sind registriert.
+1. **Erledigt:** Xcode-Anmeldung erneuert. Team `LCYUVY9ZZ4` ist im Projekt zugeordnet; beide Bundle-IDs sind registriert.
 2. **Erledigt:** Zwei iOS-App-Datensätze mit obigen Bundle-IDs, Deutsch als Hauptsprache und SKUs `elias-kunden-ios`, `elias-kasse-ios` sind angelegt.
-3. Nächste unbenutzte Buildnummer in App Store Connect prüfen. Der erste vorgesehene Build ist `0.1.0 (1)`; bei bereits erfolgtem Upload erhöhen.
+3. **Build 1 ist bereits hochgeladen.** Für den nächsten Upload eine neue Buildnummer (mindestens 2) verwenden; zuvor App Store Connect prüfen.
 4. Signieren und hochladen. Das Script verwendet das Xcode-Konto und dessen automatische Signierung; es enthält keine Zugangsdaten und speichert Ausgaben unter dem ignorierten `output/ios/`.
 
 ```sh
 # Vorprüfung ohne Team, ohne Upload:
-python3 native/ios/Scripts/testflight.py --unsigned --build-number 1
+python3 native/ios/Scripts/testflight.py --unsigned --build-number 2
 # Signierte Archive, noch ohne Upload (zugeordnetes Team):
-python3 native/ios/Scripts/testflight.py --team-id LCYUVY9ZZ4 --build-number 1
+python3 native/ios/Scripts/testflight.py --team-id LCYUVY9ZZ4 --build-number 2
 # Signieren und beide Apps zu App Store Connect hochladen:
-python3 native/ios/Scripts/testflight.py --team-id LCYUVY9ZZ4 --build-number 1 --upload
+python3 native/ios/Scripts/testflight.py --team-id LCYUVY9ZZ4 --build-number 2 --upload
 ```
 
 Mit `--app customer` oder `--app pos` lässt sich nach einem Teilerfolg nur die noch fehlende App hochladen. Bei unklarem Upload-Ergebnis zuerst App Store Connect prüfen; keinen blinden Wiederholungsupload auslösen.
@@ -46,3 +46,12 @@ Mit `--app customer` oder `--app pos` lässt sich nach einem Teilerfolg nur die 
 **Kassen-App:** Anmeldung und Mitarbeiterrechte, Suche/Barcodescanner, Inventur und Dokumentexport auf dem iPad Pro prüfen. Epson TM-m30II im lokalen Netzwerk einrichten und ausschließlich den vorgesehenen Testbon verwenden. Verkäufe und Inventurübernahmen verändern echte Betriebsdaten; nicht als unverbindliche Testbuchungen verwenden. TSE-/Kassenfreigabe und erfolgreicher Hardwaretest bleiben Voraussetzungen für den Livebetrieb. SumUp-Zahlung erfolgt separat am Terminal.
 
 Quellen: [Apple: Builds hochladen](https://developer.apple.com/help/app-store-connect/manage-builds/upload-builds), [Apple: TestFlight](https://developer.apple.com/help/app-store-connect/test-a-beta-version/testflight-overview/), [Epson: TM-m30II-Handbücher](https://support.epson.net/publist/bsmanual.php?lang=EN&model=TM-m30II).
+
+## Uploadnachweis
+
+Signierte Archive und Uploadprotokolle liegen lokal im Desktop-Projekt unter `output/ios/testflight-signed-20260921/`; sie sind nicht im Repository. Quellstand des ersten Builds: `1e3051f`.
+
+- Kunden-Build: `c0c7e478-ec1e-4964-8aeb-04112d7a69a5`
+- Kassen-Build: `9dcd035a-07da-48d4-93e9-bafa61336729`
+
+Die Installation erfolgt über die Einladung in Apples TestFlight-App. USB-Verbindung und direkter Xcode-Start sind dafür nicht Bestandteil dieses Veröffentlichungswegs. Eine öffentliche App-Store-Veröffentlichung oder externe Testgruppe wurde nicht eingerichtet.
