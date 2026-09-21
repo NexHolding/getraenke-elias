@@ -7,7 +7,7 @@ for(const [id,role,permissions] of [[owner,'owner',[]],[staff,'staff',['kasse','
 await q("insert into products(id,sku,name,category,kind,pack_count,volume_ml,price_cents,deposit_cents,stock,return_eligible) values('toy','TOY','Spielzeug','Non-Food','nonfood',1,0,101,0,100,true)");
 const sale=async(lines)=> (await q('select save_sale($1,$2,$3,$4) s',[crypto.randomUUID(),JSON.stringify(lines),'cash',owner]))[0].s;
 const s=await sale([{id:'toy',quantity:4}]);assert.equal(s.items[0].return_eligible,true);
-const command={id:crypto.randomUUID(),original_sale_id:s.id,kind:'return',reason:'Freiwillige Rückgabe',note:'Originalbon geprüft, vollständig und unbenutzt.',payment:'cash',confirmed:true,lines:[{index:0,quantity:1,restock:true}]};
+const command={id:crypto.randomUUID(),original_sale_id:s.id,kind:'return',reason:'Freiwillige Rückgabe',payment:'cash',confirmed:true,lines:[{index:0,quantity:1,restock:true}]};
 const reverse=async(v,actor=owner)=>(await q('select reverse_sale($1,$2) s',[JSON.stringify(v),actor]))[0].s;
 await assert.rejects(()=>reverse(command,denied),/FORBIDDEN/);
 await assert.rejects(()=>reverse({...command,confirmed:false}),/bestätigen/);
@@ -15,7 +15,9 @@ await q("update products set return_eligible=false,tax_rate=7,price_cents=200 wh
 const first=await reverse(command,staff);assert.equal(first.total_cents,-101);assert.equal(first.items[0].tax_rate,19);assert.equal(first.original_number,s.number);assert.equal((await q("select stock from products where id='toy'"))[0].stock,97);
 assert.deepEqual(await reverse(command,staff),first);
 await assert.rejects(()=>reverse({...command,id:crypto.randomUUID(),lines:[{index:0,quantity:4,restock:true}]}),/bereits/);
-const second=await reverse({...command,id:crypto.randomUUID(),lines:[{index:0,quantity:3,restock:false}]});
+const second=await reverse({...command,id:crypto.randomUUID(),kind:'cancellation',reason:'Beschädigung / Bruch',note:'',lines:[{index:0,quantity:3,restock:true}]});
+assert.equal(first.reversal_note,'');assert.equal(first.items[0].restock,true);assert.equal(second.items[0].restock,false);
+assert.deepEqual(await reverse({...command,id:second.id,kind:'cancellation',reason:'Beschädigung / Bruch'}),second);
 assert.equal(first.total_cents+second.total_cents,-s.total_cents);assert.equal(first.net_cents+second.net_cents,-s.net_cents);assert.equal((await q("select stock from products where id='toy'"))[0].stock,97);
 assert.deepEqual((await q('select to_jsonb(sales) s from sales where id=$1',[s.id]))[0].s,s);
 await assert.rejects(()=>reverse({...command,id:crypto.randomUUID(),original_sale_id:first.id}),/Gegenbelege/);
@@ -23,6 +25,21 @@ await q("update products set return_eligible=true,tax_rate=19,price_cents=1 wher
 const rounded=await sale([{id:'toy',quantity:4}]);const parts=[];
 for(let i=0;i<4;i++)parts.push(await reverse({...command,id:crypto.randomUUID(),original_sale_id:rounded.id,lines:[{index:0,quantity:1,restock:false}]}));
 assert.equal(parts.reduce((n,s)=>n+s.net_cents,0),-rounded.net_cents);assert.equal(parts[3].items[0].net_cents,0);
+// Stock policy is authoritative in the database, including legacy clients with conflicting flags.
+for(const reason of ['Kunde hat nicht bezahlt','Falscher Artikel / Eingabefehler','Doppelt gebucht','Beschädigung / Bruch','Abgelaufene oder mangelhafte Ware','Gesetzlicher Widerruf (geprüft)','Sonstige Buchungskorrektur']) {
+ const original=await sale([{id:'toy',quantity:1}]);
+ const before=(await q("select stock from products where id='toy'"))[0].stock;
+ const broken=reason==='Beschädigung / Bruch';
+ const reversal=await reverse({...command,id:crypto.randomUUID(),original_sale_id:original.id,kind:'cancellation',reason,note:' ',lines:[{index:0,quantity:1,restock:broken}]});
+ assert.equal(reversal.items[0].restock,!broken);assert.equal(reversal.reversal_note,'');
+ assert.equal((await q("select stock from products where id='toy'"))[0].stock,before+(broken?0:1));
+ const movements=await q("select delta_units from stock_movements where reason like $1",['setup:reversal:'+reversal.id+':%']);
+ assert.equal(movements.length,broken?0:1);if(!broken)assert.equal(movements[0].delta_units,1);
+ await reverse({...command,id:reversal.id,original_sale_id:original.id,kind:'cancellation',reason});
+ assert.equal((await q("select stock from products where id='toy'"))[0].stock,before+(broken?0:1));
+}
+const noFlagSale=await sale([{id:'toy',quantity:1}]);
+const noFlag=await reverse({...command,id:crypto.randomUUID(),original_sale_id:noFlagSale.id,lines:[{index:0,quantity:1}]});assert.equal(noFlag.items[0].restock,true);
 const oldid=crypto.randomUUID();await q("insert into sales(id,created_at,items,total_cents,net_cents,tax_cents,deposit_cents,payment,actor) values($1,now()-interval '15 days',$2,$3,$4,$5,0,'cash',$6)",[oldid,JSON.stringify(rounded.items),rounded.total_cents,rounded.net_cents,rounded.tax_cents,owner]);
 await assert.rejects(()=>reverse({...command,id:crypto.randomUUID(),original_sale_id:oldid}),/abgelaufen/);
 const technical=await reverse({...command,id:crypto.randomUUID(),original_sale_id:oldid,kind:'cancellation',reason:'Abgelaufene oder mangelhafte Ware'});assert.equal(technical.record_type,'cancellation');

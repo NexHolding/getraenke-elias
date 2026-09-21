@@ -4183,7 +4183,7 @@ textarea {
 .reversal-line { display:grid; grid-template-columns:1fr 110px 210px; gap:14px; align-items:center; padding:15px; background:#f5f7ef; border-radius:12px; }
 .receipt-manager .checkline { display:flex; align-items:center; gap:10px; font-size:13px; }
 .reversal-amount { font-size:22px; background:#edf4dc; padding:20px; border-radius:12px; }
-@media(max-width:700px) { .receipt-search-row { flex-direction:column; }.reversal-line { grid-template-columns:1fr 90px; }.reversal-line>.checkline { grid-column:1/-1; }.receipt-manager-content { padding:16px; } }
+@media(max-width:700px) { .receipt-search-row { flex-direction:column; }.reversal-line { grid-template-columns:1fr 90px; }.reversal-line>.reversal-stock-status { grid-column:1/-1; }.receipt-manager-content { padding:16px; } }
 .map-card { position:relative; }.map-revoke { position:absolute; top:10px; right:10px; z-index:1; padding:10px; border:1px solid #b4c49b; border-radius:8px; background:white; color:#344a1e; font-size:12px; cursor:pointer; }
 
 /* Customer portal and shared delivery subscription editor */

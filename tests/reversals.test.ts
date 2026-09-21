@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import { totals } from '../lib/money';import{buildFinanceReport,financeCsv}from'../lib/finance-report';import{voluntaryReturnOpen,returnDeadline,reversalSchema}from'../lib/reversals';import{businessAddressFields,businessAddress}from'../lib/business-address';import type{Sale}from'../lib/types';import{can}from'../lib/permissions';
+import { totals } from '../lib/money';import{buildFinanceReport,financeCsv}from'../lib/finance-report';import{voluntaryReturnOpen,returnDeadline,reversalSchema,reversalReasons,reversalRestocks}from'../lib/reversals';import{businessAddressFields,businessAddress}from'../lib/business-address';import type{Sale}from'../lib/types';import{can}from'../lib/permissions';
 const line={id:'toy',name:'Spielzeug',quantity:1,price_cents:1190,deposit_cents:0,tax_rate:19,deposit_tax_rate:19,return_eligible:true};
 const s:Sale={id:'1',number:1,created_at:'2026-09-28T11:00:00Z',items:[line],total_cents:1190,net_cents:1000,tax_cents:190,deposit_cents:0,payment:'cash',test_mode:true};
 test('September purchase returned in October changes October cash and tax only',()=>{
@@ -18,4 +18,13 @@ test('Reversal permission is opt-in for staff and never bypasses finance read-on
 });
 test('Business address migrates the legacy line into four lossless fields',()=>{
  const fields=businessAddressFields({business_address:'Wartbergstraße 3 · 74076 Heilbronn'});assert.deepEqual(fields,{business_street:'Wartbergstraße',business_house_number:'3',business_postal_code:'74076',business_city:'Heilbronn'});assert.equal(businessAddress(fields),'Wartbergstraße 3 · 74076 Heilbronn');
+});
+
+test('Reversal explanations are optional; stock is automatic except for breakage',()=>{
+ const command={id:crypto.randomUUID(),original_sale_id:crypto.randomUUID(),kind:'cancellation',reason:'Kunde hat nicht bezahlt',payment:'cash',confirmed:true,lines:[{index:0,quantity:1}]};
+ for(const note of [undefined,'',' ','x','Originalbon geprüft'])assert.equal(reversalSchema.safeParse({...command,note}).success,true);
+ assert.equal(reversalSchema.parse(command).note,'');
+ assert.equal(reversalSchema.safeParse({...command,note:'x'.repeat(1001)}).success,false);
+ assert.equal(reversalSchema.safeParse({...command,reason:''}).success,false);
+ for(const reason of [...reversalReasons,'Freiwillige Rückgabe'])assert.equal(reversalRestocks(reason),reason!=='Beschädigung / Bruch');
 });
