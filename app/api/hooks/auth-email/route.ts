@@ -47,8 +47,12 @@ export async function POST(req: Request) {
       !cfg.value.smtp_host ||
       !cfg.value.smtp_user ||
       !cfg.value.smtp_from
-    )
+    ) {
+      console.error("[auth-email] Confirmation delivery unavailable", {
+        reason: error ? "settings_read_failed" : "smtp_not_configured",
+      });
       throw new Error("SMTP unavailable");
+    }
     const messages = authEmailMessages(
       payload,
       process.env.NEXT_PUBLIC_SITE_URL || "https://getraenke-elias.vercel.app",

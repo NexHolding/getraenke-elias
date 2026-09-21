@@ -1,4 +1,5 @@
 "use client";
+import { registrationErrorMessage } from "@/lib/registration";
 import { nativeApp } from "@/lib/native-app";
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
@@ -160,20 +161,24 @@ export default function Account() {
                   if (register) {
                     if (f.get("password") !== f.get("confirm"))
                       throw new Error("Die Passwörter stimmen nicht überein.");
-                    const { error } = await auth.auth.signUp({
+                    const { data, error } = await auth.auth.signUp({
                       ...credentials,
                       options: {
                         emailRedirectTo: location.origin + "/auth/callback",
                         data: { name: String(f.get("name")) },
                       },
                     });
-                    if (error)
-                      throw new Error(
-                        "Die Registrierung konnte gerade nicht abgeschlossen werden. Bitte versuche es später erneut oder nutze die Anmeldung, falls du bereits ein Konto hast.",
+                    if (error) throw new Error(registrationErrorMessage(error));
+                    if (data.session) {
+                      await load();
+                      setMessage(
+                        "Dein Kundenkonto wurde erstellt. Du bist angemeldet.",
                       );
-                    setMessage(
-                      "Bitte öffne die Bestätigungs-E-Mail, um dein Konto freizuschalten.",
-                    );
+                    } else {
+                      setMessage(
+                        "Bitte öffne die Bestätigungs-E-Mail, um dein Konto freizuschalten.",
+                      );
+                    }
                   } else {
                     const { error } =
                       await auth.auth.signInWithPassword(credentials);
