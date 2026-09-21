@@ -29,7 +29,7 @@ assert.equal(parts.reduce((n,s)=>n+s.net_cents,0),-rounded.net_cents);assert.equ
 for(const reason of ['Kunde hat nicht bezahlt','Falscher Artikel / Eingabefehler','Doppelt gebucht','Beschädigung / Bruch','Abgelaufene oder mangelhafte Ware','Gesetzlicher Widerruf (geprüft)','Sonstige Buchungskorrektur']) {
  const original=await sale([{id:'toy',quantity:1}]);
  const before=(await q("select stock from products where id='toy'"))[0].stock;
- const broken=reason==='Beschädigung / Bruch';
+ const broken=reason==='Beschädigung / Bruch'||reason==='Abgelaufene oder mangelhafte Ware';
  const reversal=await reverse({...command,id:crypto.randomUUID(),original_sale_id:original.id,kind:'cancellation',reason,note:' ',lines:[{index:0,quantity:1,restock:broken}]});
  assert.equal(reversal.items[0].restock,!broken);assert.equal(reversal.reversal_note,'');
  assert.equal((await q("select stock from products where id='toy'"))[0].stock,before+(broken?0:1));

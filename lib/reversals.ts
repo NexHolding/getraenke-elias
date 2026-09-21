@@ -8,7 +8,7 @@ export const reversalSchema = z.object({
 }).refine(v=>new Set(v.lines.map(l=>l.index)).size===v.lines.length)
 .refine(v=>v.kind==="return"?v.reason==="Freiwillige Rückgabe":(reversalReasons as readonly string[]).includes(v.reason));
 export function reversalRestocks(reason: string) {
- return reason !== "Beschädigung / Bruch";
+ return reason !== "Beschädigung / Bruch" && reason !== "Abgelaufene oder mangelhafte Ware";
 }
 export function returnDeadline(sale: Sale) {
  const day = new Date(berlinDate(sale.created_at)+"T12:00:00Z");day.setUTCDate(day.getUTCDate()+14);return day.toISOString().slice(0,10);

@@ -20,11 +20,11 @@ test('Business address migrates the legacy line into four lossless fields',()=>{
  const fields=businessAddressFields({business_address:'Wartbergstraße 3 · 74076 Heilbronn'});assert.deepEqual(fields,{business_street:'Wartbergstraße',business_house_number:'3',business_postal_code:'74076',business_city:'Heilbronn'});assert.equal(businessAddress(fields),'Wartbergstraße 3 · 74076 Heilbronn');
 });
 
-test('Reversal explanations are optional; stock is automatic except for breakage',()=>{
+test('Reversal explanations are optional; stock is automatic except for damaged or expired goods',()=>{
  const command={id:crypto.randomUUID(),original_sale_id:crypto.randomUUID(),kind:'cancellation',reason:'Kunde hat nicht bezahlt',payment:'cash',confirmed:true,lines:[{index:0,quantity:1}]};
  for(const note of [undefined,'',' ','x','Originalbon geprüft'])assert.equal(reversalSchema.safeParse({...command,note}).success,true);
  assert.equal(reversalSchema.parse(command).note,'');
  assert.equal(reversalSchema.safeParse({...command,note:'x'.repeat(1001)}).success,false);
  assert.equal(reversalSchema.safeParse({...command,reason:''}).success,false);
- for(const reason of [...reversalReasons,'Freiwillige Rückgabe'])assert.equal(reversalRestocks(reason),reason!=='Beschädigung / Bruch');
+ for(const reason of [...reversalReasons,'Freiwillige Rückgabe'])assert.equal(reversalRestocks(reason),!['Beschädigung / Bruch','Abgelaufene oder mangelhafte Ware'].includes(reason));
 });
