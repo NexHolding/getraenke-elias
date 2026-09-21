@@ -73,7 +73,19 @@ export async function GET() {
           can(access, m),
         )
           ? results[0].data
-          : [],
+          : can(access, "kunden")
+            ? (results[0].data || []).map((p) => ({
+                ...p,
+                stock: null,
+                loose_stock: 0,
+                cost_net_cents: null,
+                stock_version: 0,
+                min_stock: 0,
+                target_stock: 0,
+                supplier_id: null,
+                reorder_enabled: false,
+              }))
+            : [],
         suppliers: ["lieferanten", "artikel", "einkauf"].some((m) =>
           can(access, m),
         )

@@ -1,10 +1,13 @@
 "use client";
+import SubscriptionManager from "./subscription-manager";
+import OrderHistory from "./order-history";
 import NumberInput from "./number-input";
 import { CommunicationHistory } from "./communication-history";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Plus, Users, Truck, FileText, Check, ArrowRight } from "lucide-react";
 import type {
   Customer,
+  Product,
   Employee,
   Order,
   Delivery,
@@ -150,16 +153,10 @@ export function CustomerFields({
             />
           </label>
         ))}
-      <label className="checkline">
-        <input
-          type="checkbox"
-          checked={value.invoice_email ?? true}
-          onChange={(e) =>
-            onChange({ ...value, invoice_email: e.target.checked })
-          }
-        />
-        Rechnungen automatisch per E-Mail erhalten
-      </label>
+      <p className="fineprint span-two">
+        Lieferschein und Rechnung werden nach der bestätigten Auslieferung
+        automatisch im Portal hinterlegt und per E-Mail bereitgestellt.
+      </p>
       <label className="checkline">
         <input
           type="checkbox"
@@ -273,35 +270,87 @@ export function DocumentsList({
   deliveries: Delivery[];
   invoices: Invoice[];
 }) {
+  const entries = [
+    ...deliveries.map((d) => ({
+      id: d.id,
+      kind: "delivery",
+      label: "Lieferschein",
+      prefix: "LS",
+      number: d.number,
+      date: d.delivered_at || d.created_at,
+      status: d.status === "delivered" ? "Übergeben" : "Entwurf",
+      amount: null,
+    })),
+    ...invoices.map((i) => ({
+      id: i.id,
+      kind: "invoice",
+      label: "Rechnung",
+      prefix: "RE",
+      number: i.number,
+      date: i.created_at,
+      status:
+        i.status === "paid"
+          ? "Bezahlt"
+          : i.status === "cancelled"
+            ? "Storniert"
+            : "Offen",
+      amount: i.total_cents,
+    })),
+  ].sort((a, b) => b.date.localeCompare(a.date));
   return (
-    <div className="document-list">
-      {deliveries.map((d) => (
-        <a target="_blank" key={d.id} href={`/api/documents/delivery/${d.id}`}>
-          <FileText size={18} />
-          <span>
-            Lieferschein LS-{String(d.number).padStart(6, "0")}
-            <small>{d.status === "delivered" ? "Übergeben" : "Entwurf"}</small>
+    <div className="portal-documents">
+      {entries.map((d) => (
+        <article className="portal-document" key={d.kind + d.id}>
+          <span className="portal-icon">
+            <FileText size={24} />
           </span>
-          <ArrowRight size={16} />
-        </a>
-      ))}
-      {invoices.map((i) => (
-        <a target="_blank" key={i.id} href={`/api/documents/invoice/${i.id}`}>
-          <FileText size={18} />
-          <span>
-            Rechnung RE-{String(i.number).padStart(6, "0")}
+          <div>
+            <strong>
+              {d.label} {d.prefix}-{String(d.number).padStart(6, "0")}
+            </strong>
             <small>
-              {euro(i.total_cents)} ·{" "}
-              {i.status === "paid" ? "Bezahlt" : "Offen"}
+              {new Date(d.date).toLocaleDateString("de-DE", {
+                timeZone: "Europe/Berlin",
+              })}{" "}
+              · {d.status}
             </small>
-          </span>
-          <ArrowRight size={16} />
-        </a>
+            {d.amount !== null && <b>{euro(d.amount)}</b>}
+          </div>
+          <button
+            className="button secondary"
+            onClick={() =>
+              window.dispatchEvent(
+                new CustomEvent("elias:pdf-preview", {
+                  detail: `/api/documents/${d.kind}/${d.id}`,
+                }),
+              )
+            }
+          >
+            PDF anzeigen
+          </button>
+        </article>
       ))}
+      {!entries.length && (
+        <div className="portal-empty">
+          <FileText size={32} />
+          <h3>Noch keine Dokumente</h3>
+          <p>
+            Nach der bestätigten Auslieferung erscheinen hier die zugehörigen
+            Belege.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
-export function CustomerManager({ orders }: { orders: Order[] }) {
+
+export function CustomerManager({
+  orders,
+  products,
+}: {
+  orders: Order[];
+  products: Product[];
+}) {
   const op = useOperations();
   const [selected, setSelected] = useState<string | null>(null);
   const [edit, setEdit] = useState<Partial<Customer> | null>(null);
@@ -376,23 +425,58 @@ export function CustomerManager({ orders }: { orders: Order[] }) {
                   Bearbeiten
                 </button>
               </div>
-              <div className="category-tabs" aria-label="Kundenprofil">
-                <button
-                  className={customerTab === "profile" ? "selected" : ""}
-                  onClick={() => setCustomerTab("profile")}
-                >
-                  Profil & Belege
-                </button>
-                <button
-                  className={customerTab === "communication" ? "selected" : ""}
-                  onClick={() => setCustomerTab("communication")}
-                >
-                  Kommunikation
-                </button>
-              </div>
-              {customerTab === "communication" ? (
+              <nav className="portal-nav compact" aria-label="Kundenprofil">
+                {[
+                  ["profile", "Profil"],
+                  ["subscriptions", "Lieferabos"],
+                  ["orders", "Bestellverlauf"],
+                  ["deliveries", "Lieferscheine"],
+                  ["invoices", "Rechnungen"],
+                  ["communication", "Kommunikation"],
+                ].map(([id, label]) => (
+                  <button
+                    key={id}
+                    className={customerTab === id ? "selected" : ""}
+                    aria-current={customerTab === id ? "page" : undefined}
+                    onClick={() => setCustomerTab(id)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </nav>
+              {customerTab === "communication" && (
                 <CommunicationHistory key={c.id} customerId={c.id} />
-              ) : (
+              )}
+              {customerTab === "subscriptions" && (
+                <SubscriptionManager
+                  key={c.id}
+                  staff
+                  customer={c}
+                  subscriptions={op.data.subscriptions.filter(
+                    (s) => s.customer_id === c.id,
+                  )}
+                  products={products}
+                  onChanged={op.load}
+                />
+              )}
+              {customerTab === "orders" && <OrderHistory orders={own} />}
+              {customerTab === "deliveries" && (
+                <DocumentsList
+                  deliveries={op.data.deliveries.filter(
+                    (d) => d.customer_id === c.id,
+                  )}
+                  invoices={[]}
+                />
+              )}
+              {customerTab === "invoices" && (
+                <DocumentsList
+                  deliveries={[]}
+                  invoices={op.data.invoices.filter(
+                    (i) => i.customer_id === c.id,
+                  )}
+                />
+              )}
+              {customerTab === "profile" && (
                 <>
                   <p>
                     {c.address}
@@ -401,9 +485,7 @@ export function CustomerManager({ orders }: { orders: Order[] }) {
                   </p>
                   <p>
                     {c.user_id ? "Kundenkonto verknüpft" : "Ohne Kundenlogin"} ·{" "}
-                    {c.invoice_email
-                      ? "Rechnungsversand per E-Mail"
-                      : "Rechnungsversand deaktiviert"}
+                    Rechnung und Lieferschein automatisch per E-Mail
                   </p>
                   <div className="stats-grid">
                     <div className="stat">
@@ -428,44 +510,6 @@ export function CustomerManager({ orders }: { orders: Order[] }) {
                       </strong>
                     </div>
                   </div>
-                  <h3>Bestellverlauf</h3>
-                  {own.map((o) => (
-                    <div className="ledger-row" key={o.id}>
-                      <strong>EL-{o.number}</strong>
-                      <span>
-                        {o.status === "partial"
-                          ? "Restlieferung offen"
-                          : o.status === "completed"
-                            ? "Abgeschlossen"
-                            : o.status === "cancelled"
-                              ? "Storniert"
-                              : "Offen"}
-                      </span>
-                      <small>
-                        {o.items
-                          .map((i) => `${i.quantity} × ${i.name}`)
-                          .join(", ")}
-                      </small>
-                    </div>
-                  ))}
-                  <h3>Dokumente</h3>
-                  <DocumentsList
-                    deliveries={op.data.deliveries.filter(
-                      (d) => d.customer_id === c.id,
-                    )}
-                    invoices={op.data.invoices.filter(
-                      (i) => i.customer_id === c.id,
-                    )}
-                  />
-                  <h3>Lieferabos</h3>
-                  {op.data.subscriptions
-                    .filter((s) => s.customer_id === c.id)
-                    .map((s) => (
-                      <p key={s.id}>
-                        {s.active ? "Aktiv" : "Pausiert"} · nächster Auftrag{" "}
-                        {s.next_date} · {s.interval}
-                      </p>
-                    ))}
                   <button
                     className="button secondary"
                     disabled={op.busy || !!c.user_id}
@@ -600,6 +644,11 @@ export function DeliveryManager({
   const [draftId, setDraftId] = useState("");
   const [revision, setRevision] = useState(0);
   const [planMessage, setPlanMessage] = useState("");
+  const [completed, setCompleted] = useState<Delivery | null>(null);
+  const [deliveryNote, setDeliveryNote] = useState("");
+  const deliveryLock = useRef(false);
+  const pendingDelivery = useRef<Record<string, unknown> | null>(null);
+  const [deliveryPending, setDeliveryPending] = useState(false);
   const o = orders.find((o) => o.id === selected);
   const tour = orders
     .filter(
@@ -609,6 +658,10 @@ export function DeliveryManager({
     )
     .sort((a, b) => (a.route_position || 999) - (b.route_position || 999));
   const open = (order: Order) => {
+    setCompleted(null);
+    setDeliveryNote("");
+    pendingDelivery.current = null;
+    setDeliveryPending(false);
     setSelected(order.id);
     const draft = op.data.deliveries.find(
       (d) => d.order_id === order.id && d.status === "draft",
@@ -629,27 +682,69 @@ export function DeliveryManager({
     setRecipient("");
   };
   const save = async (finalize: boolean) => {
-    if (!o) return;
-    const d = await op.act("delivery", {
-      value: {
-        order_id: o.id,
-        id: draftId,
-        revision,
-        items: o.items.map((i) => ({
-          id: i.id,
-          quantity: quantities[i.id] || 0,
-        })),
-        finalize,
-        signature,
-        signed_name: recipient,
-      },
-    });
-    if (d) {
+    if (!o || deliveryLock.current) return;
+    deliveryLock.current = true;
+    const value = pendingDelivery.current || {
+      order_id: o.id,
+      id: draftId,
+      revision,
+      items: o.items.map((i) => ({
+        id: i.id,
+        quantity: quantities[i.id] || 0,
+      })),
+      finalize,
+      signature,
+      signed_name: recipient,
+    };
+    pendingDelivery.current = value;
+    setDeliveryPending(true);
+    try {
+      const r = await fetch("/api/operations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delivery", value }),
+      });
+      const d = await r.json();
+      if (!r.ok) {
+        if (r.status < 500) {
+          pendingDelivery.current = null;
+          setDeliveryPending(false);
+        }
+        throw Error(d.error);
+      }
+      pendingDelivery.current = null;
+      setDeliveryPending(false);
       setRevision(d.revision);
-      await reload();
-      if (finalize) setSelected(null);
+      if (value.finalize) {
+        setCompleted(d);
+        setSelected(null);
+        setDeliveryNote(
+          d.archive_pending
+            ? "Übergabe gebucht. Die PDF-Aufbereitung wird beim Abruf bzw. Versand erneut versucht."
+            : "Übergabe gespeichert. Lieferschein und Rechnung sind angelegt und im Kundenportal sowie in den Finanzen verfügbar. E-Mails stehen im Versandausgang; dies ist noch keine Zustellbestätigung.",
+        );
+      } else
+        setDeliveryNote(
+          "Entwurf gespeichert. Noch keine Rechnung oder Lagerbuchung.",
+        );
+      try {
+        await Promise.all([reload(), op.load()]);
+      } catch {
+        setDeliveryNote(
+          "Lieferung gespeichert. Bitte die Ansicht aktualisieren.",
+        );
+      }
+    } catch (e) {
+      setDeliveryNote(
+        e instanceof Error
+          ? e.message
+          : "Verbindung unterbrochen. Bitte denselben Vorgang erneut prüfen.",
+      );
+    } finally {
+      deliveryLock.current = false;
     }
   };
+
   return (
     <>
       <div className="table-toolbar">
@@ -685,6 +780,26 @@ export function DeliveryManager({
         <p className="notice" role="status">
           {planMessage || op.message}
         </p>
+      )}
+      {deliveryNote && (
+        <p className="notice" role="status">
+          {deliveryNote}
+        </p>
+      )}
+      {completed && (
+        <section className="panel delivery-success">
+          <h2>Lieferung bestätigt</h2>
+          <p>
+            Die tatsächlich gelieferten Mengen wurden einmalig gebucht. Die
+            unterschriebene Empfangsbestätigung ist im Lieferschein enthalten.
+          </p>
+          <DocumentsList
+            deliveries={[completed]}
+            invoices={op.data.invoices.filter(
+              (i) => i.delivery_id === completed.id,
+            )}
+          />
+        </section>
       )}
       <div className="delivery-columns">
         <section>
@@ -790,86 +905,105 @@ export function DeliveryManager({
                 <span className="eyebrow">EL-{o.number}</span>
                 <h2>Lieferschein · {o.customer_name}</h2>
               </div>
-              <button onClick={() => setSelected(null)}>Schließen</button>
+              <button
+                disabled={deliveryPending}
+                onClick={() => setSelected(null)}
+              >
+                Schließen
+              </button>
             </div>
-            <p>
-              Trage die tatsächlich mitgebrachten Mengen ein. Fehlmengen bleiben
-              für die nächste Lieferung offen.
-            </p>
-            {o.items.map((i) => (
-              <div className="delivery-item" key={i.id}>
-                <div>
-                  <strong>{i.name}</strong>
-                  <small>
-                    Bestellt {i.quantity} · bisher geliefert{" "}
-                    {o.delivered?.[i.id] || 0} · danach offen{" "}
-                    {Math.max(
-                      0,
-                      i.quantity -
-                        (o.delivered?.[i.id] || 0) -
-                        (quantities[i.id] || 0),
-                    )}
-                  </small>
-                </div>
-                <NumberInput
-                  aria-label={`Liefermenge ${i.name}`}
+            <fieldset disabled={deliveryPending} className="delivery-fields">
+              <p>
+                Trage die tatsächlich mitgebrachten Mengen ein. Fehlmengen
+                bleiben für die nächste Lieferung offen.
+              </p>
+              {o.items.map((i) => (
+                <div className="delivery-item" key={i.id}>
+                  <div>
+                    <strong>{i.name}</strong>
+                    <small>
+                      Bestellt {i.quantity} · bisher geliefert{" "}
+                      {o.delivered?.[i.id] || 0} · danach offen{" "}
+                      {Math.max(
+                        0,
+                        i.quantity -
+                          (o.delivered?.[i.id] || 0) -
+                          (quantities[i.id] || 0),
+                      )}
+                    </small>
+                  </div>
+                  <NumberInput
+                    aria-label={`Liefermenge ${i.name}`}
 
-                  min="0"
-                  max={i.quantity - (o.delivered?.[i.id] || 0)}
-                  value={quantities[i.id] || 0}
-                  onChange={(e) =>
-                    setQuantities({
-                      ...quantities,
-                      [i.id]: Math.max(0, Math.floor(Number(e.target.value))),
-                    })
-                  }
+                    min="0"
+                    max={i.quantity - (o.delivered?.[i.id] || 0)}
+                    value={quantities[i.id] || 0}
+                    onChange={(e) =>
+                      setQuantities({
+                        ...quantities,
+                        [i.id]: Math.max(0, Math.floor(Number(e.target.value))),
+                      })
+                    }
+                  />
+                </div>
+              ))}
+              <button
+                className="button secondary"
+                disabled={op.busy}
+                onClick={() => save(false)}
+              >
+                Entwurf speichern
+              </button>
+              <h3>Übergabe bestätigen</h3>
+              <label>
+                Name des Empfängers / Abstellvermerk
+                <input
+                  value={recipient}
+                  onChange={(e) => setRecipient(e.target.value)}
                 />
-              </div>
-            ))}
-            <button
-              className="button secondary"
-              disabled={op.busy}
-              onClick={() => save(false)}
-            >
-              Entwurf speichern
-            </button>
-            <h3>Übergabe bestätigen</h3>
-            <label>
-              Name des Empfängers / Abstellvermerk
-              <input
-                value={recipient}
-                onChange={(e) => setRecipient(e.target.value)}
-              />
-            </label>
-            {o.preference_snapshot?.dropoff_allowed && (
-              <p className="notice">
-                Abstellgenehmigung:{" "}
-                {o.preference_snapshot.dropoff_note ||
-                  "Im Kundenprofil freigegeben"}
+              </label>
+              {o.preference_snapshot?.dropoff_allowed && (
+                <p className="notice">
+                  Abstellgenehmigung:{" "}
+                  {o.preference_snapshot.dropoff_note ||
+                    "Im Kundenprofil freigegeben"}
+                </p>
+              )}
+              <Signature onChange={setSignature} />
+              <button
+                className="button full"
+                disabled={
+                  op.busy ||
+                  !recipient ||
+                  (!signature && !o.preference_snapshot?.dropoff_allowed)
+                }
+                onClick={() => save(true)}
+              >
+                <Check size={18} />
+                Ware übergeben & Belege erstellen
+              </button>
+              <p className="fineprint">
+                Die bestätigte Übergabe wird dokumentiert. Lieferschein und
+                Rechnung werden dem Kunden und den Finanzen zugeordnet; der
+                Versand erfolgt über den E-Mail-Ausgang.
+              </p>
+            </fieldset>
+            {deliveryNote && (
+              <p role="status" className="notice">
+                {deliveryNote}
               </p>
             )}
-            <Signature onChange={setSignature} />
-            <button
-              className="button full"
-              disabled={
-                op.busy ||
-                !recipient ||
-                (!signature && !o.preference_snapshot?.dropoff_allowed)
-              }
-              onClick={() => save(true)}
-            >
-              <Check size={18} />
-              Ware übergeben & Belege erstellen
-            </button>
-            <p className="fineprint">
-              Die bestätigte Übergabe wird dokumentiert. Lieferschein und
-              Rechnung werden dem Kunden und den Finanzen zugeordnet; der
-              Versand erfolgt über den E-Mail-Ausgang.
-            </p>
-            {op.message && (
-              <p role="status" className="notice">
-                {op.message}
-              </p>
+            {deliveryPending && (
+              <div className="notice">
+                <p>
+                  Vorgang läuft oder die Antwort ist unklar. Bei
+                  Verbindungsabbruch dieselbe Übergabe erneut prüfen; keine
+                  zweite Lieferung anlegen.
+                </p>
+                <button className="button" onClick={() => save(true)}>
+                  Übergabe erneut prüfen
+                </button>
+              </div>
             )}
           </section>
         </div>

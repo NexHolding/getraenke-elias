@@ -1,3 +1,5 @@
+import { archiveDeliveryDocuments } from "@/lib/business-document-archive";
+import { subscriptionCommandSchema } from "@/lib/subscriptions";
 import { staffOrderSchema, staffSubscriptionSchema } from "@/lib/staff-orders";
 import { deliveryAddressFields } from "@/lib/delivery-address";
 import {
@@ -82,7 +84,18 @@ export async function POST(req: Request) {
     const owner = () => {
       if (a.role !== "owner") throw new Error("FORBIDDEN");
     };
-    if (action === "staff-order" || action === "staff-subscription") {
+    if (action === "delivery-subscription") {
+      if (!can(a, "kunden") && !can(a, "bestellungen"))
+        throw new Error("FORBIDDEN");
+      const value = subscriptionCommandSchema.parse(b.value);
+      const { data, error } = await db.rpc("save_delivery_subscription", {
+        p_value: value,
+        p_actor: a.user.id,
+        p_customer: false,
+      });
+      if (error) throw new Error(error.message);
+      return Response.json(data);
+    } else if (action === "staff-order" || action === "staff-subscription") {
       check("bestellungen");
       const value =
         action === "staff-order"
@@ -256,7 +269,21 @@ export async function POST(req: Request) {
         throw new Error(
           "HINWEIS:Lieferung nicht gespeichert. Bitte Restmengen, Lagerbestand und Unterschrift prüfen und bei paralleler Bearbeitung neu laden.",
         );
-      return Response.json(data);
+      let documents = null,
+        archivePending = false;
+      if (v.finalize) {
+        try {
+          documents = await archiveDeliveryDocuments(data.id);
+        } catch {
+          archivePending = true;
+        }
+      }
+      return Response.json({
+        ...data,
+        invoice: documents,
+        archive_pending: archivePending,
+        mail_status: v.finalize ? "queued" : null,
+      });
     } else if (action === "plan") {
       check("lieferung");
       const date = z.iso.date().parse(b.date);
@@ -269,7 +296,10 @@ export async function POST(req: Request) {
         .from("orders")
         .select("*")
         .in("status", ["confirmed", "partial", "delivering"])
-        .or(`delivery_date.is.null,delivery_date.eq.${date}`);
+        .or(`delivery_date.is.null,delivery_date.eq.${date}`)
+        .or(
+          `requested_delivery_date.is.null,requested_delivery_date.lte.${date}`,
+        );
       if (error) throw error;
       const plan = planDay(orders || [], date, cfg?.value || {});
       for (const stop of plan.stops) {

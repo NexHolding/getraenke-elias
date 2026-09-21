@@ -164,6 +164,14 @@ export function CommunicationHistory({ customerId }: { customerId?: string }) {
                             ? "?customer=" + encodeURIComponent(customerId)
                             : "")
                         }
+                        onClick={(e) => {
+                          e.preventDefault();
+                          window.dispatchEvent(
+                            new CustomEvent("elias:pdf-preview", {
+                              detail: e.currentTarget.getAttribute("href"),
+                            }),
+                          );
+                        }}
                         target="_blank"
                         rel="noopener noreferrer"
                       >

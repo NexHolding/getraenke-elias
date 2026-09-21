@@ -21,6 +21,7 @@ const tables = {
   auth_mail_dispatch: [],
   mail_outbox: [],
   communication_attachments: [],
+  business_documents: [],
   invoices: [{ id: "invoice-1", order_id: "order-1" }],
   orders: [{ id: "order-1" }],
   purchases: [],
@@ -81,6 +82,9 @@ const fake = {
         op = "update";
         value = v;
         return query;
+      },
+      upsert(v) {
+        return query.insert(v);
       },
       insert(v) {
         op = "insert";

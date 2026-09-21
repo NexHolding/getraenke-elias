@@ -52,18 +52,29 @@ export async function archiveAttachment(
   const buf = Buffer.from(bytes);
   const { data, error } = await db
     .from("communication_attachments")
-    .insert({
-      communication_id: communicationId,
-      filename,
-      content_type: "application/pdf",
-      content_base64: buf.toString("base64"),
-      size_bytes: buf.length,
-      sha256: createHash("sha256").update(buf).digest("hex"),
-    })
+    .upsert(
+      {
+        communication_id: communicationId,
+        filename,
+        content_type: "application/pdf",
+        content_base64: buf.toString("base64"),
+        size_bytes: buf.length,
+        sha256: createHash("sha256").update(buf).digest("hex"),
+      },
+      { onConflict: "communication_id,filename", ignoreDuplicates: true },
+    )
     .select("*")
-    .single();
+    .maybeSingle();
   if (error) throw error;
-  return attachmentContent(data);
+  if (data) return attachmentContent(data);
+  const winner = await db
+    .from("communication_attachments")
+    .select("*")
+    .eq("communication_id", communicationId)
+    .eq("filename", filename)
+    .single();
+  if (winner.error) throw winner.error;
+  return attachmentContent(winner.data);
 }
 export function attachmentContent(record: {
   filename: string;

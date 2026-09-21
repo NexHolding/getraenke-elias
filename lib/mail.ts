@@ -98,24 +98,9 @@ export async function dispatchMail() {
       const attachments = [];
       if (m.kind === "delivery_document" || m.kind === "invoice_document") {
         const kind = m.kind === "invoice_document" ? "invoice" : "delivery";
-        const { data: record, error } = await db
-          .from(kind === "invoice" ? "invoices" : "deliveries")
-          .select("*")
-          .eq("id", m.reference_id)
-          .single();
-        if (error) throw error;
-        const { data: order } = await db
-          .from("orders")
-          .select("*")
-          .eq("id", record.order_id)
-          .single();
-        const { data: cfg } = await db
-          .from("settings")
-          .select("value")
-          .eq("id", 1)
-          .single();
-        const { businessDocument } = await import("./documents");
-        const pdf = businessDocument(kind, record, order, cfg?.value || {});
+        const { businessDocumentArchive } =
+          await import("./business-document-archive");
+        const pdf = await businessDocumentArchive(kind, m.reference_id);
         if (!communication) throw new Error("Customer archive unavailable");
         attachments.push(
           await archiveAttachment(communication.id, pdf.filename, pdf.bytes),

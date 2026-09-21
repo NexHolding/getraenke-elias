@@ -1,3 +1,4 @@
+import { receiptLogo } from "./receipt-logo";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { euro, totals } from "./money";
@@ -16,18 +17,41 @@ export function businessDocument(
   if (snapshot.business_snapshot?.business_name)
     cfg = snapshot.business_snapshot;
   const doc = new jsPDF();
-  const title = kind === "invoice" ? "Rechnung" : "Lieferschein";
+  const title =
+    kind === "invoice"
+      ? "Rechnung"
+      : record.status === "draft"
+        ? "Lieferschein · Entwurf"
+        : "Lieferschein";
+  const documentDate =
+    (kind === "delivery" ? (record as Delivery).delivered_at : null) ||
+    record.created_at;
   const number = `${kind === "invoice" ? "RE" : "LS"}-${String(record.number).padStart(6, "0")}`;
-  doc.setFillColor(35, 48, 34);
-  doc.rect(0, 0, 210, 40, "F");
-  doc.setTextColor(196, 219, 116);
-  doc.setFontSize(12);
-  doc.text("GETRÄNKESHOP ELIAS", 16, 14);
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(24);
-  doc.text(title, 16, 29);
-  doc.setFontSize(10);
-  doc.text(number, 194, 29, { align: "right" });
+  const header = () => {
+    doc.setFillColor(160, 185, 48);
+    doc.rect(16, 12, 1.3, 22, "F");
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(104, 124, 67);
+    doc.setFontSize(8);
+    doc.text("GETRÄNKESHOP ELIAS", 21, 17);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(42, 54, 35);
+    doc.setFontSize(23);
+    doc.text(title, 21, 28);
+    const logo = doc.getImageProperties(receiptLogo);
+    doc.addImage(
+      receiptLogo,
+      "PNG",
+      151,
+      12,
+      43,
+      (43 * logo.height) / logo.width,
+    );
+    doc.setDrawColor(222, 229, 211);
+    doc.line(16, 38, 194, 38);
+  };
+  header();
+  doc.setFont("helvetica", "normal");
   doc.setTextColor(40, 45, 35);
   doc.setFontSize(10);
   const invoice = kind === "invoice" ? (record as Invoice) : null;
@@ -43,7 +67,8 @@ export function businessDocument(
   );
   doc.text(
     [
-      `Datum: ${new Date(record.created_at).toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" })}`,
+      `Beleg: ${number}`,
+      `Datum: ${new Date(documentDate).toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" })}`,
       `Auftrag: EL-${String(order.number).padStart(5, "0")}`,
     ],
     130,
@@ -51,7 +76,7 @@ export function businessDocument(
   );
   autoTable(doc, {
     startY: 77,
-    margin: { left: 16, right: 16, bottom: 35 },
+    margin: { left: 16, right: 16, bottom: 35, top: 45 },
     head: [
       kind === "invoice"
         ? ["Artikel", "Menge", "USt.", "Netto", "Brutto", "Pfand"]
@@ -84,7 +109,7 @@ export function businessDocument(
             ),
           ];
     }),
-    headStyles: { fillColor: [45, 63, 38] },
+    headStyles: { fillColor: [237, 243, 222], textColor: [58, 78, 35] },
     styles: { fontSize: 9, cellPadding: 4 },
     alternateRowStyles: { fillColor: [247, 249, 240] },
   });
@@ -93,7 +118,7 @@ export function businessDocument(
       .finalY + 12;
   if (y + 65 > 260) {
     doc.addPage();
-    y = 22;
+    y = 50;
   }
   if (invoice) {
     const t = totals(invoice.items);
@@ -123,7 +148,7 @@ export function businessDocument(
     }
     y += 8;
     doc.text(
-      `Leistungsdatum: ${new Date(record.created_at).toLocaleDateString("de-DE")} · ${invoice.status === "paid" ? "Bezahlt" : "Zahlungsstatus: offen"}`,
+      `Leistungsdatum: ${new Date(record.created_at).toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" })} · ${invoice.status === "paid" ? "Bezahlt" : "Zahlungsstatus: offen"}`,
       16,
       y,
     );
@@ -141,6 +166,7 @@ export function businessDocument(
   }
   for (let p = 1; p <= doc.getNumberOfPages(); p++) {
     doc.setPage(p);
+    if (p > 1) header();
     doc.setFontSize(8);
     doc.setTextColor(95, 105, 80);
     doc.text(cfg.business_name || "Getränkeshop Elias · Frank Elias", 16, 276);
@@ -150,8 +176,8 @@ export function businessDocument(
       281,
     );
     doc.text(
-      cfg.tax_number
-        ? `Steuernummer / USt-IdNr.: ${cfg.tax_number}`
+      cfg.tax_number || cfg.vat_id
+        ? `Steueridentität: ${cfg.tax_number || cfg.vat_id}`
         : "Einrichtungsbeleg · Noch kein steuerlicher Echtbetrieb",
       16,
       286,

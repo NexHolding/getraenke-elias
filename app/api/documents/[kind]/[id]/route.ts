@@ -1,6 +1,6 @@
 import { serviceDb, requireStaff, safeError } from "@/lib/server";
 import { signedCustomer } from "@/lib/customer-server";
-import { businessDocument } from "@/lib/documents";
+import { businessDocumentArchive } from "@/lib/business-document-archive";
 import { can } from "@/lib/permissions";
 import { z } from "zod";
 export async function GET(
@@ -28,24 +28,20 @@ export async function GET(
     } catch {}
     if (!allowed) {
       const c = await signedCustomer();
-      if (c.id !== record.customer_id) throw new Error("FORBIDDEN");
+      if (
+        c.id !== record.customer_id ||
+        (type === "delivery" && record.status !== "delivered")
+      )
+        throw new Error("FORBIDDEN");
     }
-    const { data: order } = await db
-      .from("orders")
-      .select("*")
-      .eq("id", record.order_id)
-      .single();
-    const { data: cfg } = await db
-      .from("settings")
-      .select("value")
-      .eq("id", 1)
-      .single();
-    const pdf = businessDocument(type, record, order, cfg?.value || {});
+    const pdf = await businessDocumentArchive(type, id);
     return new Response(new Uint8Array(pdf.bytes), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `inline; filename="${pdf.filename}"`,
         "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff",
+        "X-Robots-Tag": "noindex, nofollow, noarchive",
       },
     });
   } catch (e) {

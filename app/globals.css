@@ -4185,3 +4185,470 @@ textarea {
 .reversal-amount { font-size:22px; background:#edf4dc; padding:20px; border-radius:12px; }
 @media(max-width:700px) { .receipt-search-row { flex-direction:column; }.reversal-line { grid-template-columns:1fr 90px; }.reversal-line>.checkline { grid-column:1/-1; }.receipt-manager-content { padding:16px; } }
 .map-card { position:relative; }.map-revoke { position:absolute; top:10px; right:10px; z-index:1; padding:10px; border:1px solid #b4c49b; border-radius:8px; background:white; color:#344a1e; font-size:12px; cursor:pointer; }
+
+/* Customer portal and shared delivery subscription editor */
+.portal-nav {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  margin: 28px 0;
+  background: #eef1e7;
+  padding: 8px;
+  border-radius: 18px;
+}
+.portal-nav button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  padding: 16px 10px;
+  color: #66715e;
+  font-weight: 650;
+  min-height: 52px;
+  font-size: 13px;
+  white-space: normal;
+}
+.portal-nav button.selected {
+  background: white;
+  color: #293822;
+  box-shadow: 0 2px 8px #26352010;
+}
+.portal-nav button:hover {
+  background: #ffffffb0;
+}
+.portal-nav.compact {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.portal-content {
+  background: #fff;
+  border: 1px solid #e0e5d9;
+  border-radius: 24px;
+  padding: 30px;
+  min-width: 0;
+}
+.portal-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.portal-section-head h2 {
+  font-size: 27px;
+  margin: 7px 0;
+}
+.portal-section-head p {
+  margin: 8px 0;
+  color: #747c6c;
+}
+.portal-account-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 24px;
+  padding: 24px 0;
+}
+.portal-empty {
+  padding: 40px 24px;
+  border: 1px dashed #d4dec5;
+  border-radius: 18px;
+  text-align: center;
+  background: #f8faf4;
+  color: #727d66;
+}
+.portal-empty svg {
+  color: #99b035;
+}
+.portal-empty h3 {
+  color: #35412d;
+  margin: 14px 0 8px;
+}
+.portal-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: #edf3df;
+  color: #789327;
+  flex-shrink: 0;
+}
+.order-history {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+.order-history-card {
+  border: 1px solid #e0e5d9;
+  border-radius: 18px;
+  padding: 22px;
+  min-width: 0;
+}
+.order-history-card header,
+.order-history-card footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.order-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.order-history small,
+.portal-document small,
+.subscription-selected small {
+  display: block;
+  color: #7b8373;
+  font-size: 12px;
+  margin-top: 5px;
+}
+.order-history-card details {
+  border-top: 1px solid #e8ecdf;
+  border-bottom: 1px solid #e8ecdf;
+  margin: 18px 0;
+  padding: 14px 0;
+}
+.order-history-card summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+.order-item-list > div {
+  padding: 12px 0;
+  font-size: 13px;
+}
+.order-eta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  background: #f1f5e6;
+  padding: 12px;
+  border-radius: 10px;
+}
+.order-history-card footer {
+  font-size: 13px;
+}
+.order-history-card footer > strong {
+  text-align: right;
+  font-size: 18px;
+}
+.portal-documents {
+  display: grid;
+  gap: 12px;
+}
+.portal-document {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid #e0e5d9;
+  border-radius: 16px;
+}
+.portal-document strong {
+  font-size: 14px;
+}
+.portal-document b {
+  display: block;
+  margin-top: 8px;
+}
+.subscription-manager {
+  min-width: 0;
+}
+.subscription-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.subscription-card {
+  border: 1px solid #dce4d0;
+  border-radius: 18px;
+  padding: 22px;
+  background: #fbfcf8;
+}
+.subscription-card h3 {
+  margin: 10px 0;
+}
+.subscription-card p {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+  color: #69765c;
+}
+.subscription-card ul {
+  padding-left: 18px;
+  line-height: 1.8;
+  font-size: 14px;
+}
+.subscription-editor {
+  background: #f8faf4;
+  border: 1px solid #e0e6d6;
+  border-radius: 18px;
+  padding: 24px;
+}
+.subscription-editor fieldset {
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.subscription-editor label {
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 650;
+}
+.subscription-editor input,
+.subscription-editor select,
+.subscription-editor textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 13px;
+  border: 1px solid #ccd7bf;
+  border-radius: 10px;
+  background: white;
+  font: inherit;
+  box-sizing: border-box;
+}
+.subscription-editor .checkline {
+  display: flex;
+  align-items: center;
+}
+.subscription-editor input[type="checkbox"] {
+  width: auto;
+}
+.subscription-schedule {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.subscription-search {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+}
+.subscription-search input {
+  grid-column: 1/-1;
+}
+.subscription-results {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 16px 0 24px;
+  max-height: 330px;
+  overflow-y: auto;
+}
+.subscription-results > button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  background: white;
+  border: 1px solid #e1e7d8;
+  border-radius: 12px;
+  padding: 10px;
+  min-width: 0;
+}
+.subscription-results > button > span {
+  flex: 1;
+  min-width: 0;
+}
+.subscription-results .product-photo {
+  width: 38px !important;
+  height: 62px !important;
+  min-width: 38px;
+  flex-shrink: 0;
+}
+.subscription-results strong {
+  font-size: 12px;
+  display: block;
+}
+.subscription-results small {
+  display: block;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #718062;
+}
+.subscription-selected {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 80px 40px;
+  align-items: center;
+  gap: 12px;
+  background: white;
+  padding: 14px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+}
+.subscription-selected strong {
+  font-size: 14px;
+}
+.subscription-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 0;
+}
+.subscription-total small {
+  display: block;
+  color: #717e60;
+  font-size: 12px;
+}
+.subscription-total strong {
+  display: block;
+  font-size: 27px;
+  margin: 6px 0;
+}
+@media (max-width: 900px) {
+  .portal-nav {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .portal-content {
+    padding: 22px;
+  }
+  .order-history,
+  .subscription-cards {
+    grid-template-columns: 1fr;
+  }
+  .portal-section-head {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 600px) {
+  .account-page {
+    padding-top: 28px !important;
+  }
+  .account-page h1 {
+    font-size: 30px;
+  }
+  .portal-nav {
+    gap: 5px;
+    padding: 5px;
+    margin: 20px 0;
+  }
+  .portal-nav button {
+    flex-direction: column;
+    gap: 7px;
+    padding: 12px 4px;
+    font-size: 11px;
+    min-height: 66px;
+  }
+  .portal-nav.compact button {
+    min-height: 48px;
+  }
+  .portal-content {
+    padding: 18px 14px;
+    border-radius: 18px;
+  }
+  .portal-section-head h2 {
+    font-size: 24px;
+  }
+  .portal-section-head .button {
+    width: 100%;
+    justify-content: center;
+  }
+  .subscription-editor {
+    padding: 16px 12px;
+  }
+  .subscription-schedule,
+  .subscription-results {
+    grid-template-columns: 1fr;
+  }
+  .subscription-total {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .portal-document {
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: 16px;
+    gap: 12px;
+  }
+  .portal-document .button {
+    grid-column: 1/-1;
+    width: 100%;
+    justify-content: center;
+  }
+  .order-history-card {
+    padding: 16px;
+  }
+  .order-history-card header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .subscription-selected {
+    grid-template-columns: minmax(0, 1fr) 65px 32px;
+    gap: 8px;
+  }
+  .portal-account-actions {
+    justify-content: space-between;
+  }
+}
+.delivery-fields {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.delivery-success {
+  border-color: #a9bf67;
+  margin-bottom: 22px;
+}
+.delivery-fields .signature {
+  touch-action: none;
+  width: 100%;
+  background: #fff;
+  border: 2px dashed #b6c795;
+  border-radius: 14px;
+}
+.delivery-editor {
+  max-height: 94dvh;
+  overflow: auto;
+}
+.delivery-fields > label {
+  display: grid;
+  gap: 8px;
+}
+.delivery-fields > label > input {
+  padding: 14px;
+  border: 1px solid #bbcaaa;
+  border-radius: 10px;
+}
+.delivery-fields .button.full {
+  margin-top: 16px;
+}
+.native-customer-account .topline,
+.native-customer-account .site-header,
+.native-customer-account footer.footer {
+  display: none;
+}
+.native-customer-account .account-page {
+  padding-top: 22px;
+  padding-bottom: 20px;
+  max-width: 1100px;
+}
+.native-customer-account .account-page > .eyebrow {
+  font-size: 10px;
+}
+.native-customer-account .account-page > h1 {
+  font-size: 28px;
+}
+.portal-account-actions {
+  flex-wrap: wrap;
+}
+.skip-link:not(:focus) {
+  clip-path: inset(50%);
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  white-space: nowrap;
+}

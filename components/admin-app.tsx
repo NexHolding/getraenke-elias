@@ -561,7 +561,7 @@ export default function AdminApp({ section }: { section: string }) {
               {section === "inventur" && (
                 <InventoryPanel onStockChange={load} />
               )}
-              {section === "kunden" && <CustomerManager orders={data.orders} />}
+              {section === "kunden" && <CustomerManager products={products} orders={data.orders} />}
               {section === "lieferung" && (
                 <DeliveryManager orders={data.orders} reload={load} />
               )}
