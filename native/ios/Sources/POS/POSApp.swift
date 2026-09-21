@@ -9,8 +9,6 @@ struct POSRoot: View {
   @StateObject private var workspace = WebWorkspace(mode: "pos", path: "/kassenzugang")
   @StateObject private var connection = ConnectionMonitor()
   @Environment(\.scenePhase) private var scenePhase
-  @State private var scanner = false
-  @State private var printer = false
   var body: some View {
     NavigationStack {
       VStack(spacing: 0) {
@@ -25,24 +23,26 @@ struct POSRoot: View {
         }
         ToolbarItemGroup(placement: .topBarTrailing) {
           Button {
-            scanner = true
+            workspace.showScanner = true
           } label: {
             Label("Scannen", systemImage: "barcode.viewfinder")
           }.accessibilityIdentifier("pos-scan")
           Button {
-            printer = true
+            workspace.showPrinter = true
           } label: {
             Label("Drucker", systemImage: "printer")
           }.accessibilityIdentifier("pos-printer")
         }
       }
-      .sheet(isPresented: $scanner) {
+      .toolbar(workspace.registerVisible ? .hidden : .visible, for: .navigationBar)
+      .statusBarHidden(workspace.registerVisible)
+      .sheet(isPresented: $workspace.showScanner) {
         BarcodeScanner { value in
-          scanner = false
+          workspace.showScanner = false
           workspace.scan(value)
         }
       }
-      .sheet(isPresented: $printer) { PrinterSettings() }
+      .sheet(isPresented: $workspace.showPrinter) { PrinterSettings() }
       .overlay {
         if scenePhase != .active {
           AppConfig.background.ignoresSafeArea().overlay(

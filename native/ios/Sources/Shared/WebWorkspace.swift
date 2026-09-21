@@ -13,6 +13,10 @@ final class WebWorkspace: NSObject, ObservableObject, Identifiable, WKNavigation
   @Published var error: String?
   @Published var currentURL: URL?
   @Published var downloadedFile: URL?
+  @Published var registerVisible = false
+  @Published var showScanner = false
+  @Published var showPrinter = false
+  private var urlObservation: NSKeyValueObservation?
   var checkout: (() -> CheckoutPayload)?
   var pendingCheckout: (() -> Bool)?
   var completed: ((UUID, String) -> Void)?
@@ -42,6 +46,12 @@ final class WebWorkspace: NSObject, ObservableObject, Identifiable, WKNavigation
     webView.allowsBackForwardNavigationGestures = true
     webView.isOpaque = false
     webView.backgroundColor = .systemBackground
+    if mode == "pos" { webView.scrollView.bounces = false }
+    // Observe URL changes as Next.js navigation also uses history.pushState.
+    urlObservation = webView.observe(\.url, options: [.new]) { [weak self] view, _ in
+      let url = view.url
+      Task { @MainActor [weak self] in self?.updateLocation(url) }
+    }
     if AppConfig.isUITest {
       webView.loadHTMLString(
         "<html><meta name='viewport' content='width=device-width'><body style='font:20px -apple-system;padding:40px'><h1>\(mode == "pos" ? "Elias Kasse · Vorschau" : "Bestellung prüfen · Vorschau")</h1><p>Isolierter UI-Test. Keine Anmeldung, Bestellung oder Buchung.</p></body></html>",
@@ -49,6 +59,14 @@ final class WebWorkspace: NSObject, ObservableObject, Identifiable, WKNavigation
     } else {
       open(path)
     }
+  }
+  private func updateLocation(_ url: URL?) {
+    currentURL = url
+    registerVisible =
+      mode == "pos"
+      && url.map {
+        NavigationPolicy.isTrusted($0) && $0.path == "/crm/kasse"
+      } == true
   }
   static func jsString(_ text: String) -> String {
     let data = try! JSONEncoder().encode(text)
@@ -79,7 +97,7 @@ final class WebWorkspace: NSObject, ObservableObject, Identifiable, WKNavigation
   }
   func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
     loading = false
-    currentURL = webView.url
+    updateLocation(webView.url)
   }
   func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
     failed(error)
@@ -256,6 +274,11 @@ final class WebWorkspace: NSObject, ObservableObject, Identifiable, WKNavigation
       number.range(of: "^EL-[0-9]{1,12}$", options: .regularExpression) != nil
     {
       completed?(uuid, number)
+      replyHandler(["ok": true], nil)
+      return
+    }
+    if mode == "pos", url.path == "/crm/kasse", type == "pos.scan" || type == "pos.printer" {
+      if type == "pos.scan" { showScanner = true } else { showPrinter = true }
       replyHandler(["ok": true], nil)
       return
     }

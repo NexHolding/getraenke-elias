@@ -1,5 +1,7 @@
 "use client";
-import { nativeApp } from "@/lib/native-app";
+import { nativeApp, nativeRequest } from "@/lib/native-app";
+import POSCatalog from "./pos-catalog";
+import CashRegisterLink from "./cash-register-link";
 import ManualPurchase from "./manual-purchase";
 import StaffOrders from "./staff-orders";
 import CheckoutFlow, { receiptDownload } from "./checkout-flow";
@@ -144,6 +146,9 @@ export default function AdminApp({ section }: { section: string }) {
     [notice, setNotice] = useState(""),
     [busy, setBusy] = useState(false),
     [query, setQuery] = useState(""),
+    [posTool, setPosTool] = useState<"products" | "returns" | "discount">(
+      "products",
+    ),
     [showArchived, setShowArchived] = useState(false),
     [category, setCategory] = useState("Alle Getränke"),
     [selected, setSelected] = useState<string[]>([]),
@@ -186,22 +191,6 @@ export default function AdminApp({ section }: { section: string }) {
     setData(d);
   }, [router]);
   useEffect(() => {
-    if (nativeApp() !== "pos" || section !== "kasse") return;
-    const scan = (event: Event) => {
-      const barcode: unknown = (event as CustomEvent).detail?.barcode;
-      if (
-        typeof barcode !== "string" ||
-        !/^[A-Za-z0-9 ._-]{1,80}$/.test(barcode)
-      )
-        return;
-      setCategory("Alle Getränke");
-      setQuery(barcode);
-      setNotice("Barcode übernommen. Bitte den passenden Artikel antippen.");
-    };
-    window.addEventListener("elias:native-scan", scan);
-    return () => window.removeEventListener("elias:native-scan", scan);
-  }, [section]);
-  useEffect(() => {
     let live = true;
     fetch("/api/admin", { cache: "no-store" })
       .then(async (r) => {
@@ -217,6 +206,11 @@ export default function AdminApp({ section }: { section: string }) {
     return () => {
       live = false;
     };
+  }, []);
+  useEffect(() => {
+    const showCatalog = () => setPosTool("products");
+    window.addEventListener("elias:native-scan", showCatalog);
+    return () => window.removeEventListener("elias:native-scan", showCatalog);
   }, []);
   const act = async (
     action: string,
@@ -325,7 +319,9 @@ export default function AdminApp({ section }: { section: string }) {
     }
   }
   return (
-    <div className="admin-shell">
+    <div
+      className={`admin-shell ${section === "kasse" ? "register-shell" : ""}`}
+    >
       <aside className="sidebar">
         <Link href="/">
           <Logo />
@@ -334,19 +330,26 @@ export default function AdminApp({ section }: { section: string }) {
         <nav aria-label="Verwaltung">
           {nav
             .filter(([id]) => data && can(data, id))
-            .map(([id, label, Icon]) => (
-              <Link
-                href={id === "uebersicht" ? "/crm" : `/crm/${id}`}
-                className={section === id ? "active" : ""}
-                key={id}
-              >
-                <Icon size={19} />
-                {label}
-                {id === "bestellungen" && pending.length > 0 && (
-                  <span className="nav-count">{pending.length}</span>
-                )}
-              </Link>
-            ))}
+            .map(([id, label, Icon]) =>
+              id === "kasse" ? (
+                <CashRegisterLink key={id}>
+                  <Icon size={19} />
+                  {label}
+                </CashRegisterLink>
+              ) : (
+                <Link
+                  href={id === "uebersicht" ? "/crm" : `/crm/${id}`}
+                  className={section === id ? "active" : ""}
+                  key={id}
+                >
+                  <Icon size={19} />
+                  {label}
+                  {id === "bestellungen" && pending.length > 0 && (
+                    <span className="nav-count">{pending.length}</span>
+                  )}
+                </Link>
+              ),
+            )}
         </nav>
         <div className="sidebar-bottom">
           <div>
@@ -372,6 +375,91 @@ export default function AdminApp({ section }: { section: string }) {
         </div>
       </aside>
       <div className="admin-main">
+        {section === "kasse" && (
+          <header className="register-header">
+            <Link
+              href="/crm"
+              className="register-back"
+              onClick={(event) => {
+                if (
+                  (cart.length || Object.values(returns).some(Boolean)) &&
+                  !window.confirm(
+                    "Kasse verlassen und aktuellen ungebuchten Bon verwerfen?",
+                  )
+                )
+                  event.preventDefault();
+              }}
+            >
+              <Logo />
+              <span>Zur Verwaltung</span>
+            </Link>
+            <h1>
+              Kasse <small>{data?.name}</small>
+            </h1>
+            <div className="register-tools">
+              <button
+                type="button"
+                onClick={() => {
+                  if (nativeApp() === "pos")
+                    nativeRequest({ type: "pos.scan" }).catch(() =>
+                      setError(
+                        "Scanner bitte über die App-Symbolleiste öffnen oder die App aktualisieren.",
+                      ),
+                    );
+                  else {
+                    setPosTool("products");
+                    requestAnimationFrame(() =>
+                      document.getElementById("pos-search")?.focus(),
+                    );
+                  }
+                }}
+              >
+                <Search size={18} /> <span>Scannen / Suchen</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (nativeApp() === "pos")
+                    nativeRequest({ type: "pos.printer" }).catch(() =>
+                      setError(
+                        "Druckereinrichtung bitte über die App-Symbolleiste öffnen oder die App aktualisieren.",
+                      ),
+                    );
+                  else window.open("/crm/einstellungen", "_blank", "noopener");
+                }}
+              >
+                <Printer size={18} />
+                <span>Drucker</span>
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (
+                    (cart.length || Object.values(returns).some(Boolean)) &&
+                    !window.confirm(
+                      "Arbeitsplatz sperren und ungebuchten Bon verwerfen?",
+                    )
+                  )
+                    return;
+                  const response = await fetch("/api/terminal", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ action: "lock" }),
+                  });
+                  if (!response.ok) {
+                    setError("Arbeitsplatz konnte nicht gesperrt werden.");
+                    return;
+                  }
+                  router.push("/kassenzugang");
+                  router.refresh();
+                }}
+              >
+                <ShieldCheck size={18} />
+                <span>Sperren</span>
+              </button>
+            </div>
+          </header>
+        )}
         <header className="admin-topbar">
           <span>
             Verwaltung <ChevronRight size={14} /> <strong>{heading}</strong>
@@ -567,11 +655,11 @@ export default function AdminApp({ section }: { section: string }) {
                         <h2>Schnellzugriff</h2>
                       </div>
                       <div className="quick-grid">
-                        <Link href="/crm/kasse">
+                        <CashRegisterLink>
                           <Store />
                           <strong>Kasse öffnen</strong>
                           <small>Verkauf starten</small>
-                        </Link>
+                        </CashRegisterLink>
                         <Link href="/crm/artikel">
                           <Plus />
                           <strong>Artikel pflegen</strong>
@@ -1205,74 +1293,240 @@ export default function AdminApp({ section }: { section: string }) {
               )}
               {section === "kasse" && (
                 <>
-                  <div className="category-tabs">
-                    {categories.map((c) => (
-                      <button
-                        key={c}
-                        className={category === c ? "selected" : ""}
-                        onClick={() => setCategory(c)}
-                      >
-                        {c}
-                      </button>
-                    ))}
-                  </div>
                   <div className="pos-layout">
-                    <section>
-                      <label className="search-field">
-                        <Search size={19} />
-                        <input
-                          value={query}
-                          onChange={(e) => setQuery(e.target.value)}
-                          placeholder="Artikel oder Barcode suchen"
+                    <section className="pos-workspace">
+                      <div
+                        className="pos-workspace-tabs"
+                        role="group"
+                        aria-label="Kassenfunktionen"
+                      >
+                        <button
+                          aria-pressed={posTool === "products"}
+                          onClick={() => setPosTool("products")}
+                        >
+                          <Package size={18} /> Artikel
+                        </button>
+                        <button
+                          aria-pressed={posTool === "returns"}
+                          onClick={() => setPosTool("returns")}
+                        >
+                          <BottleWine size={18} /> Pfandrücknahme{" "}
+                          <b>
+                            {Object.values(returns).reduce(
+                              (s, n) => s + n,
+                              0,
+                            ) || ""}
+                          </b>
+                        </button>
+                        {can(data, "rabatt") && (
+                          <button
+                            aria-pressed={posTool === "discount"}
+                            onClick={() => setPosTool("discount")}
+                          >
+                            % Rabatt {discountMode !== "none" && "aktiv"}
+                          </button>
+                        )}
+                      </div>
+                      <div
+                        className="pos-tool-content"
+                        hidden={posTool !== "products"}
+                      >
+                        <POSCatalog
+                          products={products}
+                          onSelect={(p) => {
+                            setLastSale(null);
+                            if (cart.length === 0) {
+                              setDiscountMode("none");
+                              setDiscount(0);
+                              setDiscountReason("Aktion");
+                            }
+                            setCart((c) =>
+                              c.some((l) => l.id === p.id)
+                                ? c.map((l) =>
+                                    l.id === p.id
+                                      ? {
+                                          ...l,
+                                          quantity: Math.min(
+                                            l.quantity + 1,
+                                            1000,
+                                          ),
+                                        }
+                                      : l,
+                                  )
+                                : [...c, { id: p.id, quantity: 1 }],
+                            );
+                          }}
                         />
-                      </label>
-                      <div className="pos-products">
-                        {filtered
-                          .filter((p) => p.active)
-                          .map((p) => (
-                            <button
-                              disabled={p.deposit_cents === null}
-                              key={p.id}
-                              onClick={() => {
-                                setLastSale(null);
-                                if (cart.length === 0) {
-                                  setDiscountMode("none");
-                                  setDiscount(0);
-                                  setDiscountReason("Aktion");
+                      </div>
+                      <div
+                        className="pos-tool-content pos-adjustments"
+                        hidden={posTool !== "returns"}
+                      >
+                        <h2>Pfand zurücknehmen</h2>
+                        <p>
+                          Leergut antippen oder die Anzahl direkt eingeben. Die
+                          Rücknahme erscheint auf dem Bon.
+                        </p>
+                        <h3 className="pos-subhead">Pfandrücknahme</h3>
+                        <div className="return-grid">
+                          {returnTypes.map((d) => (
+                            <div className="return-tile" key={d.cents}>
+                              <button
+                                onClick={() =>
+                                  setReturns({
+                                    ...returns,
+                                    [d.cents]: Math.min(
+                                      1000,
+                                      (returns[d.cents] || 0) + 1,
+                                    ),
+                                  })
                                 }
-                                setCart((c) =>
-                                  c.some((l) => l.id === p.id)
-                                    ? c.map((l) =>
-                                        l.id === p.id
-                                          ? {
-                                              ...l,
-                                              quantity: Math.min(
-                                                l.quantity + 1,
-                                                1000,
-                                              ),
-                                            }
-                                          : l,
-                                      )
-                                    : [...c, { id: p.id, quantity: 1 }],
-                                );
-                              }}
-                            >
-                              <ProductPhoto product={p} />
-                              <span className="badge">{p.category}</span>
-                              <strong>{p.name}</strong>
-                              <small>{pack(p)}</small>
-                              <b>{euro(p.price_cents)}</b>
-                              <small>inkl. {p.tax_rate} % MwSt.</small>
-                              <small>
-                                {p.deposit_cents === null
-                                  ? "Pfand prüfen"
-                                  : `+ ${euro(p.deposit_cents)} Pfand`}
-                              </small>
-                            </button>
+                              >
+                                {d.kind === "bottle" ? (
+                                  <BottleWine size={22} />
+                                ) : (
+                                  <Package size={22} />
+                                )}
+                                <strong>{d.label}</strong>
+                                <span>{euro(d.cents)}</span>
+                              </button>
+                              <label>
+                                Menge
+                                <input
+                                  aria-label={`Rückgabe ${d.label}`}
+                                  type="number"
+                                  min="0"
+                                  max="1000"
+                                  value={returns[d.cents] || 0}
+                                  onChange={(e) =>
+                                    setReturns({
+                                      ...returns,
+                                      [d.cents]: Math.max(
+                                        0,
+                                        Math.min(
+                                          1000,
+                                          Math.floor(Number(e.target.value)),
+                                        ),
+                                      ),
+                                    })
+                                  }
+                                />
+                              </label>
+                            </div>
                           ))}
+                        </div>
+                      </div>
+                      <div
+                        className="pos-tool-content pos-adjustments"
+                        hidden={posTool !== "discount"}
+                      >
+                        <h2>Rabatt vergeben</h2>
+                        <p>
+                          Artikelrabatte bearbeitest du direkt an der jeweiligen
+                          Bonposition.
+                        </p>
+                        {can(data, "rabatt") && (
+                          <fieldset
+                            className="pos-discount-panel"
+                            disabled={busy || cart.length === 0}
+                          >
+                            <legend>Rabatt</legend>
+                            <div
+                              className="segmented"
+                              role="group"
+                              aria-label="Rabattart"
+                            >
+                              {(
+                                [
+                                  ["none", "Kein Rabatt"],
+                                  ["item", "Einzelartikel"],
+                                  ["cart", "Warenkorb"],
+                                ] as const
+                              ).map(([value, label]) => (
+                                <button
+                                  type="button"
+                                  key={value}
+                                  aria-pressed={discountMode === value}
+                                  className={
+                                    discountMode === value ? "active" : ""
+                                  }
+                                  onClick={() => {
+                                    setDiscountMode(value);
+                                    setDiscount(
+                                      value === "cart"
+                                        ? (data.settings.discount_percent ?? 10)
+                                        : 0,
+                                    );
+                                    setDiscountReason("Aktion");
+                                    setCart((c) =>
+                                      c.map((line) => ({
+                                        ...line,
+                                        discount_percent: 0,
+                                        discount_reason: "",
+                                      })),
+                                    );
+                                  }}
+                                >
+                                  {label}
+                                </button>
+                              ))}
+                            </div>
+                            {discountMode === "cart" && (
+                              <div className="pos-discount-fields">
+                                <label>
+                                  Warenkorbrabatt (%)
+                                  <input
+                                    aria-label="Warenkorbrabatt (%)"
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    step="1"
+                                    value={discount}
+                                    onChange={(e) =>
+                                      setDiscount(
+                                        Math.max(
+                                          0,
+                                          Math.min(
+                                            100,
+                                            Math.trunc(
+                                              Number(e.target.value) || 0,
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                    }
+                                  />
+                                </label>
+                                <label>
+                                  Rabattgrund
+                                  <select
+                                    value={discountReason}
+                                    onChange={(e) =>
+                                      setDiscountReason(e.target.value)
+                                    }
+                                  >
+                                    {discountReasons.map((reason) => (
+                                      <option key={reason}>{reason}</option>
+                                    ))}
+                                  </select>
+                                </label>
+                              </div>
+                            )}
+                            <small className="muted">
+                              {discountMode === "item"
+                                ? "Rabatt an der jeweiligen Position eingeben. "
+                                : ""}
+                              Pfand und Pfandrücknahmen bleiben unverändert.
+                              Rabatte werden je Einheit auf Cent gerundet.
+                            </small>
+                          </fieldset>
+                        )}
                       </div>
                     </section>
-                    <aside className="panel pos-cart">
+                    <aside
+                      className="panel pos-cart"
+                      aria-label="Aktueller Bon"
+                    >
                       <div className="panel-head">
                         <h2>Aktueller Bon</h2>
                         <button
@@ -1290,391 +1544,287 @@ export default function AdminApp({ section }: { section: string }) {
                           <Trash2 size={17} />
                         </button>
                       </div>
-                      {cart.length === 0 && (
-                        <p className="muted">
-                          Artikel auswählen oder Pfand zurücknehmen.
-                        </p>
-                      )}
-                      {can(data, "rabatt") && (
-                        <fieldset
-                          className="pos-discount-panel"
-                          disabled={busy || cart.length === 0}
-                        >
-                          <legend>Rabatt</legend>
-                          <div
-                            className="segmented"
-                            role="group"
-                            aria-label="Rabattart"
-                          >
-                            {(
-                              [
-                                ["none", "Kein Rabatt"],
-                                ["item", "Einzelartikel"],
-                                ["cart", "Warenkorb"],
-                              ] as const
-                            ).map(([value, label]) => (
-                              <button
-                                type="button"
-                                key={value}
-                                aria-pressed={discountMode === value}
-                                className={
-                                  discountMode === value ? "active" : ""
-                                }
-                                onClick={() => {
-                                  setDiscountMode(value);
-                                  setDiscount(
-                                    value === "cart"
-                                      ? (data.settings.discount_percent ?? 10)
-                                      : 0,
-                                  );
-                                  setDiscountReason("Aktion");
-                                  setCart((c) =>
-                                    c.map((line) => ({
-                                      ...line,
-                                      discount_percent: 0,
-                                      discount_reason: "",
-                                    })),
-                                  );
-                                }}
-                              >
-                                {label}
-                              </button>
-                            ))}
-                          </div>
-                          {discountMode === "cart" && (
-                            <div className="pos-discount-fields">
-                              <label>
-                                Warenkorbrabatt (%)
-                                <input
-                                  aria-label="Warenkorbrabatt (%)"
-                                  type="number"
-                                  min="0"
-                                  max="100"
-                                  step="1"
-                                  value={discount}
-                                  onChange={(e) =>
-                                    setDiscount(
-                                      Math.max(
-                                        0,
-                                        Math.min(
-                                          100,
-                                          Math.trunc(
-                                            Number(e.target.value) || 0,
-                                          ),
-                                        ),
-                                      ),
-                                    )
-                                  }
-                                />
-                              </label>
-                              <label>
-                                Rabattgrund
-                                <select
-                                  value={discountReason}
-                                  onChange={(e) =>
-                                    setDiscountReason(e.target.value)
-                                  }
-                                >
-                                  {discountReasons.map((reason) => (
-                                    <option key={reason}>{reason}</option>
-                                  ))}
-                                </select>
-                              </label>
-                            </div>
+                      <div className="pos-cart-lines">
+                        {cart.length === 0 &&
+                          !Object.values(returns).some(Boolean) && (
+                            <p className="muted">
+                              Artikel auswählen oder Pfand zurücknehmen.
+                            </p>
                           )}
-                          <small className="muted">
-                            {discountMode === "item"
-                              ? "Rabatt an der jeweiligen Position eingeben. "
-                              : ""}
-                            Pfand und Pfandrücknahmen bleiben unverändert.
-                            Rabatte werden je Einheit auf Cent gerundet.
-                          </small>
-                        </fieldset>
-                      )}
-                      {cart.map((l) => {
-                        const p = products.find((p) => p.id === l.id)!;
-                        const priced = lines.find((line) => line.id === l.id)!;
-                        return (
-                          <div className="pos-item" key={l.id}>
-                            <div className="pos-line">
-                              <div>
-                                <strong>{p.name}</strong>
-                                <small>
-                                  {priced.price_cents !== p.price_cents && (
-                                    <del>{euro(p.price_cents)} </del>
-                                  )}
-                                  {euro(priced.price_cents)} +{" "}
-                                  {euro(p.deposit_cents ?? 0)} Pfand
-                                </small>
-                              </div>
-                              <div className="stepper">
-                                <button
-                                  aria-label={`${p.name} reduzieren`}
-                                  onClick={() =>
-                                    setCart(
-                                      cart.flatMap((x) =>
-                                        x.id === l.id
-                                          ? x.quantity > 1
-                                            ? [
-                                                {
-                                                  ...x,
-                                                  quantity: x.quantity - 1,
-                                                },
-                                              ]
-                                            : []
-                                          : [x],
-                                      ),
-                                    )
-                                  }
-                                >
-                                  <Minus size={13} />
-                                </button>
-                                <span>{l.quantity}</span>
-                                <button
-                                  aria-label={`${p.name} erhöhen`}
-                                  onClick={() =>
-                                    setCart(
-                                      cart.map((x) =>
-                                        x.id === l.id
-                                          ? {
-                                              ...x,
-                                              quantity: Math.min(
-                                                1000,
-                                                x.quantity + 1,
-                                              ),
-                                            }
-                                          : x,
-                                      ),
-                                    )
-                                  }
-                                >
-                                  <Plus size={13} />
-                                </button>
-                              </div>
-                            </div>
-                            {can(data, "rabatt") && discountMode === "item" && (
-                              <div className="pos-discount-fields">
-                                <label>
-                                  Rabatt (%)
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    max="100"
-                                    step="1"
-                                    aria-label={`Rabatt für ${p.name} (%)`}
-                                    value={l.discount_percent || 0}
-                                    onChange={(e) =>
-                                      setCart((c) =>
-                                        c.map((x) =>
+                        {cart.map((l) => {
+                          const p = products.find((p) => p.id === l.id)!;
+                          const priced = lines.find(
+                            (line) => line.id === l.id,
+                          )!;
+                          return (
+                            <div className="pos-item" key={l.id}>
+                              <div className="pos-line">
+                                <div>
+                                  <strong>{p.name}</strong>
+                                  <small className="pos-line-pack">
+                                    {pack(p)}
+                                  </small>
+                                  <small>
+                                    {priced.price_cents !== p.price_cents && (
+                                      <del>{euro(p.price_cents)} </del>
+                                    )}
+                                    {euro(priced.price_cents)} +{" "}
+                                    {euro(p.deposit_cents ?? 0)} Pfand
+                                  </small>
+                                </div>
+                                <div className="stepper">
+                                  <button
+                                    aria-label={`${p.name} reduzieren`}
+                                    onClick={() =>
+                                      setCart(
+                                        cart.flatMap((x) =>
+                                          x.id === l.id
+                                            ? x.quantity > 1
+                                              ? [
+                                                  {
+                                                    ...x,
+                                                    quantity: x.quantity - 1,
+                                                  },
+                                                ]
+                                              : []
+                                            : [x],
+                                        ),
+                                      )
+                                    }
+                                  >
+                                    <Minus size={13} />
+                                  </button>
+                                  <span>{l.quantity}</span>
+                                  <button
+                                    aria-label={`${p.name} erhöhen`}
+                                    onClick={() =>
+                                      setCart(
+                                        cart.map((x) =>
                                           x.id === l.id
                                             ? {
                                                 ...x,
-                                                discount_percent: Math.max(
-                                                  0,
-                                                  Math.min(
-                                                    100,
-                                                    Math.trunc(
-                                                      Number(e.target.value) ||
-                                                        0,
-                                                    ),
-                                                  ),
+                                                quantity: Math.min(
+                                                  1000,
+                                                  x.quantity + 1,
                                                 ),
-                                                discount_reason:
-                                                  x.discount_reason ||
-                                                  discountReasons[0],
                                               }
                                             : x,
                                         ),
                                       )
                                     }
-                                  />
-                                </label>
-                                {!!l.discount_percent && (
-                                  <label>
-                                    Grund
-                                    <select
-                                      aria-label={`Rabattgrund für ${p.name}`}
-                                      value={
-                                        l.discount_reason || discountReasons[0]
-                                      }
-                                      onChange={(e) =>
-                                        setCart((c) =>
-                                          c.map((x) =>
-                                            x.id === l.id
-                                              ? {
-                                                  ...x,
-                                                  discount_reason:
-                                                    e.target.value,
-                                                }
-                                              : x,
-                                          ),
-                                        )
-                                      }
-                                    >
-                                      {discountReasons.map((reason) => (
-                                        <option key={reason}>{reason}</option>
-                                      ))}
-                                    </select>
-                                  </label>
-                                )}
-                                {!!l.discount_percent && (
-                                  <small className="muted">
-                                    Nachlass für diese Position:{" "}
-                                    {euro(discountTotal([priced]))}
-                                  </small>
-                                )}
+                                  >
+                                    <Plus size={13} />
+                                  </button>
+                                </div>
                               </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                      <h3 className="pos-subhead">Pfandrücknahme</h3>
-                      <div className="return-grid">
-                        {returnTypes.map((d) => (
-                          <div className="return-tile" key={d.cents}>
-                            <button
-                              onClick={() =>
-                                setReturns({
-                                  ...returns,
-                                  [d.cents]: Math.min(
-                                    1000,
-                                    (returns[d.cents] || 0) + 1,
-                                  ),
-                                })
-                              }
-                            >
-                              {d.kind === "bottle" ? (
-                                <BottleWine size={22} />
-                              ) : (
-                                <Package size={22} />
-                              )}
-                              <strong>{d.label}</strong>
-                              <span>{euro(d.cents)}</span>
-                            </button>
-                            <label>
-                              Menge
-                              <input
-                                aria-label={`Rückgabe ${d.label}`}
-                                type="number"
-                                min="0"
-                                max="1000"
-                                value={returns[d.cents] || 0}
-                                onChange={(e) =>
-                                  setReturns({
-                                    ...returns,
-                                    [d.cents]: Math.max(
-                                      0,
-                                      Math.min(
-                                        1000,
-                                        Math.floor(Number(e.target.value)),
-                                      ),
-                                    ),
-                                  })
+                              {can(data, "rabatt") &&
+                                discountMode === "item" && (
+                                  <div className="pos-discount-fields">
+                                    <label>
+                                      Rabatt (%)
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        step="1"
+                                        aria-label={`Rabatt für ${p.name} (%)`}
+                                        value={l.discount_percent || 0}
+                                        onChange={(e) =>
+                                          setCart((c) =>
+                                            c.map((x) =>
+                                              x.id === l.id
+                                                ? {
+                                                    ...x,
+                                                    discount_percent: Math.max(
+                                                      0,
+                                                      Math.min(
+                                                        100,
+                                                        Math.trunc(
+                                                          Number(
+                                                            e.target.value,
+                                                          ) || 0,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    discount_reason:
+                                                      x.discount_reason ||
+                                                      discountReasons[0],
+                                                  }
+                                                : x,
+                                            ),
+                                          )
+                                        }
+                                      />
+                                    </label>
+                                    {!!l.discount_percent && (
+                                      <label>
+                                        Grund
+                                        <select
+                                          aria-label={`Rabattgrund für ${p.name}`}
+                                          value={
+                                            l.discount_reason ||
+                                            discountReasons[0]
+                                          }
+                                          onChange={(e) =>
+                                            setCart((c) =>
+                                              c.map((x) =>
+                                                x.id === l.id
+                                                  ? {
+                                                      ...x,
+                                                      discount_reason:
+                                                        e.target.value,
+                                                    }
+                                                  : x,
+                                              ),
+                                            )
+                                          }
+                                        >
+                                          {discountReasons.map((reason) => (
+                                            <option key={reason}>
+                                              {reason}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      </label>
+                                    )}
+                                    {!!l.discount_percent && (
+                                      <small className="muted">
+                                        Nachlass für diese Position:{" "}
+                                        {euro(discountTotal([priced]))}
+                                      </small>
+                                    )}
+                                  </div>
+                                )}
+                            </div>
+                          );
+                        })}
+                        {Object.entries(returns)
+                          .filter(([, quantity]) => quantity > 0)
+                          .map(([cents, quantity]) => (
+                            <div className="pos-return-line" key={cents}>
+                              <div>
+                                <strong>Pfandrücknahme</strong>
+                                <small>
+                                  {quantity} × {euro(Number(cents))}
+                                </small>
+                              </div>
+                              <b>−{euro(Number(cents) * quantity)}</b>
+                              <button
+                                className="icon-button"
+                                aria-label={`Pfandrücknahme ${cents} entfernen`}
+                                onClick={() =>
+                                  setReturns((current) => ({
+                                    ...current,
+                                    [cents]: 0,
+                                  }))
                                 }
-                              />
-                            </label>
+                              >
+                                <X size={16} />
+                              </button>
+                            </div>
+                          ))}
+                      </div>
+                      <div className="pos-checkout">
+                        <div className="cart-totals" aria-live="polite">
+                          {discountTotal(lines) > 0 && (
+                            <div className="discount-saving">
+                              <span>Rabatt gesamt (ohne Pfand)</span>
+                              <strong>−{euro(discountTotal(lines))}</strong>
+                            </div>
+                          )}
+                          <div>
+                            <span>Netto</span>
+                            <span>{euro(total.net)}</span>
                           </div>
-                        ))}
-                      </div>
-                      <div className="cart-totals" aria-live="polite">
-                        {discountTotal(lines) > 0 && (
-                          <div className="discount-saving">
-                            <span>Rabatt gesamt (ohne Pfand)</span>
-                            <strong>−{euro(discountTotal(lines))}</strong>
+                          <div>
+                            <span>Umsatzsteuer</span>
+                            <span>{euro(total.tax)}</span>
                           </div>
-                        )}
-                        <div>
-                          <span>Netto</span>
-                          <span>{euro(total.net)}</span>
+                          <div>
+                            <span>Pfand enthalten</span>
+                            <span>{euro(total.deposit)}</span>
+                          </div>
+                          <div className="total">
+                            <strong>
+                              {total.gross < 0 ? "Auszahlung" : "Gesamt"}
+                            </strong>
+                            <strong>{euro(Math.abs(total.gross))}</strong>
+                          </div>
                         </div>
-                        <div>
-                          <span>Umsatzsteuer</span>
-                          <span>{euro(total.tax)}</span>
+                        <div className="segmented">
+                          {[
+                            ["cash", "Bar"],
+                            ["card", "Karte"],
+                          ].map(([v, l]) => (
+                            <button
+                              className={payment === v ? "active" : ""}
+                              key={v}
+                              onClick={() => setPayment(v)}
+                            >
+                              {l}
+                            </button>
+                          ))}
                         </div>
-                        <div>
-                          <span>Pfand enthalten</span>
-                          <span>{euro(total.deposit)}</span>
-                        </div>
-                        <div className="total">
-                          <strong>
-                            {total.gross < 0 ? "Auszahlung" : "Gesamt"}
-                          </strong>
-                          <strong>{euro(Math.abs(total.gross))}</strong>
-                        </div>
-                      </div>
-                      <div className="segmented">
-                        {[
-                          ["cash", "Bar"],
-                          ["card", "Karte"],
-                        ].map(([v, l]) => (
-                          <button
-                            className={payment === v ? "active" : ""}
-                            key={v}
-                            onClick={() => setPayment(v)}
-                          >
-                            {l}
-                          </button>
-                        ))}
-                      </div>
-                      <CheckoutFlow
-                        key={data.operatorId}
-                        settings={data.settings}
-                        operatorId={data.operatorId}
-                        pendingReceipt={data.pendingReceipt}
-                        disabled={busy || !lines.length}
-                        onRefresh={load}
-                        payload={{
-                          id: saleId,
-                          lines: cart.map((line) => ({
-                            id: line.id,
-                            quantity: line.quantity,
-                            discount_percent:
-                              can(data, "rabatt") && discountMode === "item"
-                                ? line.discount_percent || 0
-                                : 0,
-                            discount_reason: can(data, "rabatt")
-                              ? discountMode === "cart"
-                                ? discountReason
-                                : discountMode === "item"
-                                  ? line.discount_reason || discountReasons[0]
-                                  : ""
-                              : "",
-                          })),
-                          payment,
-                          discount:
-                            can(data, "rabatt") && discountMode === "cart"
-                              ? discount
-                              : 0,
-                          returns: Object.entries(returns)
-                            .filter(([, q]) => q > 0)
-                            .map(([d, q]) => ({
-                              deposit_cents: Number(d),
-                              quantity: q,
+                        <CheckoutFlow
+                          key={data.operatorId}
+                          settings={data.settings}
+                          operatorId={data.operatorId}
+                          pendingReceipt={data.pendingReceipt}
+                          disabled={busy || !lines.length}
+                          onRefresh={load}
+                          payload={{
+                            id: saleId,
+                            lines: cart.map((line) => ({
+                              id: line.id,
+                              quantity: line.quantity,
+                              discount_percent:
+                                can(data, "rabatt") && discountMode === "item"
+                                  ? line.discount_percent || 0
+                                  : 0,
+                              discount_reason: can(data, "rabatt")
+                                ? discountMode === "cart"
+                                  ? discountReason
+                                  : discountMode === "item"
+                                    ? line.discount_reason || discountReasons[0]
+                                    : ""
+                                : "",
                             })),
-                        }}
-                        onBooked={(s) => {
-                          setLastSale(s);
-                          setCart([]);
-                          setDiscountMode("none");
-                          setDiscount(0);
-                          setDiscountReason("Aktion");
-                          setReturns({});
-                          setSaleId(crypto.randomUUID());
-                        }}
-                      />
-                      {lastSale && (
-                        <button
-                          className="button secondary full"
-                          onClick={() => receiptDownload(lastSale.id)}
-                        >
-                          <Printer size={18} /> Bon als PDF
-                        </button>
-                      )}
-                      <p className="fineprint">
-                        Kartenbeträge werden dokumentiert. Eine automatische
-                        Abbuchung über ein Kartenterminal ist noch nicht
-                        angebunden.
-                      </p>
+                            payment,
+                            discount:
+                              can(data, "rabatt") && discountMode === "cart"
+                                ? discount
+                                : 0,
+                            returns: Object.entries(returns)
+                              .filter(([, q]) => q > 0)
+                              .map(([d, q]) => ({
+                                deposit_cents: Number(d),
+                                quantity: q,
+                              })),
+                          }}
+                          onBooked={(s) => {
+                            setLastSale(s);
+                            setCart([]);
+                            setDiscountMode("none");
+                            setDiscount(0);
+                            setDiscountReason("Aktion");
+                            setReturns({});
+                            setSaleId(crypto.randomUUID());
+                          }}
+                        />
+                        {lastSale && (
+                          <button
+                            className="button secondary full"
+                            onClick={() => receiptDownload(lastSale.id)}
+                          >
+                            <Printer size={18} /> Bon als PDF
+                          </button>
+                        )}
+                        <p className="fineprint">
+                          {payment === "card"
+                            ? "Zahlung zuerst am separaten SumUp-Terminal prüfen."
+                            : "Barzahlung am Tresen."}
+                        </p>
+                      </div>
                     </aside>
                   </div>
                 </>
