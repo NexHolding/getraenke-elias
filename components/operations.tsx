@@ -1,4 +1,10 @@
 "use client";
+import DeliveryDepositDialog from "./delivery-deposit-dialog";
+import {
+  deliveryAmount,
+  deliveryReturnValue,
+  returnAmount,
+} from "@/lib/delivery-totals";
 import { useDialog } from "./use-dialog";
 import InvoiceStatus from "./invoice-status";
 import { paymentLabels } from "@/lib/billing";
@@ -313,7 +319,7 @@ export function DocumentsList({
       number: d.number,
       date: d.delivered_at || d.created_at,
       status: d.status === "delivered" ? "Übergeben" : "Entwurf",
-      amount: null,
+      amount: deliveryAmount(d),
     })),
     ...invoices.map((i) => ({
       id: i.id,
@@ -720,6 +726,10 @@ export function DeliveryManager({
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [signature, setSignature] = useState<string | null>(null);
   const [signatureVersion, setSignatureVersion] = useState(0);
+  const [depositReturns, setDepositReturns] = useState<Record<string, number>>(
+    {},
+  );
+  const [depositOpen, setDepositOpen] = useState(false);
   const [recipient, setRecipient] = useState("");
   const [expectedPayment, setExpectedPayment] = useState<
     "cash" | "card" | "invoice"
@@ -737,6 +747,14 @@ export function DeliveryManager({
   const pendingDelivery = useRef<Record<string, unknown> | null>(null);
   const [deliveryPending, setDeliveryPending] = useState(false);
   const o = orders.find((o) => o.id === selected);
+  const deliveryGross =
+    o?.items.reduce(
+      (sum, i) =>
+        sum +
+        (quantities[i.id] || 0) * (i.price_cents + (i.deposit_cents || 0)),
+      0,
+    ) || 0;
+  const deliveryDue = deliveryGross - returnAmount(depositReturns);
   const tour = orders
     .filter(
       (o) =>
@@ -757,6 +775,13 @@ export function DeliveryManager({
     const draft = op.data.deliveries.find(
       (d) => d.order_id === order.id && d.status === "draft",
     );
+    setDepositReturns(deliveryReturnValue(draft));
+    setDepositOpen(false);
+    setDeliveryPayment(
+      draft?.payment_method === "invoice" && method !== "invoice"
+        ? method
+        : draft?.payment_method || method,
+    );
     setDraftId(draft?.id || crypto.randomUUID());
     setRevision(draft?.revision || 0);
     setQuantities(
@@ -770,6 +795,7 @@ export function DeliveryManager({
       ),
     );
     setSignature(null);
+    setSignatureVersion((v) => v + 1);
     setRecipient("");
   };
   const changeQuantity = (id: string, value: number, maximum: number) => {
@@ -787,8 +813,11 @@ export function DeliveryManager({
   const hasDeliveryItems = Object.values(quantities).some(
     (quantity) => quantity > 0,
   );
-  const save = async (finalize: boolean) => {
-    if (!o || deliveryLock.current) return;
+  const save = async (
+    finalize: boolean,
+    returnOverride?: Record<string, number>,
+  ) => {
+    if (!o || deliveryLock.current) return false;
     deliveryLock.current = true;
     const value = pendingDelivery.current || {
       order_id: o.id,
@@ -798,12 +827,18 @@ export function DeliveryManager({
         id: i.id,
         quantity: quantities[i.id] || 0,
       })),
+      returns: Object.entries(returnOverride || depositReturns)
+        .filter(([, quantity]) => quantity > 0)
+        .map(([cents, quantity]) => ({
+          deposit_cents: Number(cents),
+          quantity,
+        })),
       finalize,
-      signature,
+      signature: returnOverride ? null : signature,
       signed_name: recipient,
       expected_payment_method: expectedPayment,
       payment_method: deliveryPayment,
-      payment_confirmed: paymentConfirmed,
+      payment_confirmed: returnOverride ? false : paymentConfirmed,
     };
     pendingDelivery.current = value;
     setDeliveryPending(true);
@@ -824,6 +859,12 @@ export function DeliveryManager({
       pendingDelivery.current = null;
       setDeliveryPending(false);
       setRevision(d.revision);
+      setDepositReturns(deliveryReturnValue(d));
+      if (!value.finalize) {
+        setPaymentConfirmed(false);
+        setSignature(null);
+        setSignatureVersion((v) => v + 1);
+      }
       if (value.finalize) {
         setCompleted(d);
         setSelected(null);
@@ -843,12 +884,14 @@ export function DeliveryManager({
           "Lieferung gespeichert. Bitte die Ansicht aktualisieren.",
         );
       }
+      return true;
     } catch (e) {
       setDeliveryNote(
         e instanceof Error
           ? e.message
           : "Verbindung unterbrochen. Bitte denselben Vorgang erneut prüfen.",
       );
+      return false;
     } finally {
       deliveryLock.current = false;
     }
@@ -923,52 +966,91 @@ export function DeliveryManager({
       <div className="delivery-columns">
         <section>
           <h2>Deine Tour · {tour.length} Stopps</h2>
-          {tour.map((order, i) => (
-            <article className="panel route-stop" key={order.id}>
-              <span className="stop-number">{i + 1}</span>
-              <div>
-                <span className="eyebrow">
-                  CA. {order.eta_start}–{order.eta_end} UHR
-                </span>
-                <h3>{order.customer_name}</h3>
-                <p>{order.address}</p>
-                <p className="delivery-payment-hint">
-                  {order.approved_payment_method
-                    ? paymentLabels[order.approved_payment_method]
-                    : "Zahlungsart noch nicht freigegeben"}
-                  {order.approved_payment_method
-                    ? order.approved_payment_method === "invoice"
-                      ? " · Nicht vor Ort kassieren"
-                      : " · Vor Ort kassieren"
-                    : ""}
-                </p>
-                <p>
-                  {order.preference_snapshot?.dropoff_allowed
-                    ? `Abstellen erlaubt: ${order.preference_snapshot.dropoff_note || "siehe Kundenhinweis"}`
-                    : "Persönliche Übergabe erforderlich"}
-                </p>
-                <div className="inline-actions">
-                  <a
-                    target="_blank"
-                    className="text-link"
-                    href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.address)}`}
-                  >
-                    Google Maps
-                  </a>
-                  <a
-                    target="_blank"
-                    className="text-link"
-                    href={`https://maps.apple.com/?daddr=${encodeURIComponent(order.address)}`}
-                  >
-                    Apple Karten
-                  </a>
-                  <button className="button" onClick={() => open(order)}>
-                    Lieferschein öffnen
-                  </button>
+          {tour.map((order, i) => {
+            const draft = op.data.deliveries.find(
+              (d) => d.order_id === order.id && d.status === "draft",
+            );
+            const paymentMethod =
+              draft?.payment_method || order.approved_payment_method;
+            return (
+              <article className="panel route-stop" key={order.id}>
+                <span className="stop-number">{i + 1}</span>
+                <div>
+                  <span className="eyebrow">
+                    CA. {order.eta_start}–{order.eta_end} UHR
+                  </span>
+                  <h3>{order.customer_name}</h3>
+                  <p>{order.address}</p>
+                  <p className="delivery-payment-hint">
+                    {op.data.deliveries.some(
+                      (d) => d.order_id === order.id && d.status === "draft",
+                    ) ? (
+                      <>
+                        Zahlbetrag nach Pfandrücknahme:{" "}
+                        {euro(
+                          deliveryAmount(
+                            op.data.deliveries.find(
+                              (d) =>
+                                d.order_id === order.id && d.status === "draft",
+                            )!,
+                          ),
+                        )}{" "}
+                        · Entwurf
+                      </>
+                    ) : (
+                      <>
+                        Geplanter Betrag inkl. Pfand:{" "}
+                        {euro(
+                          order.items.reduce(
+                            (sum, i) =>
+                              sum +
+                              Math.max(
+                                0,
+                                i.quantity - (order.delivered?.[i.id] || 0),
+                              ) *
+                                (i.price_cents + (i.deposit_cents || 0)),
+                            0,
+                          ),
+                        )}
+                      </>
+                    )}
+                  </p>
+                  <p className="delivery-payment-hint">
+                    {paymentMethod
+                      ? paymentLabels[paymentMethod]
+                      : "Zahlungsart noch nicht freigegeben"}
+                    {paymentMethod
+                      ? paymentMethod === "invoice"
+                        ? " · Nicht vor Ort kassieren"
+                        : " · Vor Ort kassieren"
+                      : ""}
+                  </p>
+                  <p>
+                    Persönliche Übergabe mit Kundenunterschrift erforderlich
+                  </p>
+                  <div className="inline-actions">
+                    <a
+                      target="_blank"
+                      className="text-link"
+                      href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.address)}`}
+                    >
+                      Google Maps
+                    </a>
+                    <a
+                      target="_blank"
+                      className="text-link"
+                      href={`https://maps.apple.com/?daddr=${encodeURIComponent(order.address)}`}
+                    >
+                      Apple Karten
+                    </a>
+                    <button className="button" onClick={() => open(order)}>
+                      Lieferschein öffnen
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
           {!tour.length && (
             <p className="panel">Für diesen Tag ist noch keine Tour geplant.</p>
           )}
@@ -1112,63 +1194,77 @@ export function DeliveryManager({
                 Entwurf speichern
               </button>
               <section className="delivery-payment-box">
-                <h3>
-                  {expectedPayment === "invoice"
-                    ? "Rechnungskunde · nicht kassieren"
-                    : "Zahlung vor Ort"}
-                </h3>
-                <strong>
-                  {euro(
-                    o.items.reduce(
-                      (sum, i) =>
-                        sum +
-                        (quantities[i.id] || 0) *
-                          (i.price_cents + (i.deposit_cents || 0)),
-                      0,
-                    ),
-                  )}{" "}
-                  inkl. Pfand
+                <h3>Zahlung bei Übergabe</h3>
+                <p>Ware inklusive Lieferpfand: {euro(deliveryGross)}</p>
+                <p>Pfandrücknahme: −{euro(returnAmount(depositReturns))}</p>
+                <button
+                  type="button"
+                  className="button secondary"
+                  onClick={() => setDepositOpen(true)}
+                >
+                  Pfand erfassen
+                </button>
+                <strong aria-live="polite">
+                  {deliveryDue < 0
+                    ? "An Kunden auszahlen"
+                    : "Zahlbetrag nach Pfandrücknahme"}
+                  : {euro(Math.abs(deliveryDue))}
                 </strong>
-                {expectedPayment === "invoice" ? (
+                <p>
+                  Für diesen Auftrag freigegeben:{" "}
+                  {paymentLabels[expectedPayment]}. Bar oder EC ist auch bei
+                  Rechnungskunden möglich.
+                </p>
+                <label>
+                  Zahlungsart vor Ort
+                  <select
+                    aria-label="Zahlungsart vor Ort"
+                    value={deliveryPayment}
+                    onChange={(e) => {
+                      setDeliveryPayment(
+                        e.target.value as typeof deliveryPayment,
+                      );
+                      setPaymentConfirmed(false);
+                      setSignature(null);
+                      setSignatureVersion((v) => v + 1);
+                    }}
+                  >
+                    <option value="cash">Kunde bezahlt bar</option>
+                    <option value="card">Kunde bezahlt mit EC-Karte</option>
+                    {expectedPayment === "invoice" && (
+                      <option value="invoice">
+                        Auf Rechnung (freigegeben)
+                      </option>
+                    )}
+                  </select>
+                </label>
+                {deliveryDue < 0 && deliveryPayment === "invoice" ? (
+                  <p className="notice">
+                    Pfandguthaben bitte bar oder per EC auszahlen. Zahlungsart
+                    ändern und Auszahlung bestätigen.
+                  </p>
+                ) : deliveryDue === 0 ? (
+                  <p>Vollständig mit Pfand verrechnet. Keine Zahlung nötig.</p>
+                ) : deliveryPayment === "invoice" ? (
                   <p>
-                    Die Rechnung wird mit Zahlungsziel erstellt und bleibt bis
-                    zum Zahlungseingang offen.
+                    Die Rechnung über den verbleibenden Betrag wird mit
+                    Zahlungsziel erstellt.
                   </p>
                 ) : (
-                  <>
-                    <p>
-                      Für diesen Auftrag freigegeben:{" "}
-                      {paymentLabels[expectedPayment]}
-                    </p>
-                    <label>
-                      Zahlungsart vor Ort
-                      <select
-                        aria-label="Zahlungsart vor Ort"
-                        value={deliveryPayment}
-                        onChange={(e) => {
-                          setDeliveryPayment(e.target.value as "cash" | "card");
-                          setPaymentConfirmed(false);
-                          setSignature(null);
-                          setSignatureVersion((v) => v + 1);
-                        }}
-                      >
-                        <option value="cash">Barzahlung</option>
-                        <option value="card">
-                          EC-Karte am separaten Gerät
-                        </option>
-                      </select>
-                    </label>
-                    <label className="checkline">
-                      <input
-                        type="checkbox"
-                        checked={paymentConfirmed}
-                        onChange={(e) => setPaymentConfirmed(e.target.checked)}
-                      />
-                      {deliveryPayment === "cash"
+                  <label className="checkline">
+                    <input
+                      type="checkbox"
+                      checked={paymentConfirmed}
+                      onChange={(e) => setPaymentConfirmed(e.target.checked)}
+                    />
+                    {deliveryDue < 0
+                      ? deliveryPayment === "cash"
+                        ? "Pfandguthaben bar ausgezahlt"
+                        : "EC-Erstattung am separaten Gerät erfolgreich"
+                      : deliveryPayment === "cash"
                         ? "Vollständigen Barbetrag erhalten"
                         : "EC-Zahlung am separaten Gerät erfolgreich"}
-                    </label>
-                  </>
+                  </label>
                 )}
               </section>
               {!o.approved_payment_method && (
@@ -1184,19 +1280,16 @@ export function DeliveryManager({
               )}
               <h3>Übergabe bestätigen</h3>
               <label>
-                Name des Empfängers / Abstellvermerk
+                Name des Empfängers
                 <input
                   value={recipient}
                   onChange={(e) => setRecipient(e.target.value)}
                 />
               </label>
-              {o.preference_snapshot?.dropoff_allowed && (
-                <p className="notice">
-                  Abstellgenehmigung:{" "}
-                  {o.preference_snapshot.dropoff_note ||
-                    "Im Kundenprofil freigegeben"}
-                </p>
-              )}
+              <p className="fineprint">
+                Der Kunde bestätigt den Empfang immer mit seiner Unterschrift –
+                unabhängig von Zahlungsart und Abstellgenehmigung.
+              </p>
               <Signature key={signatureVersion} onChange={setSignature} />
               <button
                 className="button full"
@@ -1205,8 +1298,11 @@ export function DeliveryManager({
                   !hasDeliveryItems ||
                   !o.approved_payment_method ||
                   !recipient ||
-                  (expectedPayment !== "invoice" && !paymentConfirmed) ||
-                  (!signature && !o.preference_snapshot?.dropoff_allowed)
+                  (deliveryPayment !== "invoice" &&
+                    deliveryDue !== 0 &&
+                    !paymentConfirmed) ||
+                  (deliveryDue < 0 && deliveryPayment === "invoice") ||
+                  !signature
                 }
                 onClick={() => save(true)}
               >
@@ -1238,6 +1334,13 @@ export function DeliveryManager({
             )}
           </section>
         </div>
+      )}
+      {depositOpen && (
+        <DeliveryDepositDialog
+          value={depositReturns}
+          save={(value) => save(false, value)}
+          close={() => setDepositOpen(false)}
+        />
       )}
     </>
   );

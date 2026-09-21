@@ -169,7 +169,7 @@ const deliver = async (
   )[0].d;
 const id = crypto.randomUUID();
 const items = [{ id: product.id, quantity: 2 }];
-await assert.rejects(() => deliver(id, items, true, null), /Signature/);
+await assert.rejects(() => deliver(id, items, true, null), /Kundenunterschrift/);
 await assert.rejects(
   () => deliver(id, items, true, receiptLogo, other),
   /FORBIDDEN/,

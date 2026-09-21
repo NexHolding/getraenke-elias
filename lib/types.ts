@@ -248,6 +248,9 @@ export type Employee = {
   has_pin: boolean;
 };
 export type Delivery = {
+  deposit_returns?: SaleLine[];
+  total_cents?: number | null;
+  payment_method?: "cash" | "card" | "invoice" | null;
   id: string;
   number: number;
   order_id: string;

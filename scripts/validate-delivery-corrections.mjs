@@ -79,7 +79,7 @@ try {
     revision: 0,
     finalize: true,
     signed_name: "Empfang",
-    signature: null,
+    signature: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aOuoAAAAASUVORK5CYII=",
     expected_payment_method: "invoice",
     payment_method: "invoice",
     payment_confirmed: false,

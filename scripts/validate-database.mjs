@@ -113,6 +113,7 @@ let args = [
 ];
 await query("select save_delivery($1,$2,$3,$4,$5,$6,$7,$8)", args);
 args[5] = true;
+args[6] = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aOuoAAAAASUVORK5CYII=";
 args[7] = "Abgestellt";
 await query("select save_delivery($1,$2,$3,$4,$5,$6,$7,$8)", args);
 await query("select save_delivery($1,$2,$3,$4,$5,$6,$7,$8)", args);
@@ -139,8 +140,8 @@ await query("select save_delivery($1,$2,$3,$4,$5,$6,$7,$8)", [
   0,
   owner,
   true,
-  null,
-  "Abgestellt",
+  args[6],
+  "Empfänger",
 ]);
 o = (await query("select * from orders where id=$1", [order]))[0];
 assert.equal(o.status, "completed");

@@ -1,4 +1,5 @@
 "use client";
+import DepositReturnGrid from "./deposit-return-grid";
 import OrderApproval from "./order-approval";
 import { nativeApp, nativeRequest } from "@/lib/native-app";
 import ReceiptManager from "./receipt-manager";
@@ -14,7 +15,7 @@ import SettingsPanel from "./settings-panel";
 import { CustomerManager, DeliveryManager, InvoiceLedger } from "./operations";
 import { ProductPhoto } from "./product-photo";
 import { can } from "@/lib/permissions";
-import { depositProfiles, depositFor, returnTypes } from "@/lib/deposits";
+import { depositProfiles, depositFor } from "@/lib/deposits";
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useDialog } from "./use-dialog";
@@ -1365,53 +1366,7 @@ export default function AdminApp({ section }: { section: string }) {
                           Rücknahme erscheint auf dem Bon.
                         </p>
                         <h3 className="pos-subhead">Pfandrücknahme</h3>
-                        <div className="return-grid">
-                          {returnTypes.map((d) => (
-                            <div className="return-tile" key={d.cents}>
-                              <button
-                                onClick={() =>
-                                  setReturns({
-                                    ...returns,
-                                    [d.cents]: Math.min(
-                                      1000,
-                                      (returns[d.cents] || 0) + 1,
-                                    ),
-                                  })
-                                }
-                              >
-                                {d.kind === "bottle" ? (
-                                  <BottleWine size={22} />
-                                ) : (
-                                  <Package size={22} />
-                                )}
-                                <strong>{d.label}</strong>
-                                <span>{euro(d.cents)}</span>
-                              </button>
-                              <label>
-                                Menge
-                                <NumberInput
-                                  aria-label={`Rückgabe ${d.label}`}
-                                  placeholder="Menge eingeben"
-                                  min="0"
-                                  max="1000"
-                                  value={returns[d.cents] || 0}
-                                  onChange={(e) =>
-                                    setReturns({
-                                      ...returns,
-                                      [d.cents]: Math.max(
-                                        0,
-                                        Math.min(
-                                          1000,
-                                          Math.floor(Number(e.target.value)),
-                                        ),
-                                      ),
-                                    })
-                                  }
-                                />
-                              </label>
-                            </div>
-                          ))}
-                        </div>
+                        <DepositReturnGrid value={returns} onChange={setReturns} />
                       </div>
                       <div
                         className="pos-tool-content pos-adjustments"

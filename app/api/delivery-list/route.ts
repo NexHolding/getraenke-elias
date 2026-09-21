@@ -19,7 +19,23 @@ export async function GET(req: Request) {
     ]);
     if (orders.error) throw orders.error;
     if (settings.error) throw settings.error;
-    const bytes = deliveryListPdf(orders.data, date, settings.data.value);
+    const drafts = orders.data.length
+      ? await db
+          .from("deliveries")
+          .select("*")
+          .in(
+            "order_id",
+            orders.data.map((o) => o.id),
+          )
+          .eq("status", "draft")
+      : { data: [], error: null };
+    if (drafts.error) throw drafts.error;
+    const bytes = deliveryListPdf(
+      orders.data,
+      date,
+      settings.data.value,
+      drafts.data || [],
+    );
     return new Response(new Uint8Array(bytes), {
       headers: {
         "Content-Type": "application/pdf",

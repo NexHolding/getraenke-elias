@@ -260,6 +260,22 @@ export async function POST(req: Request) {
             )
             .min(1)
             .max(200),
+          returns: z
+            .array(
+              z.object({
+                deposit_cents: z
+                  .number()
+                  .int()
+                  .refine((v) =>
+                    [
+                      8, 15, 25, 150, 240, 285, 330, 310, 342, 450, 510,
+                    ].includes(v),
+                  ),
+                quantity: z.number().int().min(1).max(1000),
+              }),
+            )
+            .max(11)
+            .optional(),
           finalize: z.boolean(),
           expected_payment_method: z
             .enum(["cash", "card", "invoice"])

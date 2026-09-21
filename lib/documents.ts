@@ -1,3 +1,4 @@
+import { deliveryAmount } from "./delivery-totals";
 import { paymentLabels } from "./billing";
 import { receiptLogo } from "./receipt-logo";
 import { jsPDF } from "jspdf";
@@ -163,7 +164,7 @@ export function businessDocument(
     y += 7;
     doc.text(
       invoice.status === "paid"
-        ? `Zahlung erhalten: ${paymentLabels[invoice.payment_method || "invoice"]}`
+        ? `${invoice.total_cents < 0 ? "Pfandguthaben ausgezahlt" : invoice.total_cents === 0 ? "Vollständig verrechnet" : "Zahlung erhalten"}: ${paymentLabels[invoice.payment_method || "invoice"]}`
         : invoice.due_date
           ? `Zahlbar bis ${new Date(invoice.due_date + "T12:00:00Z").toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "Europe/Berlin" })} (${invoice.payment_terms_days} Tage ab Rechnungsdatum).`
           : "Zahlungsziel gemäß vereinbarter Konditionen.",
@@ -172,6 +173,40 @@ export function businessDocument(
     );
   } else {
     const d = record as Delivery;
+    if (d.deposit_returns?.length) {
+      autoTable(doc, {
+        startY: y,
+        margin: { left: 16, right: 16, top: 45, bottom: 45 },
+        head: [["Pfandrücknahme", "Menge", "Abzug"]],
+        body: d.deposit_returns.map((l) => [
+          `${l.name} · ${euro(l.deposit_cents)}`,
+          String(-l.quantity),
+          euro(l.quantity * l.deposit_cents),
+        ]),
+        styles: { fontSize: 9, cellPadding: 3 },
+        headStyles: { fillColor: [237, 243, 222], textColor: [58, 78, 35] },
+      });
+      y =
+        (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable
+          .finalY + 10;
+    }
+    if (y + 60 > 260) {
+      doc.addPage();
+      y = 50;
+    }
+    const amount = deliveryAmount(d);
+    doc.setFontSize(11);
+    doc.text(
+      `${amount < 0 ? "Pfandguthaben / Auszahlung" : "Zahlbetrag nach Pfandrücknahme"}: ${euro(Math.abs(amount))}`,
+      16,
+      y,
+    );
+    y += 8;
+    doc.setFontSize(9);
+    if (d.payment_method) {
+      doc.text(`Zahlungsart: ${paymentLabels[d.payment_method]}`, 16, y);
+      y += 8;
+    }
     doc.text(`Empfang: ${d.signed_name || "Noch nicht bestätigt"}`, 16, y);
     if (d.signature) {
       try {

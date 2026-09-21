@@ -106,7 +106,22 @@ const server = createServer(async (req, res) => {
             quantity: i.quantity,
           })),
       };
+      d.deposit_returns = (v.value.returns || []).map((r) => ({
+        id: `return-${r.deposit_cents}`,
+        name: "Pfandrücknahme",
+        quantity: -r.quantity,
+        deposit_cents: r.deposit_cents,
+        price_cents: 0,
+        tax_rate: 19,
+        deposit_tax_rate: 19,
+      }));
+      d.total_cents = [...d.items, ...d.deposit_returns].reduce(
+        (sum, l) => sum + l.quantity * (l.price_cents + (l.deposit_cents || 0)),
+        0,
+      );
+      d.payment_method = v.value.payment_method;
       op.deliveries = [d];
+      if (v.value.finalize) data.orders[0].status = "completed";
       return res.end(JSON.stringify(d));
     }
     return res.end(JSON.stringify({ ok: true, number: "EL-TEST" }));
@@ -128,6 +143,14 @@ const server = createServer(async (req, res) => {
     );
   if (url.pathname === "/api/catalog")
     return res.end(JSON.stringify({ products, guest_orders: true }));
+  if (url.pathname.endsWith("/00000000-0000-0000-0000-000000000030")) {
+    res.setHeader("content-type", "application/pdf");
+    return res.end(
+      await readFile(
+        `output/delivery-returns/${url.pathname.includes("/invoice/") ? "invoice" : "delivery"}.pdf`,
+      ),
+    );
+  }
   if (url.pathname.startsWith("/api/documents/delivery/")) {
     res.setHeader("content-type", "application/pdf");
     return res.end(await readFile("output/delivery-corrections/partial.pdf"));
@@ -281,6 +304,122 @@ try {
     }
     await page.getByRole("button", { name: "PDF-Dokument schließen" }).click();
   }
+  data.orders[0].approved_payment_method = "invoice";
+  data.orders[0].payment_revision++;
+  op.deliveries[0].payment_method = "invoice";
+  await page.goto("http://127.0.0.1:3029/crm/lieferung");
+  await page
+    .getByRole("button", { name: "Lieferschein öffnen", exact: true })
+    .click();
+  const paymentSelect = page.getByLabel("Zahlungsart vor Ort");
+  assert.equal(await paymentSelect.inputValue(), "invoice");
+  await paymentSelect.selectOption("card");
+  const finish = page.getByRole("button", {
+    name: "Ware übergeben & Belege erstellen",
+  });
+  await page
+    .getByLabel("Name des Empfängers", { exact: true })
+    .fill("QA Empfänger");
+  await page.getByLabel("EC-Zahlung am separaten Gerät erfolgreich").check();
+  assert.equal(await finish.isDisabled(), true);
+  const sign = async () => {
+    const canvas = page.getByLabel("Unterschrift hier zeichnen");
+    await canvas.scrollIntoViewIfNeeded();
+    const box = await canvas.boundingBox();
+    await page.mouse.move(box.x + 40, box.y + 60);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 180, box.y + 110, { steps: 10 });
+    await page.mouse.up();
+  };
+  await sign();
+  assert.equal(await finish.isEnabled(), true);
+  await page
+    .getByRole("button", { name: "Pfand erfassen", exact: true })
+    .click();
+  const deposit = page.getByRole("dialog", {
+    name: "Pfand erfassen",
+    exact: true,
+  });
+  await deposit.getByLabel("Rückgabe Einweg / Dose").fill("3");
+  await deposit.getByRole("button", { name: /12er Wasser/ }).click();
+  await deposit.screenshot({
+    path: "output/delivery-returns/deposit-dialog.png",
+  });
+  await deposit
+    .getByRole("button", { name: "Pfand speichern", exact: true })
+    .click();
+  await deposit.waitFor({ state: "hidden" });
+  assert.equal(
+    await page
+      .getByLabel("EC-Zahlung am separaten Gerät erfolgreich")
+      .isChecked(),
+    false,
+  );
+  assert.equal(await finish.isDisabled(), true);
+  await page
+    .getByText("Zahlbetrag nach Pfandrücknahme: 20,73 €", { exact: true })
+    .waitFor();
+  assert.equal(
+    commands
+      .at(-1)
+      .value.returns.reduce((sum, r) => sum + r.quantity * r.deposit_cents, 0),
+    405,
+  );
+  assert.equal(commands.at(-1).value.signature, null);
+  await page.getByRole("button", { name: "Schließen", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Lieferschein öffnen", exact: true })
+    .click();
+  await page
+    .getByText("Zahlbetrag nach Pfandrücknahme: 20,73 €", { exact: true })
+    .waitFor();
+  await paymentSelect.selectOption("cash");
+  await page
+    .getByLabel("Name des Empfängers", { exact: true })
+    .fill("QA Empfänger");
+  await page.getByLabel("Vollständigen Barbetrag erhalten").check();
+  assert.equal(await finish.isDisabled(), true);
+  await sign();
+  assert.equal(await finish.isEnabled(), true);
+  await page
+    .getByRole("dialog", { name: "Lieferschein", exact: true })
+    .screenshot({ path: "output/delivery-returns/settlement.png" });
+  await finish.click();
+  await page.getByRole("heading", { name: "Lieferung bestätigt" }).waitFor();
+  await page
+    .locator(".delivery-success")
+    .getByText("20,73 €", { exact: true })
+    .waitFor();
+  assert.equal(commands.at(-1).value.payment_method, "cash");
+  assert.ok(commands.at(-1).value.signature.startsWith("data:image/png"));
+  for (const kind of ["delivery", "invoice"]) {
+    const url = `/api/documents/${kind}/00000000-0000-0000-0000-000000000030`;
+    const pages = await page.evaluate((url) => window.inspectPdf(url), url);
+    assert.ok(pages.join(" ").includes("Pfandrücknahme"));
+    assert.ok(pages.join(" ").includes("20,73"));
+    await page.evaluate(
+      (url) =>
+        window.dispatchEvent(
+          new CustomEvent("elias:pdf-preview", { detail: url }),
+        ),
+      url,
+    );
+    await page
+      .locator(".pdf-preview-pages canvas")
+      .nth(pages.length - 1)
+      .waitFor();
+    for (let n = 0; n < pages.length; n++) {
+      const image = await page
+        .locator(".pdf-preview-pages canvas")
+        .nth(n)
+        .evaluate((c) => c.toDataURL("image/png"));
+      await writeFile(
+        `output/delivery-returns/${kind}-${n + 1}.png`,
+        Buffer.from(image.split(",")[1], "base64"),
+      );
+    }
+    await page.getByRole("button", { name: "PDF-Dokument schließen" }).click();
+  }
   await page.goto("http://127.0.0.1:3029/shop");
   const product = products.find((p) => p.id === f.items[0].id);
   await page.evaluate((product) => {
@@ -313,7 +452,7 @@ try {
   assert.equal(commands.at(-1).requested_payment_method, "card");
   assert.deepEqual(errors, []);
   console.log(
-    "PASS browser: customer chooses payment explicitly, seller overrides invoice request to cash; delivery editor excludes missing article and resets payment acknowledgement after amount change; dedicated PDF preview and print; tablet screenshots.",
+    "PASS browser: customer chooses payment explicitly, seller overrides invoice request to cash; delivery editor excludes missing article and resets payment acknowledgement after amount change; dedicated PDF preview and print; tablet screenshots; invoice customer pays cash/card; deposit dialog saves and restores draft, correct overview amount, signature mandatory and reset after changes, delivery and invoice PDFs include deposit deduction.",
   );
 } finally {
   await browser.close();

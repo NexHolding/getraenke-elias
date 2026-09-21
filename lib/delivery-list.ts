@@ -1,10 +1,16 @@
+import { deliveryAmount } from "./delivery-totals";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { receiptLogo } from "./receipt-logo";
 import { euro } from "./money";
 import { paymentLabels } from "./billing";
-import type { Order, Settings } from "./types";
-export function deliveryListPdf(orders: Order[], date: string, cfg: Settings) {
+import type { Delivery, Order, Settings } from "./types";
+export function deliveryListPdf(
+  orders: Order[],
+  date: string,
+  cfg: Settings,
+  drafts: Delivery[] = [],
+) {
   const doc = new jsPDF({ orientation: "landscape" });
   const header = () => {
     doc.setTextColor(42, 54, 35);
@@ -30,29 +36,37 @@ export function deliveryListPdf(orders: Order[], date: string, cfg: Settings) {
   };
   header();
   const rows = orders.map((order, index) => {
-    const lines = order.items
-      .map((item) => ({
-        ...item,
-        quantity: Math.max(
-          0,
-          item.quantity - (order.delivered?.[item.id] || 0),
-        ),
-      }))
-      .filter((item) => item.quantity > 0);
-    const amount = lines.reduce(
-      (sum, item) =>
-        sum + item.quantity * (item.price_cents + (item.deposit_cents || 0)),
-      0,
+    const draft = drafts.find(
+      (d) => d.order_id === order.id && d.status === "draft",
     );
-    const method = order.approved_payment_method;
+    const lines = draft
+      ? draft.items
+      : order.items
+          .map((item) => ({
+            ...item,
+            quantity: Math.max(
+              0,
+              item.quantity - (order.delivered?.[item.id] || 0),
+            ),
+          }))
+          .filter((item) => item.quantity > 0);
+    const amount = draft
+      ? deliveryAmount(draft)
+      : lines.reduce(
+          (sum, item) =>
+            sum +
+            item.quantity * (item.price_cents + (item.deposit_cents || 0)),
+          0,
+        );
+    const method = draft?.payment_method || order.approved_payment_method;
     const customer = `${order.customer_name}\n${order.address}\n${order.phone}\nEL-${String(order.number).padStart(5, "0")}`;
     return [
       String(index + 1),
       `${order.eta_start || "–"}–${order.eta_end || "–"}`,
       customer,
       lines.map((item) => `${item.quantity} × ${item.name}`).join("\n"),
-      `${method ? paymentLabels[method] : "Freigabe fehlt"}\n${euro(amount)} inkl. Pfand${method === "invoice" ? "\nNicht kassieren" : method ? "\nVor Ort kassieren" : ""}`,
-      `${order.notes || ""}${order.preference_snapshot?.dropoff_allowed ? "\nAbstellen: " + (order.preference_snapshot.dropoff_note || "erlaubt") : ""}`,
+      `${method ? paymentLabels[method] : "Freigabe fehlt"}\n${euro(amount)} inkl. Pfand${draft?.deposit_returns?.length ? "\nNach Pfandrücknahme" : ""}${amount < 0 ? "\nAn Kunden auszahlen" : amount === 0 ? "\nVerrechnet" : method === "invoice" ? "\nNicht kassieren" : method ? "\nVor Ort kassieren" : ""}`,
+      `${order.notes || ""}${order.preference_snapshot?.dropoff_allowed ? "\nKundenhinweis: " + (order.preference_snapshot.dropoff_note || "Abstellgenehmigung hinterlegt") : ""}`,
     ];
   });
   autoTable(doc, {
@@ -95,7 +109,7 @@ export function deliveryListPdf(orders: Order[], date: string, cfg: Settings) {
     doc.setFontSize(8);
     doc.setTextColor(95, 105, 84);
     doc.text(
-      `Planungsstand · tatsächliche Liefermengen vor Übergabe prüfen · Seite ${page}/${doc.getNumberOfPages()}`,
+      `Planungsstand · Liefermengen prüfen · Kundenunterschrift erforderlich · Seite ${page}/${doc.getNumberOfPages()}`,
       14,
       202,
     );

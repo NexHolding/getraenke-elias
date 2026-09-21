@@ -83,7 +83,7 @@ async function deliver(o, extra = {}, actor = driver) {
     items: [{ id: item.id, quantity: 2 }],
     revision: 0,
     finalize: true,
-    signature: null,
+    signature: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aOuoAAAAASUVORK5CYII=",
     signed_name: "Testempfänger",
     expected_payment_method: "invoice",
     payment_method: "invoice",
