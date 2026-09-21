@@ -58,17 +58,29 @@ export default function Account() {
   }, []);
   const load = useCallback(async () => {
     const r = await fetch("/api/customer", { cache: "no-store" });
-    if (r.ok) {
-      const d = await r.json();
-      setAccount(d);
-      setProfile(d.customer);
-    }
+    const d = await r.json();
+    if (!r.ok)
+      throw new Error(
+        d.error || "Dein Kundenkonto konnte nicht geladen werden.",
+      );
+    setAccount(d);
+    setProfile(d.customer);
     setLoaded(true);
   }, []);
   useEffect(() => {
     let active = true;
     fetch("/api/customer", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : null))
+      .then(async (r) => {
+        if (r.ok) return r.json();
+        if (r.status !== 401) {
+          const d = await r.json();
+          if (active)
+            setMessage(
+              d.error || "Dein Kundenkonto konnte nicht geladen werden.",
+            );
+        }
+        return null;
+      })
       .then((d) => {
         if (active) {
           const params = new URLSearchParams(location.search);
