@@ -1,5 +1,6 @@
 "use client";
 import { businessAddressFields, businessAddress } from "@/lib/business-address";
+import { paymentAccountIssue } from "@/lib/payment-qr";
 import NumberInput from "./number-input";
 import EpsonWizard from "./epson-wizard";
 import { useState } from "react";
@@ -11,6 +12,7 @@ import { useOperations } from "./operations";
 const tabs = [
   ["betrieb", "Betrieb"],
   ["steuern", "Steuern & Belege"],
+  ["rechnungen", "Rechnungen & Bank"],
   ["automatik", "Bestellautomatik"],
   ["lieferung", "Auslieferung"],
   ["schnittstellen", "Schnittstellen"],
@@ -254,6 +256,30 @@ export default function SettingsPanel({
                     stündlichen Lauf nach der eingestellten Uhrzeit.
                     Versandfreigabe und Bestell-E-Mail werden am Lieferanten
                     gepflegt.
+                  </p>
+                </>
+              )}
+              {tab === "rechnungen" && (
+                <>
+                  {text(
+                    "bank_account_holder",
+                    "Kontoinhaber / Zahlungsempfänger",
+                  )}
+                  {text("bank_name", "Bank (optional)")}
+                  {text("bank_iban", "IBAN")}
+                  {text("bank_bic", "BIC (bei EWR-Konten optional)")}
+                  <p className="notice span-two">
+                    {paymentAccountIssue(v)
+                      ? `Banking-QR noch nicht bereit: ${paymentAccountIssue(v)}`
+                      : "Bankverbindung formal geprüft. Neue offene Rechnungen im Echtbetrieb erhalten automatisch einen SEPA-Banking-QR-Code."}
+                  </p>
+                  <p className="fineprint span-two">
+                    Bitte die Bankverbindung mit dem Geschäftskonto abgleichen.
+                    Eine gültige Prüfziffer bestätigt nicht den Kontoinhaber.
+                    Betrag, Empfänger, IBAN und Rechnungsnummer werden auch
+                    lesbar gedruckt. Änderungen gelten für neue Rechnungen;
+                    archivierte Belege bleiben unverändert. Einrichtungsbelege
+                    enthalten keine Zahlungsaufforderung und keinen Zahlungs-QR.
                   </p>
                 </>
               )}

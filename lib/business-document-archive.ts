@@ -1,7 +1,7 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { serviceDb } from "./server";
-import { businessDocument } from "./documents";
+import { businessDocument, businessDocumentFilename } from "./documents";
 import { archiveAttachment, attachmentContent } from "./communications";
 export async function businessDocumentArchive(
   kind: "invoice" | "delivery",
@@ -36,7 +36,8 @@ export async function businessDocumentArchive(
       .eq("id", 1)
       .single();
     if (ce) throw ce;
-    let pdf = businessDocument(kind, record, order, cfg.value);
+    let pdf: ReturnType<typeof businessDocument> | undefined;
+    const filename = businessDocumentFilename(kind, record.number);
     // If this document was mailed before PDF archiving existed, preserve that original attachment.
     const { data: mails, error: me } = await db
       .from("mail_outbox")
@@ -56,7 +57,7 @@ export async function businessDocumentArchive(
         .from("communication_attachments")
         .select("*")
         .eq("communication_id", c.id)
-        .eq("filename", pdf.filename)
+        .eq("filename", filename)
         .maybeSingle();
       if (ae) throw ae;
       if (a) {
@@ -65,19 +66,40 @@ export async function businessDocumentArchive(
         break;
       }
     }
+    if (
+      !pdf &&
+      kind === "invoice" &&
+      !record.service_date &&
+      record.delivery_id
+    ) {
+      const { data: delivery, error: de } = await db
+        .from("deliveries")
+        .select("number,delivered_at")
+        .eq("id", record.delivery_id)
+        .single();
+      if (de) throw de;
+      if (delivery.delivered_at) {
+        record.service_date = new Intl.DateTimeFormat("en-CA", {
+          timeZone: "Europe/Berlin",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        }).format(new Date(delivery.delivered_at));
+        record.delivery_number = delivery.number;
+      }
+    }
+    pdf ??= businessDocument(kind, record, order, cfg.value);
     // Drafts remain editable and are never archived as signed delivery notes.
     if (kind === "delivery" && record.status !== "delivered") return pdf;
-    const { error: ie } = await db
-      .from("business_documents")
-      .upsert(
-        {
-          [key]: id,
-          filename: pdf.filename,
-          pdf_base64: pdf.bytes.toString("base64"),
-          sha256: createHash("sha256").update(pdf.bytes).digest("hex"),
-        },
-        { onConflict: key, ignoreDuplicates: true },
-      );
+    const { error: ie } = await db.from("business_documents").upsert(
+      {
+        [key]: id,
+        filename: pdf.filename,
+        pdf_base64: pdf.bytes.toString("base64"),
+        sha256: createHash("sha256").update(pdf.bytes).digest("hex"),
+      },
+      { onConflict: key, ignoreDuplicates: true },
+    );
     if (ie) throw ie;
     stored = await read();
     if (stored.error) throw stored.error;

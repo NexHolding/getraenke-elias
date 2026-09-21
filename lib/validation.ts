@@ -1,3 +1,4 @@
+import { normalizeIban, paymentAccountIssue } from "./payment-qr";
 import { z } from "zod";
 import { businessAddress } from "./business-address";
 export const taxRateSchema = z.number().int().min(0).max(100);
@@ -68,7 +69,10 @@ export const productSchema = z
     source: z.string().max(200),
     kind: z.enum(["beverage", "rental", "nonfood"]),
   })
-  .refine((p) => !p.return_eligible || p.kind === "nonfood", "14-Tage-Rücknahme ist nur für Nicht-Lebensmittel möglich.")
+  .refine(
+    (p) => !p.return_eligible || p.kind === "nonfood",
+    "14-Tage-Rücknahme ist nur für Nicht-Lebensmittel möglich.",
+  )
   .refine(
     (p) => p.target_stock >= p.min_stock,
     "Zielbestand muss mindestens dem Mindestbestand entsprechen.",
@@ -116,93 +120,124 @@ export const orderSchema = z
       .max(200),
   })
   .transform((value) => ({ ...value, address: formatDeliveryAddress(value) }));
-export const settingsSchema = z.object({
-  live_mode: z.boolean().default(false),
-  guest_orders: z.boolean().default(true),
-  reorder_days: z
-    .array(z.number().int().min(1).max(7))
-    .min(1)
-    .max(7)
-    .default([1]),
-  reorder_time: z
-    .string()
-    .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
-    .default("10:00"),
-  reorder_weeks: z.number().int().min(1).max(12).default(1),
-  reorder_anchor: z.iso.date().default("2026-09-14"),
-  delivery_days: z
-    .array(z.number().int().min(1).max(7))
-    .min(1)
-    .max(7)
-    .default([1, 2, 3, 4, 5]),
-  delivery_from: z
-    .string()
-    .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
-    .default("10:00"),
-  delivery_to: z
-    .string()
-    .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
-    .default("18:00"),
-  delivery_stop_minutes: z.number().int().min(1).max(120).default(10),
-  discount_percent: z.number().int().min(0).max(100).default(10),
-  tax_number: z.string().trim().max(80).default(""),
-  vat_id: z
-    .string()
-    .trim()
-    .regex(/^(DE[0-9]{9})?$/, "Deutsche USt-IdNr.: DE und neun Ziffern.")
-    .default(""),
-  register_id: z.string().trim().min(1).max(60).default("ELIAS-KASSE-01"),
-  default_tax_rate: taxRateSchema.default(19),
-  default_deposit_tax_rate: taxRateSchema.default(19),
-  business_name: z
-    .string()
-    .min(1)
-    .max(200)
-    .default("Getränkeshop Elias · Frank Elias"),
-  business_street: deliveryAddressShape.street.optional(),
-  business_house_number: deliveryAddressShape.house_number.optional(),
-  business_postal_code: deliveryAddressShape.postal_code.optional(),
-  business_city: deliveryAddressShape.city.optional(),
-  business_address: z
-    .string()
-    .min(1)
-    .max(300)
-    .default("Wartbergstraße 3 · 74076 Heilbronn"),
-  route_geocoding: z.boolean().default(false),
-  auto_reorder: z.boolean(),
-  instagram: z
-    .string()
-    .max(200)
-    .refine(
-      (s) =>
-        !s || /^https:\/\/(www\.)?instagram\.com\/[A-Za-z0-9_.]+\/?$/.test(s),
-    ),
-  domain: z
-    .string()
-    .max(200)
-    .regex(/^[a-z0-9.-]+$/),
-  printer_mode: z.enum(["browser", "epson", "star"]),
-  printer_address: z.string().max(200),
-  printer_model: z.string().max(100).optional(),
-  printer_device_id: z
-    .string()
-    .regex(/^[a-zA-Z0-9_-]{1,64}$/)
-    .optional(),
-  printer_width_dots: z.union([z.literal(512), z.literal(576)]).optional(),
-  tse_provider: z.enum(["", "fiskaly", "other"]),
-  invoice_payment_days: z.number().int().min(1).max(365).default(14),
-  invoice_reminders_enabled: z.boolean().default(true),
-  smtp_enabled: z.boolean().default(false),
-  smtp_host: z.string().max(200),
-  smtp_port: z
-    .number()
-    .int()
-    .refine((p) => [465, 587].includes(p)),
-  smtp_user: z.string().max(200),
-  smtp_from: z.union([z.email(), z.literal("")]),
-  smtp_password: z.string().max(500).optional(),
-}).transform((v) => {
-  if (v.business_street && v.business_house_number && v.business_postal_code && v.business_city)
-    return {...v,business_address:businessAddress({business_street:v.business_street,business_house_number:v.business_house_number,business_postal_code:v.business_postal_code,business_city:v.business_city})};
-  return v;
-});
+export const settingsSchema = z
+  .object({
+    live_mode: z.boolean().default(false),
+    guest_orders: z.boolean().default(true),
+    reorder_days: z
+      .array(z.number().int().min(1).max(7))
+      .min(1)
+      .max(7)
+      .default([1]),
+    reorder_time: z
+      .string()
+      .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
+      .default("10:00"),
+    reorder_weeks: z.number().int().min(1).max(12).default(1),
+    reorder_anchor: z.iso.date().default("2026-09-14"),
+    delivery_days: z
+      .array(z.number().int().min(1).max(7))
+      .min(1)
+      .max(7)
+      .default([1, 2, 3, 4, 5]),
+    delivery_from: z
+      .string()
+      .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
+      .default("10:00"),
+    delivery_to: z
+      .string()
+      .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
+      .default("18:00"),
+    delivery_stop_minutes: z.number().int().min(1).max(120).default(10),
+    discount_percent: z.number().int().min(0).max(100).default(10),
+    tax_number: z.string().trim().max(80).default(""),
+    vat_id: z
+      .string()
+      .trim()
+      .regex(/^(DE[0-9]{9})?$/, "Deutsche USt-IdNr.: DE und neun Ziffern.")
+      .default(""),
+    register_id: z.string().trim().min(1).max(60).default("ELIAS-KASSE-01"),
+    default_tax_rate: taxRateSchema.default(19),
+    default_deposit_tax_rate: taxRateSchema.default(19),
+    business_name: z
+      .string()
+      .min(1)
+      .max(200)
+      .default("Getränkeshop Elias · Frank Elias"),
+    business_street: deliveryAddressShape.street.optional(),
+    business_house_number: deliveryAddressShape.house_number.optional(),
+    business_postal_code: deliveryAddressShape.postal_code.optional(),
+    business_city: deliveryAddressShape.city.optional(),
+    business_address: z
+      .string()
+      .min(1)
+      .max(300)
+      .default("Wartbergstraße 3 · 74076 Heilbronn"),
+    route_geocoding: z.boolean().default(false),
+    auto_reorder: z.boolean(),
+    instagram: z
+      .string()
+      .max(200)
+      .refine(
+        (s) =>
+          !s || /^https:\/\/(www\.)?instagram\.com\/[A-Za-z0-9_.]+\/?$/.test(s),
+      ),
+    domain: z
+      .string()
+      .max(200)
+      .regex(/^[a-z0-9.-]+$/),
+    printer_mode: z.enum(["browser", "epson", "star"]),
+    printer_address: z.string().max(200),
+    printer_model: z.string().max(100).optional(),
+    printer_device_id: z
+      .string()
+      .regex(/^[a-zA-Z0-9_-]{1,64}$/)
+      .optional(),
+    printer_width_dots: z.union([z.literal(512), z.literal(576)]).optional(),
+    tse_provider: z.enum(["", "fiskaly", "other"]),
+    bank_account_holder: z
+      .string()
+      .trim()
+      .max(70)
+      .regex(/^[^\r\n\x00-\x1f]*$/)
+      .default(""),
+    bank_iban: z.string().transform(normalizeIban).default(""),
+    bank_bic: z.string().trim().toUpperCase().max(11).default(""),
+    bank_name: z.string().trim().max(100).default(""),
+    invoice_payment_days: z.number().int().min(1).max(365).default(14),
+    invoice_reminders_enabled: z.boolean().default(true),
+    smtp_enabled: z.boolean().default(false),
+    smtp_host: z.string().max(200),
+    smtp_port: z
+      .number()
+      .int()
+      .refine((p) => [465, 587].includes(p)),
+    smtp_user: z.string().max(200),
+    smtp_from: z.union([z.email(), z.literal("")]),
+    smtp_password: z.string().max(500).optional(),
+  })
+  .superRefine((v, ctx) => {
+    if (v.bank_iban || v.bank_account_holder || v.bank_bic) {
+      const issue = paymentAccountIssue(v);
+      if (issue)
+        ctx.addIssue({ code: "custom", path: ["bank_iban"], message: issue });
+    }
+  })
+  .transform((v) => {
+    if (
+      v.business_street &&
+      v.business_house_number &&
+      v.business_postal_code &&
+      v.business_city
+    )
+      return {
+        ...v,
+        business_address: businessAddress({
+          business_street: v.business_street,
+          business_house_number: v.business_house_number,
+          business_postal_code: v.business_postal_code,
+          business_city: v.business_city,
+        }),
+      };
+    return v;
+  });

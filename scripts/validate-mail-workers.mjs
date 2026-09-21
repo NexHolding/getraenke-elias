@@ -230,7 +230,7 @@ await build({
                 : args.path === "nodemailer"
                   ? "export default {createTransport:()=>globalThis.__eliasMailQA.transport};"
                   : args.path === "documents"
-                    ? 'export const businessDocument=()=>({filename:"Elias-QA.pdf",bytes:Buffer.from("%PDF-QA-original")});'
+                    ? 'export const businessDocumentFilename=()=>"Elias-QA.pdf";export const businessDocument=()=>({filename:"Elias-QA.pdf",bytes:Buffer.from("%PDF-QA-original")});'
                     : 'export const lookup=async()=>[{address:"1.1.1.1"}];',
         }));
       },

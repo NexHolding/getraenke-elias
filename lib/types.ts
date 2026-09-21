@@ -47,13 +47,22 @@ export type Supplier = {
   auto_send: boolean;
 };
 export type CartLine = { product: Product; quantity: number };
-export type OrderStockLine = {id:string;name:string;required:number;stock:number|null;reserved:number;available:number|null;missing:number|null;state:"available"|"shortage"|"unknown"|"inactive"};
+export type OrderStockLine = {
+  id: string;
+  name: string;
+  required: number;
+  stock: number | null;
+  reserved: number;
+  available: number | null;
+  missing: number | null;
+  state: "available" | "shortage" | "unknown" | "inactive";
+};
 export type Order = Partial<DeliveryAddress> & {
-  auto_processing?:boolean;
-  auto_confirmed_at?:string|null;
-  stock_check?:OrderStockLine[];
-  stock_checked_at?:string|null;
-  delivery_started_at?:string|null;
+  auto_processing?: boolean;
+  auto_confirmed_at?: string | null;
+  stock_check?: OrderStockLine[];
+  stock_checked_at?: string | null;
+  delivery_started_at?: string | null;
   requested_payment_method?: "cash" | "card" | "invoice" | null;
   approved_payment_method?: "cash" | "card" | "invoice" | null;
   payment_revision?: number;
@@ -131,6 +140,8 @@ export type Sale = {
   test_mode: boolean;
 };
 export type SaleLine = {
+  pack_count?: number;
+  volume_ml?: number;
   return_eligible?: boolean;
   original_line?: number;
   net_cents?: number;
@@ -212,6 +223,10 @@ export type Settings = {
   smtp_user: string;
   smtp_from: string;
   smtp_password_set?: boolean;
+  bank_account_holder?: string;
+  bank_iban?: string;
+  bank_bic?: string;
+  bank_name?: string;
   invoice_payment_days?: number;
   invoice_reminders_enabled?: boolean;
 };
@@ -271,6 +286,8 @@ export type Delivery = {
   mode: string;
 };
 export type Invoice = {
+  service_date?: string | null;
+  delivery_number?: number | null;
   payment_method?: "cash" | "card" | "invoice";
   payment_terms_days?: number | null;
   due_date?: string | null;

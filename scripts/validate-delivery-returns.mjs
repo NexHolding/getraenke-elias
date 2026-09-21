@@ -16,6 +16,7 @@ try {
     await db.exec(await readFile("supabase/migrations/" + f, "utf8"));
   const q = async (sql, args = []) =>
     JSON.parse(JSON.stringify((await db.query(sql, args)).rows));
+  await q(`update settings set value=value||'{"bank_account_holder":"QA Account","bank_iban":"DE89370400440532013000","bank_bic":"COBADEFFXXX"}'::jsonb where id=1`);
   const actor = crypto.randomUUID();
   await q("insert into auth.users values($1,$2)", [
     actor,
@@ -126,6 +127,14 @@ try {
   let invoice = (
     await q("select * from invoices where delivery_id=$1", [d.id])
   )[0];
+  assert.equal(invoice.business_snapshot.bank_iban, "DE89370400440532013000");
+  assert.equal(invoice.business_snapshot.bank_account_holder, "QA Account");
+  assert.equal(invoice.delivery_number, d.number);
+  const serviceDate = new Intl.DateTimeFormat("en-CA", {timeZone:"Europe/Berlin",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date(d.delivered_at));
+  assert.equal(invoice.service_date.slice(0,10), serviceDate);
+  await assert.rejects(() => q("update invoices set service_date=service_date+1 where id=$1", [invoice.id]), /immutable/);
+  await q(`update settings set value=value||'{"bank_account_holder":"Changed Account"}'::jsonb where id=1`);
+  assert.equal((await q("select business_snapshot->>'bank_account_holder' holder from invoices where id=$1",[invoice.id]))[0].holder,"QA Account");
   assert.equal(invoice.payment_method, "cash");
   assert.equal(invoice.status, "paid");
   assert.equal(invoice.total_cents, 2073);
