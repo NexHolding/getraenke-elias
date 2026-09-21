@@ -180,7 +180,7 @@ export const inventoryRequest = z.discriminatedUnion("action", [
         .max(10000000)
         .refine((x) => x !== 0),
       reason,
-      note: z.string().trim().min(3).max(1500),
+      note,
       reference: z.string().max(300).default(""),
       occurred_on: z.iso.date(),
     }),

@@ -9,9 +9,11 @@ import {
   Download,
   Package,
   AlertTriangle,
+  Search,
 } from "lucide-react";
 import { ProductPhoto } from "./product-photo";
 import { categories } from "@/lib/catalog";
+import { searchInventoryProducts } from "@/lib/inventory-catalog";
 import { euro, pack } from "@/lib/money";
 import {
   inventoryReasons,
@@ -624,7 +626,8 @@ export default function InventoryPanel({
                     <td>
                       {reasonLabel(a.reason)}
                       <small>
-                        {a.note} · {a.actor_name}
+                        {a.note ? `${a.note} · ` : ""}
+                        {a.actor_name}
                       </small>
                     </td>
                     <td>
@@ -1138,12 +1141,15 @@ function AdjustmentForm({
   save: (v: Record<string, unknown>) => Promise<boolean>;
 }) {
   const [pid, setPid] = useState(""),
+    [query, setQuery] = useState(""),
+    [limit, setLimit] = useState(6),
     [reason, setReason] = useState("breakage"),
     [direction, setDirection] = useState(-1),
     [unit, setUnit] = useState("single"),
     [qty, setQty] = useState("1"),
     [id, setId] = useState(() => crypto.randomUUID());
   const p = products.find((x) => x.id === pid);
+  const matches = searchInventoryProducts(products, query);
   const delta =
     Number(qty) * (unit === "pack" ? p?.pack_count || 1 : 1) * direction;
   return (
@@ -1151,6 +1157,7 @@ function AdjustmentForm({
       className="panel form-grid two-columns"
       onSubmit={async (e) => {
         e.preventDefault();
+        if (busy || !p || p.stock === null) return;
         const form = e.currentTarget;
         const f = new FormData(form);
         if (
@@ -1170,26 +1177,112 @@ function AdjustmentForm({
         }
       }}
     >
-      <label className="span-two">
-        Artikel
-        <select
-          required
-          aria-label="Korrekturartikel"
-          value={pid}
-          onChange={(e) => setPid(e.target.value)}
-        >
-          <option value="">Artikel wählen</option>
-          {products
-            .filter(
-              (x) => x.active || (x.stock || 0) > 0 || (x.loose_stock || 0) > 0,
-            )
-            .map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name} · {pack(p)}
-              </option>
-            ))}
-        </select>
-      </label>
+      <section
+        className="span-two adjustment-catalog"
+        aria-label="Artikel auswählen"
+      >
+        <label>
+          Artikel suchen
+          <span className="adjustment-search">
+            <Search size={19} aria-hidden="true" />
+            <input
+              type="search"
+              aria-label="Korrekturartikel suchen"
+              placeholder="Name, Marke, Artikelnummer oder EAN"
+              autoComplete="off"
+              value={query}
+              disabled={busy}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") e.preventDefault();
+              }}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setPid("");
+                setLimit(6);
+              }}
+            />
+          </span>
+        </label>
+        {p ? (
+          <div className="adjustment-selection">
+            <Check size={20} aria-hidden="true" />
+            <div>
+              <strong>{p.name}</strong>
+              <span>
+                {pack(p)} · Art.-Nr. {p.sku}
+              </span>
+              <span>
+                Bestand:{" "}
+                {quantityLabel(
+                  p.stock === null
+                    ? null
+                    : p.stock * p.pack_count + (p.loose_stock || 0),
+                  p.pack_count,
+                )}
+              </span>
+            </div>
+            <button
+              type="button"
+              className="button secondary"
+              disabled={busy}
+              onClick={() => setPid("")}
+            >
+              Artikel ändern
+            </button>
+          </div>
+        ) : (
+          <>
+            <p className="fineprint" role="status">
+              {matches.length
+                ? `${matches.length} Artikel gefunden · Bitte den passenden Artikel auswählen.`
+                : "Keine passenden Artikel gefunden. Suche nach Name, Artikelnummer oder EAN ändern."}
+            </p>
+            <ul className="adjustment-results" aria-label="Gefundene Artikel">
+              {matches.slice(0, limit).map((product) => (
+                <li key={product.id}>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    data-product-id={product.id}
+                    onClick={() => setPid(product.id)}
+                  >
+                    <span>
+                      <strong>{product.name}</strong>
+                      <small>
+                        {pack(product)} · Art.-Nr. {product.sku}
+                        {!product.active ? " · Inaktiv" : ""}
+                      </small>
+                    </span>
+                    <span className="adjustment-result-stock">
+                      <small>Bestand</small>
+                      <strong>
+                        {quantityLabel(
+                          product.stock === null
+                            ? null
+                            : product.stock * product.pack_count +
+                                (product.loose_stock || 0),
+                          product.pack_count,
+                        )}
+                      </strong>
+                    </span>
+                    <ArrowRight size={18} aria-hidden="true" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+            {matches.length > limit && (
+              <button
+                type="button"
+                className="button secondary"
+                disabled={busy}
+                onClick={() => setLimit(limit + 12)}
+              >
+                Weitere Artikel anzeigen ({matches.length - limit})
+              </button>
+            )}
+          </>
+        )}
+      </section>
       <label>
         Grund
         <select
@@ -1254,13 +1347,11 @@ function AdjustmentForm({
         <input name="reference" maxLength={300} />
       </label>
       <label className="span-two">
-        Begründung / Dokumentation
+        Begründung / Dokumentation (optional)
         <textarea
           name="note"
           aria-label="Korrekturbegründung"
-          minLength={3}
           maxLength={1500}
-          required
           placeholder="Was ist passiert? Bei Geschenken z. B. Anlass und Empfänger; bei Bruch betroffene Ware."
         />
       </label>

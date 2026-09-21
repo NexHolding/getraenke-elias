@@ -262,6 +262,66 @@ try {
     () => cmd("reverse", { ...reversal, id: crypto.randomUUID() }),
     /bereits gegengebucht/,
   );
+  // Optional explanations must retain stock evidence, idempotency and mandatory fields.
+  for (const [reason, note] of [
+    ["breakage", undefined],
+    ["loss", ""],
+    ["personal_use", "A"],
+    ["other", ""],
+  ]) {
+    const before = await stock();
+    const value = { ...adj, id: crypto.randomUUID(), reason, note };
+    const result = await cmd("adjust", value, employee);
+    assert.equal(result.note, note || "");
+    assert.equal(result.reason, reason);
+    assert.equal(result.actor, employee);
+    assert.equal(result.occurred_on, day);
+    assert.equal(result.product_snapshot.sku, before.sku);
+    assert.equal(
+      result.before_units,
+      before.stock * before.pack_count + before.loose_stock,
+    );
+    assert.equal(result.after_units, result.before_units - 1);
+    assert.ok(result.number && result.created_at);
+    await cmd("adjust", value, employee);
+    const after = await stock();
+    assert.equal(
+      after.stock * after.pack_count + after.loose_stock,
+      result.after_units,
+    );
+    assert.equal(
+      (
+        await q(
+          "select count(*)::int n from stock_movements where adjustment_id=$1",
+          [result.id],
+        )
+      )[0].n,
+      1,
+    );
+    await assert.rejects(
+      () =>
+        q("update stock_adjustments set note='changed' where id=$1", [
+          result.id,
+        ]),
+      /immutable/,
+    );
+  }
+  for (const extra of [
+    { reason: null },
+    { delta_units: 0 },
+    { delta_units: null },
+    { occurred_on: null },
+    { occurred_on: "2099-01-01" },
+    { note: "a".repeat(1501) },
+  ]) {
+    await assert.rejects(
+      () => cmd("adjust", { ...adj, id: crypto.randomUUID(), ...extra }),
+      /HINWEIS/,
+    );
+  }
+  console.log(
+    "PASS optional adjustment notes retain reason, actor, date, product snapshot, immutable evidence and exactly one stock movement",
+  );
   // Article edits cannot change quantities or reinterpret full packs.
   let pp = await stock();
   await assert.rejects(

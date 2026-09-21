@@ -251,11 +251,12 @@ try {
     401,
   );
   await p.getByRole("button", { name: "Bruch & Bestandskorrekturen" }).click();
-  await p.getByLabel("Korrekturartikel").selectOption(first.product_id);
-  await p.getByLabel("Korrekturmenge").fill("1");
   await p
-    .getByLabel("Korrekturbegründung")
-    .fill("Eine Flasche beim Einräumen zerbrochen.");
+    .getByLabel("Korrekturartikel suchen")
+    .fill(first.product_snapshot.sku);
+  await p.locator(`[data-product-id="${first.product_id}"]`).click();
+  await p.getByLabel("Korrekturmenge").fill("1");
+  // Supplementary explanation is optional; the reason still documents the event.
   await p
     .getByRole("button", { name: "Bestandsänderung verbindlich buchen" })
     .click();

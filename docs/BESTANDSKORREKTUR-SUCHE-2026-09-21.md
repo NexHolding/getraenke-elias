@@ -1,0 +1,9 @@
+# Artikelsuche für Bruch, Schwund und Entnahmen
+
+Die Artikelauswahl durchsucht Namen/Marken, Varianten, Kategorien, Gebindeformat, Artikelnummern und EAN. Aktive Artikel und inaktive Artikel mit Restbestand sind auswählbar. Treffer zeigen Format, Artikelnummer und aktuellen Bestand in Gebinden und Einzelstücken. Zunächst erscheinen sechs Treffer; weitere lassen sich laden. Eine geänderte Suchanfrage hebt die bisherige Auswahl auf. Enter im Suchfeld löst keine Bestandsbuchung aus.
+
+Der zusätzliche Freitext ist optional, auch bei „Sonstiger Grund“. Grund, Menge, Ereignisdatum und explizite Artikelauswahl bleiben notwendig. Unbekannte Bestände müssen zuerst inventarisiert werden. Die serverseitige Mengenprüfung verhindert negative Bestände. Rechte, Buchungs-ID zur Vermeidung doppelter Buchungen, unveränderbarer Artikel-Snapshot, Vorher-/Nachher-Bestand, Belegnummer, Bearbeiter, Zeitstempel, Grund und Bestandsbewegung bleiben bestehen. Eine Gegenbuchung eines bereits dokumentierten Bestandsereignisses erfordert wie bisher einen Inhaber und eine Begründung.
+
+Migration `202609170027_optional_adjustment_notes.sql` ersetzt ausschließlich die Inventur-Buchungsfunktion. Sie macht Zusatznotizen bei `adjust` optional, begrenzt ihre Länge und prüft fehlende Mengen, Gründe und Daten ausdrücklich. Historische Belege und Bestandswerte werden nicht verändert.
+
+Prüfung: 53 Unit-Tests, vollständige Datenbank-Testserie, Lint und Produktionsbuild. `node --import tsx scripts/verify-inventory-search.mjs` prüft die echte React-Oberfläche mit Request-Schema und allen SQL-Migrationen in einer isolierten PGlite-Datenbank: Desktop/iPad/Telefon, Suchbegriffe, EAN/SKU, weitere Treffer, fehlende Treffer, Auswahlwechsel, Enter-Schutz, Buchung ohne Notiz, Belegdaten und aktualisierter Bestand. Keine echten Warenbewegungen oder E-Mails durch diese Tests.

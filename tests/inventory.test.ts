@@ -67,3 +67,32 @@ test("CSV escapes user supplied formula cells and keeps missing values explicit"
   assert.ok(csv.includes("'@SUM"));
   assert.ok(csv.includes("Erstbestand"));
 });
+
+test("stock adjustment explanation may be absent, empty or short; reason stays mandatory", () => {
+  const value = {
+    id: crypto.randomUUID(),
+    product_id: "qa",
+    delta_units: -1,
+    reason: "breakage",
+    occurred_on: "2026-09-21",
+  };
+  for (const note of [undefined, "", "A"]) {
+    const result = inventoryRequest.parse({
+      action: "adjust",
+      value: { ...value, note },
+    });
+    assert.equal("note" in result.value && result.value.note, note || "");
+  }
+  for (const extra of [
+    { reason: undefined },
+    { reason: "invalid" },
+    { note: "a".repeat(1501) },
+  ])
+    assert.equal(
+      inventoryRequest.safeParse({
+        action: "adjust",
+        value: { ...value, ...extra },
+      }).success,
+      false,
+    );
+});
