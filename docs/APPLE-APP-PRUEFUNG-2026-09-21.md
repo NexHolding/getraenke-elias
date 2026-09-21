@@ -38,7 +38,7 @@ Grundlagen: [App Review Guidelines](https://developer.apple.com/app-store/review
 
 ## Vor öffentlicher App-Store-Freigabe noch offen
 
-Die Prüfung in App Store Connect zeigte bei der Kunden-App einen Entwurf „1.0 – In Vorbereitung zur Übermittlung“: Screenshots, Beschreibung, Support-URL und Review-Zugang waren leer, Datenschutzlabels noch nicht begonnen, Kategorie und Altersfreigabe nicht eingerichtet. Die Datenschutz-URL und der direkte Löschlink wurden in diesem Auftrag hinterlegt. Der Entwickler ist dort als Händler ausgewiesen. Das Vorhandensein der Inhaltsrechte-Erklärung war nicht bestätigt.
+Die Prüfung in App Store Connect zeigte bei beiden Apps einen Entwurf „1.0 – In Vorbereitung zur Übermittlung“: Screenshots, Beschreibung, Support-URL und Review-Zugang waren zunächst leer, Datenschutzlabels noch nicht begonnen, Kategorie und Altersfreigabe bei der Kunden-App nicht eingerichtet. Die Datenschutz-URL wurde für beide Apps hinterlegt, der direkte Löschlink zusätzlich für die Kunden-App. Der Supportlink der Kassen-App wurde ergänzt; der Supportlink der Kunden-App muss im Store-Entwurf noch gespeichert werden. Der Entwickler ist dort als Händler ausgewiesen. Das Vorhandensein der Inhaltsrechte-Erklärung war nicht bestätigt.
 
 Für beide Apps ist vor einer öffentlichen Einreichung noch erforderlich:
 
@@ -52,3 +52,7 @@ Für beide Apps ist vor einer öffentlichen Einreichung noch erforderlich:
 ## Verifikation
 
 70 TypeScript-Tests, vollständige Datenbanktests einschließlich Kontolöschung, echte Route/Retry-Worker gegen isolierte Auth-/DB-Adapter, Browserprüfung mit simulierten Antworten auf 390 und 1024 Pixel Breite, ESLint, Produktionsbuild und vier Swift-Core-Tests. Zusätzlich beide iOS-Targets archiviert und als 0.1.0 (3) zu Apple hochgeladen. Keine echte Kundenlöschung, Bestellung, Rechnung oder E-Mail wurde für diese Tests ausgelöst.
+
+## Veröffentlichung dieses Stands
+
+Migration `202609170035` angewendet; Vorher-/Nachher-Prüfsummen bestehender Kunden, Aufträge, Belege, Lagerdaten, Kommunikation und Einstellungen identisch. Code-Commit `552576f` auf GitHub main. Vercel-Produktion `https://getraenke-elias-5mhu3q574-nex-holding.vercel.app` ist READY; live geprüfte Löschseite und API-Zugriffsschutz. Beide TestFlight-Builds 3 der bestehenden internen Gruppe zugewiesen; Kasse „Im Test“, Kunden-App beim vorhandenen Tester bereits als Build 3 installiert gemeldet. Keine öffentliche App-Store-Einreichung ausgelöst.
