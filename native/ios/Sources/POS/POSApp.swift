@@ -63,9 +63,9 @@ struct PrinterSettings: View {
   var body: some View {
     NavigationStack {
       Form {
-        Section("1 · Epson im selben Netzwerk") {
+        Section("1 · Epson TM-m30II verbinden") {
           Text(
-            "iPad und Epson-Bondrucker mit demselben WLAN/LAN verbinden. ePOS-Print und HTTPS in der Epson Web Config aktivieren."
+            "Den Epson TM-m30II per LAN mit dem Router verbinden und das iPad Pro im selben Netzwerk anmelden. ePOS-Print und HTTPS in der Epson Web Config aktivieren. Bei einer WLAN-Variante kann auch der Drucker über WLAN verbunden werden."
           )
           Text(
             "Ein vertrauenswürdiges Druckerzertifikat ist erforderlich. Die App umgeht keine Zertifikatsprüfung."
@@ -107,7 +107,7 @@ struct PrinterSettings: View {
         }
         Section("Weitere Anschlüsse") {
           Text(
-            "Bluetooth und USB folgen nach Festlegung des Epson-Modells und Gerätetest. Derzeit ist die native HTTPS-Netzwerkverbindung vorbereitet."
+            "Diese App verwendet den Netzwerkanschluss des TM-m30II. Bluetooth und USB sind in dieser Version nicht eingebunden. Vor dem ersten Verkauf Verbindungstest und Testbon im CRM durchführen."
           ).font(.callout)
         }
       }.navigationTitle("Epson einrichten").navigationBarTitleDisplayMode(.inline).toolbar {

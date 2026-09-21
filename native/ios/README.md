@@ -11,9 +11,9 @@ Zwei getrennte SwiftUI-Anwendungen, gemeinsamer Swift-/WebKit-Unterbau, vorhande
 | EliasCustomer | iPhone und iPad, ab iOS 17 | de.getraenkeelias.kunden |
 | EliasPOS | iPad, ab iPadOS 17 | de.getraenkeelias.kasse |
 
-Xcode 26.3 wurde für die Abnahme verwendet. Für den Simulator ist kein Apple-Team nötig. Für Installation auf echten Geräten und TestFlight muss unter **Signing & Capabilities** das passende Apple-Developer-Team ausgewählt und die Bundle-ID registriert werden. Keine Kennwörter, Zertifikate oder Supabase-Geheimnisse sind eingebaut.
+Xcode 26.3 wurde für die Abnahme verwendet. Für den Simulator ist kein Apple-Team nötig. Für Installation auf echten Geräten und TestFlight muss der Apple-Account in Xcode angemeldet sein. Team und Bundle-IDs sind für Chris Neve (`LCYUVY9ZZ4`) zugeordnet. Keine Kennwörter, Zertifikate oder Supabase-Geheimnisse sind eingebaut.
 
-Die eingecheckte Xcode-Datei ist unmittelbar verwendbar. `python3 native/ios/Scripts/generate-project.py` erzeugt sie bei Strukturänderungen reproduzierbar neu; Änderungen an Signierung/Bundle-IDs dann auch im Generator berücksichtigen. Dieser setzt absichtlich kein Team.
+Die eingecheckte Xcode-Datei ist unmittelbar verwendbar. `python3 native/ios/Scripts/generate-project.py` erzeugt sie bei Strukturänderungen reproduzierbar neu; Änderungen an Signierung/Bundle-IDs dann auch im Generator berücksichtigen. Das zugeordnete Apple-Team ist Chris Neve (`LCYUVY9ZZ4`).
 
 ## Kunden-App
 
@@ -44,7 +44,7 @@ E-Mail-Links öffnen zurzeit die bestehende Website. Nach E-Mail-Bestätigung ka
 
 Der Webclient erkennt die Kassen-App und übergibt sein ePOS-XML über eine streng begrenzte WebKit-Brücke. Die native URLSession sendet es an genau die lokal freigegebene Adresse und gibt die Epson-Antwort an die vorhandene Statusprüfung zurück. Dadurch entfällt für diesen Transport die Browser-CORS-Grenze. Keine TLS-Ausnahme, keine Weiterleitungen und kein automatischer Wiederholungsdruck. Unsichere Antworten bleiben „unklar“ im bestehenden Belegablauf.
 
-**Hardwareabnahme ausstehend:** Modell, Firmware, Netzwerk, Zertifikat und Papierformat sind noch unbekannt. Bluetooth/USB und das Epson-SDK sind nicht eingebunden. Ein Kauf/SDK-Paket wird erst nach Modellfestlegung benötigt. Der bisherige TSE-Einrichtungsstatus wird nicht geändert; die App macht eine unfiskalisierte Kasse nicht produktionsbereit.
+**Hardwareabnahme ausstehend:** Modell festgelegt: Epson TM-m30II am iPad Pro. Firmware, Anschlussvariante, Netzwerk, Zertifikat und Papierformat sind noch zu prüfen. Bluetooth/USB und das Epson-SDK sind nicht eingebunden. Ein Kauf/SDK-Paket wird erst nach Modellfestlegung benötigt. Der bisherige TSE-Einrichtungsstatus wird nicht geändert; die App macht eine unfiskalisierte Kasse nicht produktionsbereit.
 
 ## Architektur und Sicherheitsgrenzen
 
@@ -87,3 +87,7 @@ Vor einem Store-Release zusätzlich: Apple-Team/Vertriebsweg, Kontolöschung in 
 - [Epson: SDK-Download und unterstützte Änderungen](https://www.epson.jp/dl_soft/readme/47014.htm)
 
 Offene Entscheidungen stehen in [FRAGEN-FUER-MORGEN.md](FRAGEN-FUER-MORGEN.md).
+
+## TestFlight und Entscheidungen vom 21.09.2026
+
+Beide Apps sollen über TestFlight getestet werden. Kundenbestellungen bleiben Lieferanfragen; Onlinezahlung folgt später. Die Kasse läuft auf dem iPad Pro, der Bondrucker ist ein Epson TM-m30II. SumUp bleibt ein separates EC-Gerät ohne Integration. Veröffentlichungsschritte und Testhinweise: [TESTFLIGHT.md](TESTFLIGHT.md). Kundenbenachrichtigungen: [PUSH-KONZEPT.md](PUSH-KONZEPT.md).
