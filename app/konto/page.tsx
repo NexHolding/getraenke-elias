@@ -1,5 +1,9 @@
 "use client";
-import { registrationErrorMessage } from "@/lib/registration";
+import { DeliveryAddressFields } from "@/components/delivery-address-fields";
+import {
+  registrationProfileSchema,
+  registrationErrorMessage,
+} from "@/lib/registration";
 import { nativeApp } from "@/lib/native-app";
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
@@ -42,6 +46,7 @@ export default function Account() {
   const [register, setRegister] = useState(false);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [refreshingProfile, setRefreshingProfile] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [tab, setTab] = useState("orders");
@@ -173,11 +178,18 @@ export default function Account() {
                   if (register) {
                     if (f.get("password") !== f.get("confirm"))
                       throw new Error("Die Passwörter stimmen nicht überein.");
+                    const details = registrationProfileSchema.safeParse(
+                      Object.fromEntries(f),
+                    );
+                    if (!details.success)
+                      throw new Error(
+                        "Bitte Name, Telefonnummer und vollständige Lieferadresse prüfen.",
+                      );
                     const { data, error } = await auth.auth.signUp({
                       ...credentials,
                       options: {
                         emailRedirectTo: location.origin + "/auth/callback",
-                        data: { name: String(f.get("name")) },
+                        data: details.data,
                       },
                     });
                     if (error) throw new Error(registrationErrorMessage(error));
@@ -209,10 +221,35 @@ export default function Account() {
               }}
             >
               {register && (
-                <label>
-                  Name
-                  <input name="name" required autoComplete="name" />
-                </label>
+                <>
+                  <label>
+                    Name
+                    <input
+                      name="name"
+                      required
+                      minLength={2}
+                      maxLength={150}
+                      autoComplete="name"
+                    />
+                  </label>
+                  <label>
+                    Telefon für die Lieferung
+                    <input
+                      name="phone"
+                      type="tel"
+                      required
+                      minLength={3}
+                      maxLength={80}
+                      autoComplete="tel"
+                    />
+                  </label>
+                  <DeliveryAddressFields />
+                  <p className="fineprint">
+                    Diese Lieferadresse wird für dein Profil und deine
+                    Lieferabos übernommen. Du kannst sie später jederzeit im
+                    Profil ändern.
+                  </p>
+                </>
               )}
               <label>
                 E-Mail
@@ -314,7 +351,26 @@ export default function Account() {
                   key={String(id)}
                   aria-current={tab === id ? "page" : undefined}
                   className={tab === id ? "selected" : ""}
-                  onClick={() => setTab(String(id))}
+                  disabled={refreshingProfile}
+                  onClick={async () => {
+                    if (id !== "subscriptions" && id !== "profile") {
+                      setTab(String(id));
+                      return;
+                    }
+                    setRefreshingProfile(true);
+                    try {
+                      await load();
+                      setTab(String(id));
+                    } catch (e) {
+                      setMessage(
+                        e instanceof Error
+                          ? e.message
+                          : "Kundendaten konnten nicht geladen werden.",
+                      );
+                    } finally {
+                      setRefreshingProfile(false);
+                    }
+                  }}
                 >
                   <Icon size={20} />
                   <span>{String(label)}</span>
@@ -324,6 +380,11 @@ export default function Account() {
             {message && (
               <p role="status" className="notice">
                 {message}
+              </p>
+            )}
+            {refreshingProfile && (
+              <p role="status" className="notice">
+                Lieferdaten werden aktualisiert …
               </p>
             )}
             <div className="portal-content">
@@ -397,6 +458,7 @@ export default function Account() {
               {tab === "subscriptions" && (
                 <SubscriptionManager
                   customer={account.customer}
+                  onEditProfile={() => setTab("profile")}
                   subscriptions={account.subscriptions}
                   products={products}
                   onChanged={load}

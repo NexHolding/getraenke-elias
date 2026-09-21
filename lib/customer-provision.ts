@@ -1,4 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  fillCustomerDeliveryDefaults,
+  registrationDeliveryDetails,
+} from "./customer-delivery-defaults";
 import { isSystemAccountEmail } from "./account-visibility";
 
 export const CUSTOMER_LINK_REQUIRED =
@@ -21,10 +25,17 @@ export async function provisionCustomer(
     db.from("customers").select("*").eq("user_id", user.id).maybeSingle();
   const { data: linked, error } = await readLinked();
   if (error) throw error;
-  if (linked) return linked;
+  if (linked)
+    return fillCustomerDeliveryDefaults(
+      db,
+      linked,
+      user.id,
+      user.user_metadata || {},
+    );
   const { data: created, error: insertError } = await db
     .from("customers")
     .insert({
+      ...registrationDeliveryDetails(user.user_metadata || {}),
       payment_method: "cash",
       user_id: user.id,
       email: user.email.trim().toLowerCase(),
@@ -37,7 +48,13 @@ export async function provisionCustomer(
     // record just because its email address matches an unverified login.
     const { data: concurrent, error: readError } = await readLinked();
     if (readError) throw readError;
-    if (concurrent) return concurrent;
+    if (concurrent)
+      return fillCustomerDeliveryDefaults(
+        db,
+        concurrent,
+        user.id,
+        user.user_metadata || {},
+      );
     throw new Error(CUSTOMER_LINK_REQUIRED);
   }
   if (insertError) throw insertError;

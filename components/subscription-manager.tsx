@@ -1,6 +1,10 @@
 "use client";
 import { useRef, useState } from "react";
 import { Plus, Repeat2, Search, Trash2, CalendarDays } from "lucide-react";
+import {
+  deliveryAddressFields,
+  formatDeliveryAddress,
+} from "@/lib/delivery-address";
 import type { Customer, Product, Subscription } from "@/lib/types";
 import { berlinToday, deliveryIntervals } from "@/lib/staff-orders";
 import type { SubscriptionCommand } from "@/lib/subscriptions";
@@ -15,12 +19,14 @@ export default function SubscriptionManager({
   products,
   staff = false,
   onChanged,
+  onEditProfile,
 }: {
   customer: Customer;
   subscriptions: Subscription[];
   products: Product[];
   staff?: boolean;
   onChanged: () => Promise<void>;
+  onEditProfile?: () => void;
 }) {
   const [draft, setDraft] = useState<SubscriptionCommand | null>(null),
     [query, setQuery] = useState(""),
@@ -28,13 +34,20 @@ export default function SubscriptionManager({
     [busy, setBusy] = useState(false);
   const [pending, setPending] = useState<SubscriptionCommand | null>(null);
   const lock = useRef(false);
-  const complete = !!(
-    customer.street &&
-    customer.house_number &&
-    customer.postal_code &&
-    customer.city &&
-    customer.phone
-  );
+  const address = deliveryAddressFields(customer);
+  const missing = [
+    [address.street, "Straße"],
+    [address.house_number, "Hausnummer"],
+    [
+      /^\d{5}$/.test(address.postal_code) ? address.postal_code : "",
+      "Postleitzahl",
+    ],
+    [address.city, "Ort"],
+    [customer.phone, "Telefonnummer"],
+  ]
+    .filter(([value]) => !value?.trim())
+    .map(([, label]) => label);
+  const complete = missing.length === 0;
   function start(s?: Subscription) {
     setMessage("");
     setQuery("");
@@ -166,13 +179,28 @@ export default function SubscriptionManager({
           </button>
         </div>
       )}
-      {!complete && (
-        <p className="notice">
-          Bitte zuerst im Profil die vollständige Lieferadresse und
-          Telefonnummer ergänzen. Bestehende Abos können weiterhin pausiert
-          werden.
-        </p>
-      )}
+      <div className="notice">
+        {complete ? (
+          <p>
+            <strong>Lieferadresse:</strong> {formatDeliveryAddress(address)}
+            <br />
+            Telefon: {customer.phone}
+          </p>
+        ) : (
+          <p>
+            Bitte im Profil ergänzen: {missing.join(", ")}. Bereits gespeicherte
+            Angaben werden übernommen. Bestehende Abos können weiterhin pausiert
+            werden.
+          </p>
+        )}
+        {onEditProfile && (
+          <button type="button" className="text-link" onClick={onEditProfile}>
+            {complete
+              ? "Lieferadresse im Profil ändern"
+              : "Profil vervollständigen"}
+          </button>
+        )}
+      </div>
       {draft ? (
         <form
           className="subscription-editor"

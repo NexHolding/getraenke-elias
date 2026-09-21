@@ -1,3 +1,4 @@
+import { fillCustomerDeliveryDefaults } from "@/lib/customer-delivery-defaults";
 import { initialOrderPaymentApproval } from "@/lib/order-payment-policy";
 import { isSystemAccountEmail } from "@/lib/account-visibility";
 import { createHash } from "node:crypto";
@@ -151,6 +152,9 @@ export async function POST(req: Request) {
         } else if (error) throw error;
         else customer = created;
       }
+    }
+    if (user && customer) {
+      customer = await fillCustomerDeliveryDefaults(db, customer, user.id, v);
     }
     const { data: order, error: insertError } = await db
       .from("orders")

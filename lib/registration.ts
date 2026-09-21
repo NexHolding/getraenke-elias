@@ -1,3 +1,12 @@
+import { z } from "zod";
+import { deliveryAddressShape } from "./delivery-address";
+
+export const registrationProfileSchema = z.object({
+  name: z.string().trim().min(2).max(150),
+  phone: z.string().trim().min(3).max(80),
+  ...deliveryAddressShape,
+});
+
 type RegistrationError = { code?: string; status?: number; message?: string };
 
 // Do not expose raw provider responses, account existence or email addresses.
