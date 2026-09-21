@@ -408,7 +408,7 @@ export default function AdminApp({ section }: { section: string }) {
               Kasse <small>{data?.name}</small>
             </h1>
             <div className="register-tools">
-              <button type="button" onClick={() => setCashBookOpen(true)}><Wallet size={18}/><span>Kassenabschluss · Tagesbericht</span></button>
+              <button type="button" aria-label="Kassenabschluss · Tagesbericht" title="Kassenabschluss · Tagesbericht" onClick={() => setCashBookOpen(true)}><Wallet size={18}/><span>Kassenabschluss · Tagesbericht</span></button>
               <button
                 type="button"
                 onClick={() => {

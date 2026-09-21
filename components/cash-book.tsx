@@ -189,7 +189,11 @@ export default function CashBook({
       <div className="panel-head">
         <div>
           <span className="eyebrow">BARGELD · {data.report.mode}</span>
-          <h2>Kassenabschluss · Tagesbericht</h2>
+          <h2>
+            {period.length === 7
+              ? "Kassenbuch · Monatsübersicht"
+              : "Kassenabschluss · Tagesbericht"}
+          </h2>
         </div>
         <button
           type="button"

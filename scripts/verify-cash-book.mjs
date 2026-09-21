@@ -292,6 +292,7 @@ try {
   assert.equal(entries.at(-1).balance_cents, 25000);
   await page.getByRole("button", { name: "PDF ansehen / drucken" }).click();
   await page.locator(".pdf-preview-pages canvas").first().waitFor();
+  await page.getByRole("button", { name: "Drucken", exact: true }).waitFor();
   await page.screenshot({
     path: "output/cash-book/pdf-preview-ipad.png",
     fullPage: true,

@@ -13,7 +13,9 @@ export default function PdfPreview() {
     const open = (e: Event) => {
       const value = (e as CustomEvent<string>).detail;
       if (
-        /^\/api\/cash-book(?:\?period=\d{4}-\d{2}(?:-\d{2})?&format=pdf|\/document\?id=[a-f0-9-]+)$/.test(value) ||
+        /^\/api\/cash-book(?:\?period=\d{4}-\d{2}(?:-\d{2})?&format=pdf|\/document\?id=[a-f0-9-]+)$/.test(
+          value,
+        ) ||
         /^\/api\/(delivery-list\?date=\d{4}-\d{2}-\d{2}|receipts\/[a-f0-9-]+\?format=pdf|documents\/(invoice|delivery)\/[a-f0-9-]+|communications\/attachments\/[a-f0-9-]+(?:\?customer=[a-f0-9-]+)?)$/.test(
           value,
         )
@@ -93,7 +95,7 @@ export default function PdfPreview() {
     const frame = document.createElement("iframe");
     frame.style.cssText =
       "position:fixed;width:1px;height:1px;bottom:0;left:0;border:0";
-    frame.title = "Druckansicht Lieferliste";
+    frame.title = "Elias Dokument drucken";
     document.body.appendChild(frame);
     const target = frame.contentDocument;
     if (!target) {
@@ -102,7 +104,7 @@ export default function PdfPreview() {
     }
     target.open();
     target.write(
-      "<!doctype html><html><head><title>Elias Lieferliste</title><style>@page{size:A4 landscape;margin:0}body{margin:0}img{display:block;width:100%;break-after:page}img:last-child{break-after:auto}</style></head><body></body></html>",
+      `<!doctype html><html><head><title>Elias Dokument</title><style>@page{size:A4 ${canvases[0].width > canvases[0].height ? "landscape" : "portrait"};margin:0}body{margin:0}img{display:block;width:100%;break-after:page}img:last-child{break-after:auto}</style></head><body></body></html>`,
     );
     target.close();
     try {
@@ -141,22 +143,29 @@ export default function PdfPreview() {
           <h2>
             {url.startsWith("/api/delivery-list") ? "Lieferliste" : title}
           </h2>
-          {url.startsWith("/api/delivery-list") && !loading && !error && (
-            <div className="inline-actions">
-              {!nativeApp() && (
-                <button className="button" onClick={print}>
-                  Drucken
-                </button>
-              )}
-              <a
-                className="button secondary"
-                href={`${url}&download=1`}
-                download
-              >
-                {nativeApp() ? "PDF drucken / teilen" : "PDF herunterladen"}
-              </a>
-            </div>
-          )}
+          {(url.startsWith("/api/delivery-list") ||
+            url.startsWith("/api/cash-book")) &&
+            !loading &&
+            !error && (
+              <div className="inline-actions">
+                {!nativeApp() && (
+                  <button className="button" onClick={print}>
+                    Drucken
+                  </button>
+                )}
+                <a
+                  className="button secondary"
+                  href={`${url}&download=1`}
+                  download
+                >
+                  {nativeApp()
+                    ? "Drucken / teilen"
+                    : url.startsWith("/api/cash-book/document")
+                      ? "Originalbeleg herunterladen"
+                      : "PDF herunterladen"}
+                </a>
+              </div>
+            )}
           <button
             autoFocus
             type="button"
