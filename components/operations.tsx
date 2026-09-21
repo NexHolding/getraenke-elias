@@ -1,4 +1,5 @@
 "use client";
+import NumberInput from "./number-input";
 import { CommunicationHistory } from "./communication-history";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Plus, Users, Truck, FileText, Check, ArrowRight } from "lucide-react";
@@ -137,8 +138,7 @@ export function CustomerFields({
         (["latitude", "longitude"] as const).map((key, i) => (
           <label key={key}>
             {i === 0 ? "Breitengrad (optional)" : "Längengrad (optional)"}
-            <input
-              type="number"
+            <NumberInput
               step="any"
               value={value[key] ?? ""}
               onChange={(e) =>
@@ -811,9 +811,9 @@ export function DeliveryManager({
                     )}
                   </small>
                 </div>
-                <input
+                <NumberInput
                   aria-label={`Liefermenge ${i.name}`}
-                  type="number"
+
                   min="0"
                   max={i.quantity - (o.delivered?.[i.id] || 0)}
                   value={quantities[i.id] || 0}

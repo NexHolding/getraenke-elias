@@ -4053,3 +4053,70 @@ textarea {
  .register-shell .pos-checkout .fineprint { display: none; }
  .register-shell .cart-totals .total { margin: 3px 0 5px; padding-top: 5px; font-size: 21px; }
 }
+
+/* Cashier entry and payment review: explicit fields, no prefilled zero prefixes. */
+.register-shell input[type="number"], .register-shell .discount-entry input, .cash-given input { border: 2px solid #bbc99e; border-radius: 10px; background: #fff; color: #263421; }
+.register-shell input::placeholder, .payment-dialog input::placeholder, .item-discount-dialog input::placeholder { color: #818975; font-weight: 400; opacity: 1; }
+.register-shell input:focus-visible, .payment-dialog input:focus-visible, .item-discount-dialog input:focus-visible { outline: 3px solid #94b046; outline-offset: 2px; border-color: #5c7834; }
+.register-shell .pos-discount-fields label { font-size: 14px; font-weight: 650; color: #354b2a; }
+.register-shell .pos-discount-fields input { min-height: 58px; font-size: 25px; font-weight: 700; padding: 12px; }
+.pos-item-discount { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 44px; margin-top: 8px; border: 1px solid #b4c294; border-radius: 8px; background: #f2f6e8; color: #3a542a; font-size: 13px; font-weight: 650; }
+.pos-item-discount > span { font-size: 19px; }
+.pos-item-discount.applied { color: #fff; background: #405e2e; border-color: #405e2e; }
+.pos-item-saving { display: block; margin-top: 6px; font-size: 11px; line-height: 1.5; color: #536d37; }
+.item-discount-dialog, .payment-dialog { width: min(580px,calc(100vw - 32px)); max-width: 580px; padding: 28px; border-radius: 20px; max-height: calc(100dvh - 32px); overflow: auto; }
+.item-discount-dialog .panel-head { margin-bottom: 18px; }
+.item-discount-dialog .panel-head h2 { display: flex; align-items: center; gap: 9px; font-size: 24px; }
+.item-discount-dialog .icon-button, .payment-dialog .icon-button { min-width: 44px; min-height: 44px; }
+.discount-product { padding: 14px 16px; border-radius: 10px; background: #f3f5ee; margin-bottom: 20px; }
+.discount-product strong { display: block; font-size: 18px; }
+.discount-product span { display: block; color: #647157; font-size: 13px; margin-top: 6px; }
+.discount-entry, .discount-reason, .cash-given { display: block; font-size: 14px; font-weight: 650; color: #3b4f2c; }
+.discount-entry > div { position: relative; margin-top: 8px; }
+.discount-entry input { width: 100%; min-height: 68px; font-size: 30px; font-weight: 700; padding: 12px 50px 12px 16px; }
+.discount-entry > div > span { position: absolute; right: 18px; top: 19px; font-size: 24px; color: #617745; }
+.discount-entry input::placeholder { font-size: 18px; }
+.discount-shortcuts, .cash-shortcuts { display: flex; gap: 8px; margin: 12px 0 20px; }
+.discount-shortcuts button, .cash-shortcuts button { flex: 1; min-height: 48px; border: 1px solid #d1dbbd; border-radius: 9px; color: #3b542b; font-size: 15px; font-weight: 650; background: #f4f7ee; }
+.discount-reason select { display: block; width: 100%; margin-top: 8px; min-height: 48px; padding: 10px; border: 1px solid #c3cfae; border-radius: 8px; background: white; font-size: 15px; }
+.discount-preview { padding: 16px 0; font-size: 14px; }
+.discount-preview strong { float: right; font-size: 24px; }
+.discount-preview small { display: block; clear: both; padding-top: 7px; color: #6a745e; font-size: 12px; }
+.item-discount-dialog > .button { min-height: 54px; margin-top: 12px; }
+.payment-dialog-head { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.payment-icon { display: grid; place-items: center; width: 52px; height: 52px; background: #edf3df; border-radius: 14px; color: #527033; flex-shrink: 0; }
+.payment-dialog-head .eyebrow { font-size: 10px; margin: 0 0 5px; }
+.payment-dialog-head h2 { margin: 0; font-size: 25px; }
+.payment-dialog-head > .icon-button { margin-left: auto; }
+.payment-amount { padding: 22px 16px; background: #f0f4e6; border-radius: 14px; text-align: center; margin-bottom: 22px; }
+.payment-amount span { display: block; color: #56694a; font-size: 14px; }
+.payment-amount strong { display: block; font-size: clamp(36px,6vw,54px); letter-spacing: -1px; color: #304c24; margin-top: 6px; overflow-wrap: anywhere; }
+.cash-given input { display: block; width: 100%; min-height: 68px; padding: 12px 16px; font-size: 30px; font-weight: 700; margin-top: 8px; }
+.cash-given input::placeholder { font-size: 20px; }
+.cash-change { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 16px; border: 1px dashed #b9c6a1; background: #f7f9f1; border-radius: 12px; margin: 18px 0; }
+.cash-change strong { font-size: 32px; color: #657252; }
+.cash-change.ready { border: 2px solid #a2b576; background: #edf4dc; }
+.cash-change.ready strong { color: #345323; }
+.payment-instruction, .payment-hint { font-size: 14px; line-height: 1.7; color: #5f6e52; }
+.payment-dialog .payment-confirm { display: flex; width: 100%; justify-content: center; min-height: 68px; gap: 10px; font-size: 18px; margin: 22px 0 12px; }
+.payment-dialog > .secondary { min-height: 46px; }
+.register-shell .pos-checkout > .button:disabled { background: #e4e8dd; border-color: #e4e8dd; color: #7a826f; cursor: not-allowed; opacity: 1; }
+.payment-empty-hint { margin: 8px 0 0; text-align: center; color: #737f65; font-size: 11px; }
+.cash-receipt-summary { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 16px; border-radius: 12px; background: #edf4dc; margin: 16px 0; }
+.cash-receipt-summary strong { font-size: 24px; color: #345323; }
+@media(max-width:600px), (max-height:700px) {
+ .payment-dialog, .item-discount-dialog { padding: 18px; }
+ .payment-dialog-head { margin-bottom: 12px; }
+ .payment-dialog-head h2 { font-size: 21px; }
+ .payment-amount { padding: 12px; margin-bottom: 16px; }
+ .payment-amount strong { font-size: 38px; }
+ .payment-dialog .payment-confirm { margin-top: 14px; min-height: 56px; font-size: 16px; }
+ .cash-shortcuts { flex-wrap: wrap; }
+ .cash-shortcuts button { min-width: 70px; }
+ .cash-given input { min-height: 58px; }
+ .cash-change { padding: 12px; margin: 12px 0; }
+ .discount-entry input::placeholder { font-size: 16px; }
+}
+.pos-adjustments .pos-discount-fields { grid-template-columns: minmax(160px,1fr) minmax(0,2fr); gap: 18px; }
+.pos-adjustments .pos-discount-fields input::placeholder { font-size: 16px; }
+@container pos-catalog (max-width: 450px) { .pos-adjustments .pos-discount-fields { grid-template-columns: minmax(0,1fr); } }

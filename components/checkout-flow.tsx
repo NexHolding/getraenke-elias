@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
+import PaymentDialog from "./payment-dialog";
 import Image from "next/image";
 import { useDialog } from "./use-dialog";
 import { printPdf, printerVerified } from "@/lib/epson-client";
@@ -46,6 +47,7 @@ export function receiptDownload(id: string) {
 
 export default function CheckoutFlow({
   payload,
+  totalCents,
   disabled,
   settings,
   operatorId,
@@ -54,6 +56,7 @@ export default function CheckoutFlow({
   onRefresh,
 }: {
   payload: Payload;
+  totalCents: number;
   disabled: boolean;
   settings: Settings;
   operatorId: string;
@@ -75,7 +78,10 @@ export default function CheckoutFlow({
     [error, setError] = useState(""),
     [receipt, setReceipt] = useState<string | null>(null),
     [completed, setCompleted] = useState<string[]>([]),
-    [cardConfirmed, setCardConfirmed] = useState("");
+    [review, setReview] = useState<{ payload: Payload; total: number } | null>(
+      null,
+    ),
+    [cashReceived, setCashReceived] = useState<number | null>(null);
   const lock = useRef(false),
     key = `elias-checkout-${operatorId}`;
   const activeReceipt =
@@ -116,7 +122,11 @@ export default function CheckoutFlow({
       setSaved(null);
       setReceipt(result.id);
       onBooked(result);
-      setCardConfirmed("");
+      setCashReceived(
+        typeof value.cash_received_cents === "number"
+          ? value.cash_received_cents
+          : null,
+      );
       void onRefresh().catch(() => {});
     } catch (e) {
       setError(
@@ -131,33 +141,53 @@ export default function CheckoutFlow({
   }
   return (
     <>
-      {payload.payment === "card" && (
-        <label className="checkline">
-          <input
-            type="checkbox"
-            checked={cardConfirmed === JSON.stringify(payload)}
-            onChange={(e) =>
-              setCardConfirmed(e.target.checked ? JSON.stringify(payload) : "")
-            }
-          />
-          Zahlung bzw. Erstattung am externen Kartenterminal erfolgreich
-          bestätigt
-        </label>
-      )}
       <button
         className="button full"
         disabled={
-          disabled ||
-          inFlight ||
-          !!saved ||
-          !!activeReceipt ||
-          (payload.payment === "card" &&
-            cardConfirmed !== JSON.stringify(payload))
+          disabled || inFlight || !!saved || !!activeReceipt || !!review
         }
-        onClick={() => pay(payload)}
+        onClick={() => {
+          if (disabled || lock.current || saved || activeReceipt) return;
+          setError("");
+          setReview({ payload, total: totalCents });
+        }}
       >
         {inFlight ? "Wird verbucht …" : "Bezahlen"}
       </button>
+      {disabled && !inFlight && !saved && !activeReceipt && (
+        <p className="payment-empty-hint">
+          Zuerst Artikel oder Pfandrücknahme hinzufügen.
+        </p>
+      )}
+      {review && (
+        <PaymentDialog
+          total={review.total}
+          payment={review.payload.payment}
+          stale={
+            disabled ||
+            JSON.stringify(review.payload) !== JSON.stringify(payload) ||
+            review.total !== totalCents
+          }
+          onCancel={() => setReview(null)}
+          onConfirm={(received) => {
+            if (
+              disabled ||
+              lock.current ||
+              saved ||
+              activeReceipt ||
+              JSON.stringify(review.payload) !== JSON.stringify(payload) ||
+              review.total !== totalCents
+            )
+              return;
+            const value = {
+              ...review.payload,
+              ...(received === null ? {} : { cash_received_cents: received }),
+            };
+            setReview(null);
+            void pay(value);
+          }}
+        />
+      )}
       {error && !saved && (
         <p className="error" role="alert">
           {error}
@@ -199,6 +229,7 @@ export default function CheckoutFlow({
           key={activeReceipt}
           id={activeReceipt}
           settings={settings}
+          cashReceived={receipt === activeReceipt ? cashReceived : null}
           complete={() => {
             setCompleted((v) => [...v, activeReceipt]);
             setReceipt(null);
@@ -217,9 +248,11 @@ function ReceiptOutput({
   id,
   settings,
   complete,
+  cashReceived,
 }: {
   id: string;
   settings: Settings;
+  cashReceived?: number | null;
   complete: () => void;
 }) {
   const [data, setData] = useState<Output | null>(null),
@@ -382,6 +415,18 @@ function ReceiptOutput({
             ? `Bon ${data.sale.number} · ${euro(data.sale.total_cents)} · ${data.sale.payment === "cash" ? "Barzahlung" : "Kartenzahlung erfasst"}`
             : "Gespeicherten Beleg laden und archivieren …"}
         </p>
+        {data?.sale.payment === "cash" &&
+          cashReceived != null &&
+          data.sale.total_cents >= 0 && (
+            <div className="cash-receipt-summary">
+              <span>Gegeben {euro(cashReceived)}</span>
+              <strong>
+                {cashReceived >= data.sale.total_cents
+                  ? `Rückgeld ${euro(cashReceived - data.sale.total_cents)}`
+                  : "Betrag geändert – Zahlung prüfen"}
+              </strong>
+            </div>
+          )}
         {data?.sale.test_mode && (
           <p className="notice">
             Einrichtungsbeleg · noch kein fiskalisierter Live-Verkauf.

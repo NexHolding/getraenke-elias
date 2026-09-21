@@ -1,6 +1,8 @@
 "use client";
 import { nativeApp, nativeRequest } from "@/lib/native-app";
 import POSCatalog from "./pos-catalog";
+import NumberInput from "./number-input";
+import ItemDiscountDialog from "./item-discount-dialog";
 import CashRegisterLink from "./cash-register-link";
 import ManualPurchase from "./manual-purchase";
 import StaffOrders from "./staff-orders";
@@ -149,6 +151,8 @@ export default function AdminApp({ section }: { section: string }) {
     [posTool, setPosTool] = useState<"products" | "returns" | "discount">(
       "products",
     ),
+    [catalogVisit, setCatalogVisit] = useState(0),
+    [editingDiscount, setEditingDiscount] = useState<string | null>(null),
     [showArchived, setShowArchived] = useState(false),
     [category, setCategory] = useState("Alle Getränke"),
     [selected, setSelected] = useState<string[]>([]),
@@ -1302,7 +1306,10 @@ export default function AdminApp({ section }: { section: string }) {
                       >
                         <button
                           aria-pressed={posTool === "products"}
-                          onClick={() => setPosTool("products")}
+                          onClick={() => {
+                            setPosTool("products");
+                            setCatalogVisit((v) => v + 1);
+                          }}
                         >
                           <Package size={18} /> Artikel
                         </button>
@@ -1332,6 +1339,7 @@ export default function AdminApp({ section }: { section: string }) {
                         hidden={posTool !== "products"}
                       >
                         <POSCatalog
+                          key={catalogVisit}
                           products={products}
                           onSelect={(p) => {
                             setLastSale(null);
@@ -1392,9 +1400,9 @@ export default function AdminApp({ section }: { section: string }) {
                               </button>
                               <label>
                                 Menge
-                                <input
+                                <NumberInput
                                   aria-label={`Rückgabe ${d.label}`}
-                                  type="number"
+                                  placeholder="Menge eingeben"
                                   min="0"
                                   max="1000"
                                   value={returns[d.cents] || 0}
@@ -1475,9 +1483,9 @@ export default function AdminApp({ section }: { section: string }) {
                               <div className="pos-discount-fields">
                                 <label>
                                   Warenkorbrabatt (%)
-                                  <input
+                                  <NumberInput
                                     aria-label="Warenkorbrabatt (%)"
-                                    type="number"
+                                    placeholder="Prozent eingeben"
                                     min="0"
                                     max="100"
                                     step="1"
@@ -1617,83 +1625,24 @@ export default function AdminApp({ section }: { section: string }) {
                                   </button>
                                 </div>
                               </div>
-                              {can(data, "rabatt") &&
-                                discountMode === "item" && (
-                                  <div className="pos-discount-fields">
-                                    <label>
-                                      Rabatt (%)
-                                      <input
-                                        type="number"
-                                        min="0"
-                                        max="100"
-                                        step="1"
-                                        aria-label={`Rabatt für ${p.name} (%)`}
-                                        value={l.discount_percent || 0}
-                                        onChange={(e) =>
-                                          setCart((c) =>
-                                            c.map((x) =>
-                                              x.id === l.id
-                                                ? {
-                                                    ...x,
-                                                    discount_percent: Math.max(
-                                                      0,
-                                                      Math.min(
-                                                        100,
-                                                        Math.trunc(
-                                                          Number(
-                                                            e.target.value,
-                                                          ) || 0,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    discount_reason:
-                                                      x.discount_reason ||
-                                                      discountReasons[0],
-                                                  }
-                                                : x,
-                                            ),
-                                          )
-                                        }
-                                      />
-                                    </label>
-                                    {!!l.discount_percent && (
-                                      <label>
-                                        Grund
-                                        <select
-                                          aria-label={`Rabattgrund für ${p.name}`}
-                                          value={
-                                            l.discount_reason ||
-                                            discountReasons[0]
-                                          }
-                                          onChange={(e) =>
-                                            setCart((c) =>
-                                              c.map((x) =>
-                                                x.id === l.id
-                                                  ? {
-                                                      ...x,
-                                                      discount_reason:
-                                                        e.target.value,
-                                                    }
-                                                  : x,
-                                              ),
-                                            )
-                                          }
-                                        >
-                                          {discountReasons.map((reason) => (
-                                            <option key={reason}>
-                                              {reason}
-                                            </option>
-                                          ))}
-                                        </select>
-                                      </label>
-                                    )}
-                                    {!!l.discount_percent && (
-                                      <small className="muted">
-                                        Nachlass für diese Position:{" "}
-                                        {euro(discountTotal([priced]))}
-                                      </small>
-                                    )}
-                                  </div>
+                              {can(data, "rabatt") && (
+                                <button
+                                  className={`pos-item-discount ${discountMode === "item" && l.discount_percent ? "applied" : ""}`}
+                                  aria-label={`Rabatt für ${p.name}, ${pack(p)}`}
+                                  onClick={() => setEditingDiscount(l.id)}
+                                >
+                                  <span>%</span>
+                                  {discountMode === "item" && l.discount_percent
+                                    ? `${l.discount_percent} % Rabatt bearbeiten`
+                                    : "Rabatt"}
+                                </button>
+                              )}
+                              {discountMode === "item" &&
+                                !!l.discount_percent && (
+                                  <small className="pos-item-saving">
+                                    −{euro(discountTotal([priced]))} ·{" "}
+                                    {l.discount_reason}
+                                  </small>
                                 )}
                             </div>
                           );
@@ -1767,6 +1716,7 @@ export default function AdminApp({ section }: { section: string }) {
                         </div>
                         <CheckoutFlow
                           key={data.operatorId}
+                          totalCents={total.gross}
                           settings={data.settings}
                           operatorId={data.operatorId}
                           pendingReceipt={data.pendingReceipt}
@@ -1829,6 +1779,43 @@ export default function AdminApp({ section }: { section: string }) {
                   </div>
                 </>
               )}
+              {section === "kasse" &&
+                editingDiscount &&
+                can(data, "rabatt") &&
+                (() => {
+                  const product = products.find(
+                    (p) => p.id === editingDiscount,
+                  );
+                  const line = cart.find((l) => l.id === editingDiscount);
+                  return product && line ? (
+                    <ItemDiscountDialog
+                      key={editingDiscount}
+                      product={product}
+                      percent={
+                        discountMode === "item" ? line.discount_percent || 0 : 0
+                      }
+                      reason={line.discount_reason || discountReasons[0]}
+                      cartDiscount={discountMode === "cart" ? discount : 0}
+                      onClose={() => setEditingDiscount(null)}
+                      onApply={(percent, reason) => {
+                        setDiscountMode("item");
+                        setDiscount(0);
+                        setCart((c) =>
+                          c.map((l) =>
+                            l.id === editingDiscount
+                              ? {
+                                  ...l,
+                                  discount_percent: percent,
+                                  discount_reason: reason,
+                                }
+                              : l,
+                          ),
+                        );
+                        setEditingDiscount(null);
+                      }}
+                    />
+                  ) : null;
+                })()}
               {section === "finanzen" && (
                 <>
                   <InvoiceLedger readOnly={!!data.finance_readonly} />
@@ -2619,8 +2606,7 @@ function NumberField({
   return (
     <label>
       {label}
-      <input
-        type="number"
+      <NumberInput
         min={min}
         step="1"
         value={value ?? ""}
@@ -2643,8 +2629,7 @@ function MoneyField({
   return (
     <label>
       {label}
-      <input
-        type="number"
+      <NumberInput
         min="0"
         step="0.01"
         value={value === null ? "" : value / 100}

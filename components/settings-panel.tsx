@@ -1,4 +1,5 @@
 "use client";
+import NumberInput from "./number-input";
 import EpsonWizard from "./epson-wizard";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -67,8 +68,7 @@ export default function SettingsPanel({
   ) => (
     <label>
       {label}
-      <input
-        type="number"
+      <NumberInput
         min={min}
         max={max}
         value={Number(v[key] || 0)}
