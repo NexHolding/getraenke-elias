@@ -398,9 +398,11 @@ export default function SettingsPanel({
                     Dieses Gerät als Kasse freigeben
                   </button>
                   <p className="fineprint span-two">
-                    Gerätefreigabe: 30 Tage. PIN-Sitzung: 8 Stunden, über
-                    „Mitarbeiter wechseln“ sperrbar. Native App-Store-Versionen
-                    folgen als eigener Entwicklungsschritt.
+                    Beim ersten Sperren wird das angemeldete Kassengerät für
+                    die Mitarbeiterauswahl freigegeben. Gerätefreigabe: 30 Tage,
+                    PIN-Sitzung: 8 Stunden. Vergib jedem Mitarbeiter mit
+                    Kassenzugang eine eigene vierstellige PIN. Das gilt auch
+                    für die iPad-Kassen-App.
                   </p>
                 </>
               )}

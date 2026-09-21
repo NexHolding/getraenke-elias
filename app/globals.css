@@ -4120,3 +4120,32 @@ textarea {
 .pos-adjustments .pos-discount-fields { grid-template-columns: minmax(160px,1fr) minmax(0,2fr); gap: 18px; }
 .pos-adjustments .pos-discount-fields input::placeholder { font-size: 16px; }
 @container pos-catalog (max-width: 450px) { .pos-adjustments .pos-discount-fields { grid-template-columns: minmax(0,1fr); } }
+
+/* Paired-register lock screen: named operators and a tablet-sized PIN pad. */
+.terminal-login-page { min-height: 100dvh; padding: 24px; }
+.terminal-login-card { width: min(880px, 100%); max-width: 880px; }
+.terminal-login-card .eyebrow { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.terminal-login-card h1 { font-size: clamp(25px, 4vw, 36px); margin-bottom: 12px; }
+.terminal-employee-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin: 26px 0; }
+.terminal-employee-grid button { min-height: 142px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px; padding: 20px; border: 2px solid #dde5d2; border-radius: 18px; background: #fff; color: #28391b; cursor: pointer; touch-action: manipulation; }
+.terminal-employee-grid button:hover, .terminal-employee-grid button:focus-visible { border-color: #53751f; background: #f4f8eb; outline: 3px solid #dce9bf; outline-offset: 2px; }
+.terminal-employee-grid strong { font-size: 19px; overflow-wrap: anywhere; }
+.terminal-employee-grid small { color: #647052; }
+.terminal-employee-avatar { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: #edf3de; color: #53751f; }
+.terminal-pin-card { max-width: 460px; }
+.terminal-back { display: inline-flex; align-items: center; gap: 7px; margin: 0 0 22px; }
+.terminal-pin-form { display: grid; gap: 14px; }
+.terminal-pin-form label { font-weight: 650; font-size: 15px; }
+.terminal-pin-form input { width: 100%; min-height: 64px; border: 2px solid #b4c994; border-radius: 14px; text-align: center; font-size: 32px; letter-spacing: 16px; padding-left: 24px; background: #fcfef8; color: #28391b; }
+.terminal-pin-form input:focus { outline: 3px solid #dce9bf; border-color: #53751f; }
+.terminal-keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.terminal-keypad button { display: grid; place-items: center; min-height: 60px; border: 1px solid #dde5d2; border-radius: 12px; background: #f6f8f0; color: #28391b; font-size: 25px; font-weight: 650; cursor: pointer; touch-action: manipulation; }
+.terminal-keypad button[aria-label="PIN löschen"] { font-size: 14px; }
+.terminal-keypad button:active { background: #e1edc8; }
+.terminal-unlock { width: 100%; min-height: 56px; justify-content: center; }
+.terminal-unlock:disabled { opacity: .5; cursor: not-allowed; }
+.terminal-password-link { display: inline-block; margin-top: 24px; font-size: 14px; color: #647052; text-decoration: underline; }
+@media (max-width: 520px) { .terminal-login-page { padding: 12px; } .terminal-login-card { padding: 24px 18px; } .terminal-employee-grid { grid-template-columns: 1fr 1fr; gap: 10px; } .terminal-employee-grid button { padding: 14px 8px; } .terminal-employee-grid strong { font-size: 16px; } }
+@media (max-height: 850px) { .terminal-pin-card { padding: 22px 28px; } .terminal-pin-card .brand-logo { margin-bottom: 12px; } .terminal-pin-card h1 { font-size: 26px; } .terminal-back { margin-bottom: 14px; } .terminal-pin-form { gap: 10px; } .terminal-keypad { gap: 8px; } .terminal-keypad button { min-height: 50px; } .terminal-pin-card .terminal-password-link { margin-top: 16px; } }
+
+.terminal-login-card > .brand-logo { margin-bottom: 24px; }

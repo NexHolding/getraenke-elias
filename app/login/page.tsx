@@ -25,6 +25,11 @@ export default function Login() {
         password: String(f.get("password")),
       });
       if (error) throw error;
+      const response = await fetch("/api/terminal", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "password-login" }),
+      });
+      if (!response.ok) throw new Error("Mitarbeiteranmeldung fehlgeschlagen.");
       router.push("/crm");
       router.refresh();
     } catch {

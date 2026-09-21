@@ -476,11 +476,15 @@ export default function AdminApp({ section }: { section: string }) {
             <button
               className="text-link"
               onClick={async () => {
-                await fetch("/api/terminal", {
+                const response = await fetch("/api/terminal", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ action: "lock" }),
                 });
+                if (!response.ok) {
+                  setError("Arbeitsplatz konnte nicht gesperrt werden.");
+                  return;
+                }
                 router.push("/kassenzugang");
                 router.refresh();
               }}
